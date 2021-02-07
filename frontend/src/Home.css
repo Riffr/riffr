@@ -84,8 +84,8 @@ input {
     background-color: #ffbc5a;
     /*background-color: #c8dbfc;*/
     border-radius: 5px;
-    padding: 0px 10px;
-    box-shadow: 0px 1px 3px 0px #737373;
+    padding: 0 10px;
+    box-shadow: 0 1px 3px 0 #737373;
     /*margin: 10px;*/
 }
 
@@ -196,8 +196,8 @@ input {
         grid-row: 2 / span 1;
 
         padding: 0 15px;
-        margin-left: 0px;
-        margin-right: 0px;
+        margin-left: 0;
+        margin-right: 0;
         margin-bottom: 10px;
 
         /*border: none;*/
@@ -208,8 +208,8 @@ input {
     }
 
     .lobbyContainer {
-        padding: 0px 20px;
-        box-shadow: 0px 1px 3px 0px #737373;
+        padding: 0 20px;
+        box-shadow: 0 1px 3px 0 #737373;
         /*margin: 10px;*/
     }
 

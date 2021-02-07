@@ -1,36 +1,20 @@
 import React from 'react';
-import './App.css';
+import {BrowserRouter as Router, Route} from "react-router-dom";
+import Home from "./Home";
+import Lobby from "./Lobby";
 
-function App() {
+const App = () => {
   return (
-
-    <div className="App">
-
-      <div id={"main"}>
-        <h1>Riffr <i className={"fa fa-music"}/></h1>
-        {/*<p>Enter name to start jamming</p>*/}
-        <input type={"textField"} id={"nameInput"} placeholder={"Enter name to get started"}/>
-        <div className={"lobbyContainer"} id={"joinLobby"}>
-          <h2>Join Lobby</h2>
-          <input type={"textField"} id={"lobbyInput"} placeholder={"Enter lobby name"}/>
-          <button className={"homeButton"} id={"joinButton"}>
-            <i className={"fa fa-send"}/>
-          </button>
-        </div>
-        <div className={"lobbyContainer"} id={"createLobby"}>
-          <h2>Create Lobby</h2>
-          <button className={"homeButton"} id={"createButton"}>
-            Create
-            <i className={"fa fa-rocket"}/>
-          </button>
-          <p></p>
-        </div>
+    <Router>
+      <div className="App">
+        <Route path="/" exact render={() => <Home/>}/>
+        <Route path="/lobby/:name" render={({match}) => (
+          <Lobby
+            name={match.params.name}
+          />
+        )}/>
       </div>
-      <div id={"darkmode"}>
-        <input type={"checkBox"} id={"darkmodeSwitch"}/>
-      </div>
-
-    </div>
+    </Router>
   );
 }
 

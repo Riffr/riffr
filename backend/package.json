@@ -1,0 +1,18 @@
+{
+  "name": "@riffr/backend",
+  "version": "1.0.0",
+  "description": "Group project backend",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "author": "Alistair O'Brien",
+  "license": "ISC",
+  "dependencies": {
+    "socket.io": "^3.1.0"
+  },
+  "devDependencies": {
+    "@types/socket.io": "^2.1.13"
+  }
+}

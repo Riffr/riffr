@@ -2,9 +2,25 @@ import React, { useState } from 'react';
 import {Link} from "react-router-dom";
 import './Home.css';
 
-const Home = () => {
+const Home = (props: any) => {
   const [name, setName] = useState("User");
   const [lobbyName, setLobbyName] = useState("");
+  let signallingSocket = props.socket;
+
+  const createLobby = () => {
+      signallingSocket.emit('signalling:create_room', { name: "test-room" }, ({name, status} : {name : string, status: string}) => {
+          console.log(`[callback] ${ name } ${ status }`);
+          signallingSocket.emit('message', { test: "Hello World!"}, (res:any) => {
+              console.log(`[message callback] Was expecting nothing, got ${ res }`);
+          });
+      })
+    }
+
+    const joinLobby = () => {
+        signallingSocket.emit('signalling:join_room', { name: "test-room" }, ({name, status} : {name : string, status: string}) => {
+            console.log(`[callback] ${ name } ${ status }`);
+        })
+    }
 
   return (
     <div id={"main"}>
@@ -13,14 +29,14 @@ const Home = () => {
       <div className={"lobbyContainer"} id={"joinLobby"}>
         <h2>Join Lobby</h2>
         <TextInput id={"lobbyInput"} placeholder={"Enter lobby name"} parentCallback={setLobbyName}/>
-        <button className={"homeButton"} id={"joinButton"}>
+        <button onClick={joinLobby} className={"homeButton"} id={"joinButton"}>
           <i className={"fa fa-send"}/>
         </button>
       </div>
       <div className={"lobbyContainer"} id={"createLobby"}>
         <h2>Create Lobby</h2>
         <Link to={`/lobby/${name}`}>
-          <button className={"homeButton"} id={"createButton"}>
+          <button onClick={createLobby} className={"homeButton"} id={"createButton"}>
             Create
             <i className={"fa fa-rocket"}/>
           </button>

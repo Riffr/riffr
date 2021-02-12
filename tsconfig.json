@@ -1,0 +1,12 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "umd",
+        "moduleResolution": "Node",
+        "sourceMap": true,
+        "strict": true,
+        "alwaysStrict": true
+    },
+    "include": ["**/*.ts", "**/*.tsx"],
+    "exclude": ["node_modules"]
+}

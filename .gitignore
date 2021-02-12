@@ -1,0 +1,21 @@
+# dependencies
+node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# build
+dist
+build
+
+
+#misc
+.vscode/
+.idea
+.env*
+
+
+npm-debug.log*
+

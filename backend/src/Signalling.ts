@@ -16,27 +16,27 @@ const leave = (ctx: Context) => {
     }
 };
 
-const onCreateRoom = (ctx: Context, name: string, callback: any) => {
-    console.log(`[onCreateRoom] Client requesting to create room: ${ name }`);
-    const room = ctx.io.adapter.rooms.get(name);
-    
+const onCreateRoom = (ctx: Context, name: any, callback: any) => {
+    console.log(`[onCreateRoom] Client requesting to create room: ${ name.name }`);
+    const room = ctx.io.adapter.rooms.get(name.name);
+
     if (room && room.size > 0) {
-        console.log(`[onCreateRoom] Failed to create room. ${ name } room is taken`);
-        callback(error({message: `Room ${ name } taken`}));
+        console.log(`[onCreateRoom] Failed to create room. ${ name.name } room is taken`);
+        callback(error({message: `Room ${ name.name } taken`}));
     } else {
-        join(ctx, name)
-        console.log(`[onCreateRoom] Creating and joining the room ${ name }`);
+        join(ctx, name.name)
+        console.log(`[onCreateRoom] Creating and joining the room ${ name.name }`);
         
         // TODO: When rooms are implemented as classes on client, send room details
         // on creation and joining. 
-        callback(success({message: `Joined room ${ name }`}));
+        callback(success({message: `Joined room ${ name.name }`}));
     }
 };
 
-const onJoinRoom = (ctx: Context, name: string, callback: any) => {
-    console.log(`[onJoinRoom] Client requesting to join room: ${ name }`);
-    join(ctx, name);
-    callback(success({message: `Joined room ${ name }`}));
+const onJoinRoom = (ctx: Context, name: any, callback: any) => {
+    console.log(`[onJoinRoom] Client requesting to join room: ${ name.name }`);
+    join(ctx, name.name);
+    callback(success({message: `Joined room ${ name.name }`}));
 };
 
 
@@ -47,7 +47,7 @@ const onLeaveRoom = (ctx: Context, callback: any) => {
 };
 
 const onMessage = (ctx: Context, message: any) => {
-    console.log(`[onMessage] Client sending message: ${ message }`);
+    console.log(`[onMessage] Client sending message: ${ message.message }`);
 
     const room: string = Store.of(ctx).get("room");
     if (room) {
@@ -60,7 +60,6 @@ enum SignallingEvent {
     JoinRoom                = "signalling:join_room",
     RemoveClientFromRoom    = "signalling:remove_client_from_room",
     LeaveRoom               = "signalling:leave_room",
-
     Message                 = "signalling:message"
 }
 

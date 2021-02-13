@@ -27,6 +27,12 @@
     grid-row: 8 / span 1;
 }
 
+
+#messageField {
+    grid-column: 2 / span 3;
+    grid-row: 10 / span 1;
+}
+
 @media only screen and (max-width: 600px) {
     .App {
         position: relative;

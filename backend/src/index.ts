@@ -14,4 +14,3 @@ console.log(`Attaching signalling module...`);
 server.attachModule(signallingModule);
 
 server.start();
-

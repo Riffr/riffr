@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import {Link} from "react-router-dom";
 import './Home.css';
+import {SignallingChannel} from "./connections/SignallingChannel";
 
-const Home = (props: any) => {
+
+const Home = (props: {socket: SignallingChannel}) => {
   const [name, setName] = useState("User");
   const [lobbyName, setLobbyName] = useState("");
   let signallingSocket = props.socket;
@@ -29,9 +31,11 @@ const Home = (props: any) => {
       <div className={"lobbyContainer"} id={"joinLobby"}>
         <h2>Join Lobby</h2>
         <TextInput id={"lobbyInput"} placeholder={"Enter lobby name"} parentCallback={setLobbyName}/>
-        <button onClick={joinLobby} className={"homeButton"} id={"joinButton"}>
-          <i className={"fa fa-send"}/>
-        </button>
+          <Link to={`/lobby/${lobbyName}/${name}`}>
+            <button className={"homeButton"} id={"joinButton"}>
+              <i className={"fa fa-send"}/>
+            </button>
+          </Link>
       </div>
       <div className={"lobbyContainer"} id={"createLobby"}>
         <h2>Create Lobby</h2>
@@ -46,6 +50,11 @@ const Home = (props: any) => {
   );
 }
 
+//Just some random algorithm
+const generateRandomRoomName = () => {
+    let words = ["cat", "dog", "hammer", "jack", "tape", "driver", "word","can","wheel"];
+    return words[Math.floor(Math.random()*words.length)]+"-"+words[Math.floor(Math.random()*words.length)]+"-"+words[Math.floor(Math.random()*words.length)];
+}
 
 const TextInput = (props: {id: string, placeholder: string, parentCallback: (arg0: string) => void}) => {
   return (

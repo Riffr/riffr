@@ -10,8 +10,7 @@
   "author": "Alistair O'Brien",
   "license": "ISC",
   "dependencies": {
-    "socket.io": "^3.1.0",
-    "ts-node": "^9.1.1"
+    "socket.io": "^3.1.0"
   },
   "devDependencies": {
     "@types/socket.io": "^2.1.13"

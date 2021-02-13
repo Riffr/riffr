@@ -4,9 +4,20 @@ import './App.css';
 
 import io from 'socket.io-client';
 
+import { SignallingChannel } from './connections/SignallingChannel';
+
 import { Button } from './Button';
 
+
+
 function App() {
+  var channel : SignallingChannel = new SignallingChannel("http://127.0.0.1:10000");
+
+  channel.addMessageHandler((message: any) => {
+    console.log(`[MESSAGE] ${ JSON.stringify(message) }`);
+  });
+
+
   return (
     <div className="App">
       <header className="App-header">
@@ -24,25 +35,31 @@ function App() {
         </a>
       </header>
       <div>
-        <Button text={"Test"} onClick={() => connect()}/>
+        <Button text={"Join"} onClick={() => channel.joinRoom("Test Room")}/>
+        <Button text={"Create Room"} onClick={() => channel.createRoom("Test Room")}/>
+       
+        <Button text={"Send Message"} onClick={() => channel.sendMessage("Hello World")}/>
+        <Button text={"Old"} onClick={() => join()}/>
+        
       </div>
     </div>
   );
 }
 
-const connect = () => {
+const join = async () => {
+
+
   const signallingSocket = io("http://127.0.0.1:10000/signalling");
 
   console.log(`connection ${ signallingSocket }`);
 
-
-
-  signallingSocket.emit('create_room', { name: "test-room" }, ({name, status} : {name : string, status: string}) => {
+  signallingSocket.emit('signalling:create_room', "test-room", ({name, status} : {name : string, status: string}) => {
     console.log(`[callback] ${ name } ${ status }`);
-    signallingSocket.emit('message', { test: "Hello World!"}, (res:any) => {
+    signallingSocket.emit('signalling:message', "Hello World!", (res:any) => {
       console.log(`[message callback] Was expecting nothing, got ${ res }`);
     });
-  })
+  });
+
 };
 
 

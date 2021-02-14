@@ -25,12 +25,45 @@
 #copyField {
     grid-column: 2 / span 3;
     grid-row: 8 / span 1;
+    display: grid;
+    grid-template-columns: 186px 54px;
+    justify-content: center;
 }
-
 
 #messageField {
     grid-column: 2 / span 3;
     grid-row: 10 / span 1;
+    grid-template-rows: 126px 54px;
+    grid-template-columns: auto 54px;
+    display: grid;
+}
+
+#chatSendButton {
+    background-color: #077ce0;
+    color: #e8e8e8;
+    padding: 15px 15px;
+    border-radius: 0px 0px 15px 0px;
+    font-size: medium;
+    font-weight: bolder;
+    border: 3px solid #555;
+    grid-row: 2;
+    grid-column: 2;
+}
+
+#chatSendButton:hover {
+    outline: none;
+    cursor: pointer;
+    transition: 0.15s;
+    opacity: 0.8;
+}
+
+#chatInput {
+    grid-row: 2;
+    grid-column: 1 / span 2;
+    padding-right: 54px;
+    border-radius: 0px 0px 15px 15px;
+    grid-column: 1 / span 2;
+    grid-row: 2;
 }
 
 @media only screen and (max-width: 600px) {

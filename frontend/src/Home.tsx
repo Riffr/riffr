@@ -23,7 +23,7 @@ const Home = (props: {socket: SignallingChannel}) => {
       <div className={"lobbyContainer"} id={"joinLobby"}>
         <h2>Join Lobby</h2>
         <TextInput id={"lobbyInput"} placeholder={"Enter lobby name"} parentCallback={setLobbyName}/>
-          <Link to={`/lobby/${lobbyName}/${name}`}>
+          <Link to={`/lobby/${lobbyName}/${name}`} style={{gridColumn: 3, gridRow: 2, zIndex: 1, marginRight: "-5px"}}>
             <button className={"homeButton"} id={"joinButton"}>
               <i className={"fa fa-send"}/>
             </button>

@@ -98,7 +98,6 @@ input {
 }
 
 #joinLobby > h2 {
-    margin: 20px 0 10px 0;
     grid-column: 1 / span 3;
 }
 

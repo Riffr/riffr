@@ -2,7 +2,8 @@
   "name": "@riffr/backend",
   "version": "1.0.0",
   "description": "Group project backend",
-  "main": "src/index.ts",
+  "main": "./dist/",
+  "types": "./dist/",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc"
@@ -14,5 +15,8 @@
   },
   "devDependencies": {
     "@types/socket.io": "^2.1.13"
+  },
+  "exports": {
+    "./": "./dist/"
   }
 }

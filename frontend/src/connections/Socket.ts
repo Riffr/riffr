@@ -1,14 +1,6 @@
 import io from 'socket.io-client';
 
-interface Result {
-    status: ResultStatus,
-    body: any
-};
-
-enum ResultStatus {
-    Success = 200,
-    Error = 500
-};
+import { Result, ResultStatus } from '@riffr/backend';
 
 type Function = (...args: any[]) => void;
 
@@ -56,7 +48,7 @@ class Socket {
             this.socket.emit(event, ...args, (res: Result) => {
                 // TODO: Would be nice to add some runtime typechecking
                 // for result, perhaps using https://github.com/gristlabs/ts-interface-checker
-                if (res.status == ResultStatus.Success) {
+                if (res.status === ResultStatus.Success) {
                     resolve(res.body);
                 } else { 
                     reject({

@@ -29,6 +29,12 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
         }
         , [props.name]);
 
+    const chatKeypress = (e: any) => {
+            if(e.code == "Enter"){
+               sendMessage();
+            }
+         }
+
     return (
         <div id="main" className={"noRows"}>
             <Link to={"/"}>
@@ -43,10 +49,13 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
             <h3 id={"inviteText"}>Invite your friends using the code below</h3>
             <CopyField id={"copyField"} value={props.roomCode} />
             <div id={"messageField"}>
-                <div style={{backgroundColor: "#ffffff", overflowY: "scroll", gridColumn: "1 / span 2", gridRow: "1", border: "3px solid #666", borderBottom: 0}}>
-                    {messages.map((x: any) => <p>{x.message}</p>)}
+                <div id={"chatBox"}>
+                    {messages.map((x: any) =>   <div className={"messageWrapper"}>
+                                                    <p className={"chatName"}>{props.name}</p>
+                                                    <p className={"chatMessage"}>{x.message}</p>
+                                                </div>)}
                 </div>
-                <input id={"chatInput"} type={"textField"} value={message} onChange={(e) => setMessage(e.target.value)}/>
+                <input id={"chatInput"} type={"textField"} onKeyDown={chatKeypress} value={message} onChange={(e) => setMessage(e.target.value)}/>
                 <button onClick={sendMessage} id={"chatSendButton"}>
                     <i className={"fa fa-send"}/>
                 </button>

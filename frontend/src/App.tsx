@@ -1,27 +1,27 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
-import Recorder from './Recorder';
+import React, {useEffect} from 'react';
+import {BrowserRouter as Router, Route} from "react-router-dom";
+import Home from "./Home";
+import Lobby from "./Lobby";
 
-function App() {
+import { SignallingChannel } from './connections/SignallingChannel';
+
+const App = () => {
+  let socket: SignallingChannel;
+  socket = new SignallingChannel("127.0.0.1:10000");
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <Recorder />
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <Route path="/" exact render={() => <Home socket={socket}/>}/>
+        <Route path="/lobby/:code/:name" render={({match}) => (
+          <Lobby
+            roomCode={match.params.code}
+            name={match.params.name}
+            socket={socket}
+          />
+        )}/>
+      </div>
+    </Router>
   );
 }
 

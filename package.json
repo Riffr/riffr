@@ -1,0 +1,14 @@
+{
+  "name": "riffr",
+  "version": "1.0.0",
+  "description": "Group project",
+  "scripts": {
+    "build": "npm install & cd backend & npm install & cd ../frontend & npm install",
+    "start": "concurrently \"(cd backend & tsc & node ./dist/init.js)\" \"npm start --prefix ./frontend\""
+  },
+  "author": "The Riffr Squad",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^5.3.0"
+  }
+}

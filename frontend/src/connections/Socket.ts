@@ -1,6 +1,14 @@
 import io from 'socket.io-client';
 
-import { Result, ResultStatus } from '@riffr/backend';
+interface Result {
+    status: ResultStatus,
+    body: any
+};
+
+enum ResultStatus {
+    Success = 200,
+    Error = 500
+};
 
 type Function = (...args: any[]) => void;
 

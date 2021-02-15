@@ -16,10 +16,6 @@ const start = () => {
     server.attachModule(signallingModule);
 
     server.start();
-
-    console.log(`Listening on port ${ 10000 }`);
-    io.listen(10000);
-
 };
 
 start();

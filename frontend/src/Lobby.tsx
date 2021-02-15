@@ -1,6 +1,7 @@
 import React, {RefObject, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import "./Lobby.css"
+import './css/Lobby.css';
+import './css/General.css'
 import {SignallingChannel} from "./connections/SignallingChannel";
 
 const Lobby = (props: { name: string, roomCode: string, socket: SignallingChannel }) => {
@@ -11,14 +12,14 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
         let msg = message;
         props.socket.sendMessage(msg);
         // @ts-ignore
-        setMessages(prev =>[{message: msg}, ...prev]);
+        setMessages(prev => [...prev, {message: msg}]);
         setMessage("");
     }
 
     const onMessageReceived = (e: any) => {
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev =>[e.message, ...prev]);
+        setMessages(prev => [e.message, ...prev]);
     }
 
     useEffect(() => {
@@ -30,33 +31,35 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
         , [props.name]);
 
     const chatKeypress = (e: any) => {
-            if(e.code == "Enter"){
-               sendMessage();
-            }
-         }
+        if (e.code == "Enter") {
+            sendMessage();
+            document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
+        }
+    }
 
     return (
-        <div id="main" className={"noRows"}>
+        <div id="lobby-wrapper">
             <Link to={"/"}>
-                <button className={"homeButton"} id={"homeButton"}>
+                <button className={"squircle-button red"} id={"home-button"}>
                     <i className={"fa fa-home"}/>
                 </button>
             </Link>
-            <h1 id={"greetingText"}>Hello, {props.name}</h1>
-            <ol id={"userList"}>
-                <li>{props.name}</li>
-            </ol>
-            <h3 id={"inviteText"}>Invite your friends using the code below</h3>
-            <CopyField id={"copyField"} value={props.roomCode} />
-            <div id={"messageField"}>
-                <div id={"chatBox"}>
-                    {messages.map((x: any) =>   <div className={"messageWrapper"}>
-                                                    <p className={"chatName"}>{props.name}</p>
-                                                    <p className={"chatMessage"}>{x.message}</p>
-                                                </div>)}
+            <h1>Welcome, {props.name}</h1>
+            <h3>Invite your friends using the code below</h3>
+            <CopyField id={"copy-field"} value={props.roomCode}/>
+            <div>
+                <div id={"member-list"}>
+                    <p><b>Members</b>: {props.name}, Freddie</p>
                 </div>
-                <input id={"chatInput"} type={"textField"} onKeyDown={chatKeypress} value={message} onChange={(e) => setMessage(e.target.value)}/>
-                <button onClick={sendMessage} id={"chatSendButton"}>
+                <div id={"message-field"}>
+                    {messages.map((x: any) => <div className={"messageWrapper"}>
+                        <p className={"chat-message"}><b>{props.name}</b>: {x.message}</p>
+                    </div>)}
+                </div>
+                <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
+                       placeholder={"Type message"}
+                       onChange={(e) => setMessage(e.target.value)}/>
+                <button id={"send-message-button"} className={"green"} onClick={sendMessage}>
                     <i className={"fa fa-send"}/>
                 </button>
             </div>
@@ -68,11 +71,13 @@ const CopyField = (props: { id: string, value: string }) => {
     const textFieldRef: RefObject<HTMLInputElement> = useRef(null);
     return (
         <div id={props.id}>
-            <span className={"inputStyle"} ref={textFieldRef} style={{gridRow: 1, gridColumn: "1 /span 2", padding: "12.6px 64px 12.6px 15px"}}>{props.value}</span>
-            <button className={"homeButton"} id={"joinButton"} style={{gridRow: 1, gridColumn: 2}} onClick={() => {
-                textFieldRef?.current?.select();
-                document.execCommand('copy');
-            }}>
+            <input id={"copy-input"} className={"text-input"} type={"textField"} ref={textFieldRef}
+                   value={props.value}/>
+            <button className={"circle-button circle-overlay-button blue"} style={{gridRow: 1, gridColumn: 2}}
+                    onClick={() => {
+                        textFieldRef?.current?.select();
+                        document.execCommand('copy');
+                    }}>
                 <i className={"fa fa-copy"}/>
             </button>
         </div>

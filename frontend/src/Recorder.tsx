@@ -68,14 +68,10 @@ const Recorder = () => {
 
     return (
         <div>
-            <section id="buttons">
-                <div>
-                    {playlist.map((value, index) => <Clip key={index} audioCtx={audioContext} blob={value.blob} play={true} />)}
-                </div>
-                <button onClick={init}>Grant permission</button>
-                <button disabled={false} onClick={startRecording}>Start Recording</button>
-                <button disabled={false} onClick={stopRecording}>Stop Recording</button>
-            </section>
+            {playlist.map((value, index) => <Clip key={index} audioCtx={audioContext} blob={value.blob} play={true} />)}
+            {/* <button onClick={init}>Grant permission</button>
+                <button onClick={startRecording}>Start Recording</button>
+                <button onClick={stopRecording}>Stop Recording</button> */}
         </div>
     );
 }

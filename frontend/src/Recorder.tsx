@@ -1,50 +1,78 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Clip from './Clip';
 
 declare var MediaRecorder: any;
 let mediaRecorder: any = null;
-let chunks: BlobPart[] = [];
-let recordLength = 4000;
+let audioContext = new window.AudioContext();
 
-const onSuccess = function (stream: MediaStream) {
+type BlobEvent = { data: Blob; }
 
-    mediaRecorder = new MediaRecorder(stream);
+type clipType = {
+    blob: Blob;
+    start: number;
+    end: number;
+}
 
-    mediaRecorder.onstop = makeAudioURL;
+const Recorder = () => {
+    let chunks: BlobPart[] = [];
+    let recordStartTime: number = 0;
+    let recordEndTime: number = 0;
+    const [playlist, setplaylist] = useState<clipType[]>([]);
 
-    mediaRecorder.ondataavailable = function (e: any) {
-        chunks.push(e.data);
+
+    const onSuccess = function (stream: MediaStream) {
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.onstop = saveRecording;
+
+        mediaRecorder.ondataavailable = function (evt: BlobEvent) {
+            chunks.push(evt.data);
+        }
     }
-}
 
-const startRecording = function () {
-    if (mediaRecorder.state !== 'recording') {
-        mediaRecorder.start();
-
-        setTimeout(stopRecording, recordLength);
+    const init = function () {
+        console.log(audioContext.state);
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        // console.log(playlist);
     }
-}
 
-const stopRecording = function () {
-    if (mediaRecorder.state !== 'inactive') {
-        mediaRecorder.stop();
+    const startRecording = function () {
+        if (mediaRecorder.state !== 'recording') {
+            recordStartTime = audioContext.currentTime;
+            mediaRecorder.start();
+
+            //TODO: time limit on recording?
+        }
     }
-}
 
-function makeAudioURL() {
-    const blob = new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' });
-    const audioURL = window.URL.createObjectURL(blob);
-    console.log(audioURL);
+    const stopRecording = function () {
+        if (mediaRecorder.state !== 'inactive') {
+            recordEndTime = audioContext.currentTime;
+            mediaRecorder.stop();
+        }
+    }
 
-    chunks = [];
-}
+    function saveRecording() {
+        const blobTime: clipType = { blob: new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' }), start: recordStartTime, end: recordEndTime };
+        setplaylist(playlist.concat(blobTime));
 
-function Recorder() {
+        chunks = [];
+    }
+
+
     navigator.mediaDevices.getUserMedia({ audio: true, video: false })
         .then(onSuccess)
         .catch((err) => { console.log('The following error occured: ' + err); });
+
     return (
         <div>
             <section id="buttons">
+                <div>
+                    {playlist.map((value, index) => <Clip key={index} audioCtx={audioContext} blob={value.blob} play={true} />)}
+                </div>
+                <button onClick={init}>Grant permission</button>
                 <button disabled={false} onClick={startRecording}>Start Recording</button>
                 <button disabled={false} onClick={stopRecording}>Stop Recording</button>
             </section>

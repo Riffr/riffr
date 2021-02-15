@@ -28,10 +28,10 @@
     grid-row: 1 / span 1;
     font-size: 80px;
     margin-top:20px;
-    #color: #e8e8e8;
+    /*color: #e8e8e8;*/
 }
 
-input {
+input, .inputStyle {
     padding: 15px;
 
     border: 3px solid #666;
@@ -42,6 +42,7 @@ input {
     /*font-size: medium;*/
     transition: 0.1s;
     font-size: large;
+    background: white;
 }
 
 .homeButton {
@@ -50,7 +51,7 @@ input {
     border-radius: 30px;
     font-size: medium;
     font-weight: bolder;
-    border: 3px solid #555;
+    border: 3px solid #666;
 }
 
 .homeButton:hover {

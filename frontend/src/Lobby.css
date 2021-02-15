@@ -1,16 +1,16 @@
 #greetingText {
     grid-column: 2 / span 2;
-    grid-row: 1 / span 1;
     margin-top: 10px;
 }
 
-#homeButton {
-    grid-column: 1 / span 1;
-    grid-row: 1 / span 1;
+#main.noRows {
+    grid-template-rows: none;
+}
 
+#homeButton {
     background-color: #ff7930;
     color: #e8e8e8;
-    padding: 9px 15px;
+    padding: 9px;
 }
 
 #homeButton>i {
@@ -19,20 +19,36 @@
 
 #inviteText {
     grid-column: 2 / span 3;
-    grid-row: 6 / span 1;
+}
+
+#userList {
+    grid-column: 2 /span 3;
+    text-align: left;
+    background: white;
+    border: 3px solid #666;
+    border-radius: 30px;
+    padding: 10px 40px;
 }
 
 #copyField {
     grid-column: 2 / span 3;
-    grid-row: 8 / span 1;
     display: grid;
-    grid-template-columns: 186px 54px;
+    grid-template-columns: auto 54px;
+    grid-template-rows: 54px;
+    padding-top: 12.6px;
+    padding-bottom: 12.6px;
     justify-content: center;
+    margin-bottom: 20px;
+}
+
+#userField {
+    grid-column: 2 /span 3;
+    justify-content: left;
+    text-align: left;
 }
 
 #messageField {
     grid-column: 2 / span 3;
-    grid-row: 10 / span 1;
     grid-template-rows: 126px 54px;
     grid-template-columns: auto 54px;
     display: grid;
@@ -45,7 +61,7 @@
     border-radius: 0px 0px 15px 0px;
     font-size: medium;
     font-weight: bolder;
-    border: 3px solid #555;
+    border: 3px solid #666;
     grid-row: 2;
     grid-column: 2;
 }
@@ -60,7 +76,7 @@
 #chatInput {
     grid-row: 2;
     grid-column: 1 / span 2;
-    padding-right: 54px;
+    padding-right: 69px;
     border-radius: 0px 0px 15px 15px;
     grid-column: 1 / span 2;
     grid-row: 2;

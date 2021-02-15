@@ -30,17 +30,20 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
         , [props.name]);
 
     return (
-        <div id="main">
+        <div id="main" className={"noRows"}>
             <Link to={"/"}>
                 <button className={"homeButton"} id={"homeButton"}>
                     <i className={"fa fa-home"}/>
                 </button>
             </Link>
             <h1 id={"greetingText"}>Hello, {props.name}</h1>
+            <ol id={"userList"}>
+                <li>{props.name}</li>
+            </ol>
             <h3 id={"inviteText"}>Invite your friends using the code below</h3>
             <CopyField id={"copyField"} value={props.roomCode} />
             <div id={"messageField"}>
-                <div style={{backgroundColor: "#ffffff", overflowY: "scroll", gridColumn: "1 / span 2", gridRow: "1", border: "3px solid #666"}}>
+                <div style={{backgroundColor: "#ffffff", overflowY: "scroll", gridColumn: "1 / span 2", gridRow: "1", border: "3px solid #666", borderBottom: 0}}>
                     {messages.map((x: any) => <p>{x.message}</p>)}
                 </div>
                 <input id={"chatInput"} type={"textField"} value={message} onChange={(e) => setMessage(e.target.value)}/>
@@ -56,7 +59,7 @@ const CopyField = (props: { id: string, value: string }) => {
     const textFieldRef: RefObject<HTMLInputElement> = useRef(null);
     return (
         <div id={props.id}>
-            <input type={"textField"} value={props.value} ref={textFieldRef} style={{gridRow: 1, gridColumn: "1 /span 2"}} readOnly/>
+            <span className={"inputStyle"} ref={textFieldRef} style={{gridRow: 1, gridColumn: "1 /span 2", padding: "12.6px 64px 12.6px 15px"}}>{props.value}</span>
             <button className={"homeButton"} id={"joinButton"} style={{gridRow: 1, gridColumn: 2}} onClick={() => {
                 textFieldRef?.current?.select();
                 document.execCommand('copy');

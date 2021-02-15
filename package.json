@@ -1,0 +1,17 @@
+{
+  "name": "riffr",
+  "version": "1.0.0",
+  "description": "Group project",
+  "main": "./dist/",
+  "types": "./dist/",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "concurrently \"node backend/src/init.js\" \"npm start --prefix ./frontend\""
+  },
+  "author": "The Riffr Squad",
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^5.3.0"
+  }
+}

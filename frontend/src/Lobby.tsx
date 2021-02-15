@@ -12,14 +12,14 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
         let msg = message;
         props.socket.sendMessage(msg);
         // @ts-ignore
-        setMessages(prev => [...prev, {message: msg}]);
+        setMessages(prev => [{message: msg}, ...prev]);
         setMessage("");
     }
 
     const onMessageReceived = (e: any) => {
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev => [e.message, ...prev]);
+        setMessages(prev => [{message: e}, ...prev]);
     }
 
     useEffect(() => {

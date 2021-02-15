@@ -48,8 +48,7 @@ class Room {
     }
 
     public async leave() {
-        const name = this.name;
-        await this.socket.request(SignallingEvent.LeaveRoom, name);
+        await this.socket.request(SignallingEvent.LeaveRoom);
     }
 
     public sendMessage(message: any) {
@@ -73,17 +72,18 @@ class SignallingChannel {
     }
 
     public async createRoom(name: string) {
-        if (this.room !== undefined) this.room.leave();
+        if (this.room !== undefined) await this.room.leave();
         this.room = await Room.createRoom(this.socket, name);
     }
 
     public async joinRoom(name: string) {
-        if (this.room !== undefined) this.room.leave();
+        if (this.room !== undefined) await this.room.leave();
         this.room = await Room.joinRoom(this.socket, name);
     }
 
-    public async leaveRoom(name: string) {
-        await this.socket.request(SignallingEvent.LeaveRoom, name);
+    public async leaveRoom() {
+        if (this.room === undefined) return;
+        await this.room.leave();
     }    
 
     public sendMessage(message: any) {

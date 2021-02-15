@@ -15,14 +15,18 @@ const leave = (ctx: Context) => {
 
     if (room) {
         ctx.io.in(room).emit(SignallingEvent.RemoveClientFromRoom, ctx.socket.id);
+        ctx.socket.leave(room);
     }
 };
 
 const onCreateRoom = (ctx: Context, name: string, callback: any) => {
     console.log(`[onCreateRoom] Client requesting to create room: ${ JSON.stringify(name) }`);
     const room = ctx.io.adapter.rooms.get(name);
+    console.log(`Room bug1: ${ room }`);
     
     if (room && room.size > 0) {
+        // TODO: BUG
+        console.log(`Room bug: ${ room.size }`)
         console.log(`[onCreateRoom] Failed to create room. ${ name } room is taken`);
         callback(error(`Room ${ name } taken`));
     } else {

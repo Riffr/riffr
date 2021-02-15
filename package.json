@@ -2,8 +2,6 @@
   "name": "riffr",
   "version": "1.0.0",
   "description": "Group project",
-  "main": "./dist/",
-  "types": "./dist/",
   "scripts": {
     "start": "concurrently \"(cd backend & tsc & node ./dist/init.js)\" \"npm start --prefix ./frontend\""
   },

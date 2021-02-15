@@ -5,9 +5,7 @@
   "main": "./dist/",
   "types": "./dist/",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc",
-    "start": "concurrently \"node backend/src/init.js\" \"npm start --prefix ./frontend\""
+    "start": "concurrently \"(cd backend & tsc & node ./dist/init.js)\" \"npm start --prefix ./frontend\""
   },
   "author": "The Riffr Squad",
   "license": "ISC",

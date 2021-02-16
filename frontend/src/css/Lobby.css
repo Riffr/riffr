@@ -49,9 +49,10 @@
     width: 100%;
     margin-bottom: 30px;
     border: 3px solid #444;
-    border-top: 2px solid #444;
+    border-top-width: 2px;
     border-radius: 0 0 15px 15px;
     padding: 13px;
+    height: 47px;
 }
 
 #chat-input:focus {
@@ -61,10 +62,14 @@
 #send-message-button {
     position: absolute;
     margin-left: -44px;
+    width: 44px;
     border: 3px solid #444;
+    border-top-width: 2px;
+    border-left-width: 2px;
     border-radius: 0 0 15px 0;
     padding: 10.5px;
     font-size: medium;
+    height: 47px
 }
 
 @media only screen and (min-width: 600px) {

@@ -13,6 +13,7 @@
 #join-button {
     position: absolute;
     margin-left: -55px;
+    width: 55px;
 }
 
 #create-button {

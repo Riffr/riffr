@@ -29,12 +29,14 @@ const Home = (props: { socket: SignallingChannel }) => {
           </button>
         </Link>
       </div>
-      <Link to={`/lobby/${randomRoomName}/${name}`}>
-        <button id={"create-button"}  className={"squircle-button green white-text"} onClick={newRoomClick}>
-          Or create a lobby
-          <i className={"fa fa-rocket"}/>
-        </button>
-      </Link>
+      <div>
+        <Link to={`/lobby/${randomRoomName}/${name}`}>
+          <button id={"create-button"}  className={"squircle-button green white-text"} onClick={newRoomClick}>
+            Or create a lobby
+            <i className={"fa fa-rocket"}/>
+          </button>
+        </Link>
+      </div>
     </div>
   );
 }

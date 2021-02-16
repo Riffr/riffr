@@ -12,11 +12,17 @@
 
 button:hover {
     cursor: pointer;
+    transition: 0.15s;
+    filter: brightness(110%);
 }
 
-button:focus {
-    filter: brightness(110%);
+button:active {
+    filter: brightness(90%);
     outline: none;
+}
+
+a:focus-visible button, button:focus-visible:not(:active){
+    border-color: aqua !important;
 }
 
 .title {
@@ -57,7 +63,8 @@ button:focus {
 
 .circle-overlay-button {
     position: absolute;
-    margin-left: -55px;
+    margin-left: -54px;
+    width: 54px;
 }
 
 .squircle-button {

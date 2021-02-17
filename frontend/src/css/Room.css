@@ -1,0 +1,95 @@
+#room-wrapper {
+    display: grid;
+    grid-template-columns: min-content 3fr 1fr;
+    grid-template-rows: auto 100px;
+    grid-gap: 10px;
+    color: #222;
+    padding: 10px;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    background-color: #ffbc5a;
+}
+
+#chat {
+    grid-column: 3;
+    grid-row: 1 /span 2;
+    display: flex;
+    flex-direction: column;
+}
+
+#chat #member-list {
+    grid-template-columns: auto;
+    grid-gap: 5px;
+    text-align: center;
+    border-top-width: 2px;
+}
+
+#chat #member-list p {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+@media only screen and (min-width: 1366px) {
+    #chat #member-list {
+        grid-template-columns: auto auto;
+    }
+
+    #chat-member-header {
+        grid-column: 1 /span 2;
+    }
+}
+
+@media only screen and (min-width: 1500px) {
+    #chat #member-list {
+        grid-template-columns: auto auto auto;
+    }
+
+    #chat-member-header {
+        grid-column: 1 /span 3;
+    }
+}
+
+#chat-member-header {
+    border: 3px solid #444;
+    border-bottom: none;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    padding: 5px;
+}
+
+#chat #message-field {
+    height: 100%;
+    max-height: none;
+    min-height: 0;
+}
+
+#chat div #chat-input {
+    margin-bottom: 0;
+}
+
+@media only screen and (min-width: 600px) {
+    #room-wrapper {
+        position: absolute;
+        width: 100vw;
+        height: 100vh;
+
+        background-color: #ffbc5a;
+    }
+}
+
+@media only screen and (min-width: 1000px) {
+    #room-wrapper {
+        box-shadow: 0 2px 5px 0 #5d5d5d94;
+        border: 3px solid #444;
+        border-radius: 10px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        min-width: 70vw;
+        max-width: 80vw;
+        height: 80vh;
+        width: min-content;
+        margin: 0;
+    }
+}

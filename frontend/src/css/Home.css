@@ -5,15 +5,21 @@
     margin: 40px 20px;
 }
 
+#join-lobby {
+    display: flex;
+}
+
 #lobby-input {
     width: 100%;
-    z-index: 1;
+    height: 58px;
 }
 
 #join-button {
-    position: absolute;
-    margin-left: -55px;
-    width: 55px;
+    margin-left: -58px;
+    width: 58px;
+    height: 58px;
+    border-width: 3px;
+    padding: 17px;
 }
 
 #create-button {

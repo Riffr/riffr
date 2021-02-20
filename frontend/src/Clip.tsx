@@ -1,25 +1,46 @@
-import React from 'react';
+import { useEffect, useRef } from 'react';
 
-interface ClipProps {
+export interface ClipProps {
     audioCtx: AudioContext;
     blob: Blob;
-    play: boolean;
-    recordStart?: number;
-    recordEnd?: number;
-    playStart?: number;
+    mute: boolean;
+    loopLength: number;
+    recordStart: number;
+    recordEnd: number;
 }
 
 const Clip = (props: ClipProps) => {
-    props.blob.arrayBuffer().then(arrayBuffer => {
+    let audioBuffer: AudioBuffer;
+    let playStart: number = props.loopLength - (props.recordEnd - props.recordStart);
+    let nextLoop = useRef(playStart + props.audioCtx.currentTime);
+
+    const onBufferSuccess = (buffer: AudioBuffer) => {
+        audioBuffer = buffer;
+    }
+
+    const getNextLoop = () => {
+        if (nextLoop.current < props.audioCtx.currentTime + 0.1) {
+            console.log(nextLoop);
+            nextLoop.current = nextLoop.current + props.loopLength;
+            playSound(nextLoop.current);
+        }
+    }
+
+    const playSound = (startTime: number) => {
         let sourceNode = props.audioCtx.createBufferSource();
-        props.audioCtx.decodeAudioData(arrayBuffer).then(audioBuffer => {
-            sourceNode.buffer = audioBuffer;
-            sourceNode.connect(props.audioCtx.destination);
-            if (props.play === true) {
-                //TODO: play at playStart time
-                sourceNode.start();
-            }
-        });
+        sourceNode.buffer = audioBuffer;
+        sourceNode.connect(props.audioCtx.destination);
+
+        sourceNode.start(startTime);
+    }
+
+    useEffect(() => {
+        const interval = setInterval(() => getNextLoop(), 1000);
+        return () => clearInterval(interval);
+    });
+
+    props.blob.arrayBuffer().then(arrayBuffer => {
+        props.audioCtx.decodeAudioData(arrayBuffer).then(onBufferSuccess);
     })
 
     return (

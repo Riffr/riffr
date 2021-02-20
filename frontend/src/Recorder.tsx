@@ -1,77 +1,71 @@
-import React, { useState } from 'react';
-import Clip from './Clip';
-
-declare var MediaRecorder: any;
-let mediaRecorder: any = null;
-let audioContext = new window.AudioContext();
+import { useRef } from 'react';
 
 type BlobEvent = { data: Blob; }
 
-type clipType = {
+export interface RecordType {
     blob: Blob;
     start: number;
     end: number;
 }
 
-const Recorder = () => {
+interface RecorderProps {
+    recorder: any;
+    audioCtx: AudioContext;
+    addToPlaylist(record: RecordType): void;
+    loopLength: number;
+}
+
+const Recorder = (props: RecorderProps) => {
     let chunks: BlobPart[] = [];
-    let recordStartTime: number = 0;
-    let recordEndTime: number = 0;
-    const [playlist, setplaylist] = useState<clipType[]>([]);
+    const startTime = useRef(0);
+    const stopTime = useRef(0);
 
-
-    const onSuccess = function (stream: MediaStream) {
-        mediaRecorder = new MediaRecorder(stream);
-
-        mediaRecorder.onstop = saveRecording;
-
-        mediaRecorder.ondataavailable = function (evt: BlobEvent) {
-            chunks.push(evt.data);
+    const startRecording = () => {
+        if (props.audioCtx.state === 'suspended') {
+            console.log("Audio context permission required");
+        }
+        if (props.recorder !== null && props.recorder.state !== 'recording') {
+            console.log("Start recording...");
+            startTime.current = props.audioCtx.currentTime;
+            props.recorder.start();
         }
     }
 
-    const init = function () {
-        console.log(audioContext.state);
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-        // console.log(playlist);
-    }
-
-    const startRecording = function () {
-        if (mediaRecorder.state !== 'recording') {
-            recordStartTime = audioContext.currentTime;
-            mediaRecorder.start();
-
-            //TODO: time limit on recording?
+    const stopRecording = () => {
+        if (props.recorder !== null && props.recorder.state !== 'inactive') {
+            console.log("Stop recording");
+            props.recorder.stop();
+            stopTime.current = props.audioCtx.currentTime;
         }
     }
 
-    const stopRecording = function () {
-        if (mediaRecorder.state !== 'inactive') {
-            recordEndTime = audioContext.currentTime;
-            mediaRecorder.stop();
-        }
-    }
-
-    function saveRecording() {
-        const blobTime: clipType = { blob: new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' }), start: recordStartTime, end: recordEndTime };
-        setplaylist(playlist.concat(blobTime));
-
+    const saveRecording = () => {
+        const clip: RecordType = {
+            blob: new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' }),
+            start: startTime.current % props.loopLength,
+            end: stopTime.current % props.loopLength
+        };
+        // console.log(clip);
+        props.addToPlaylist(clip);
         chunks = [];
     }
 
 
-    navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-        .then(onSuccess)
-        .catch((err) => { console.log('The following error occured: ' + err); });
+    if (props.recorder !== null) {
+        props.recorder.onstop = saveRecording;
+
+        props.recorder.ondataavailable = (evt: BlobEvent) => {
+            chunks.push(evt.data);
+        }
+    }
+
+    // Not accurate
+    setInterval(stopRecording, props.loopLength * 1000);
 
     return (
         <div>
-            {playlist.map((value, index) => <Clip key={index} audioCtx={audioContext} blob={value.blob} play={true} />)}
-            {/* <button onClick={init}>Grant permission</button>
-                <button onClick={startRecording}>Start Recording</button>
-                <button onClick={stopRecording}>Stop Recording</button> */}
+            <button onClick={startRecording}>Start Recording</button>
+            <button onClick={stopRecording}>Stop Recording</button>
         </div>
     );
 }

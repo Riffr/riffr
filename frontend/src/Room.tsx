@@ -1,8 +1,9 @@
-import React, {RefObject, useEffect, useRef, useState} from 'react';
+import React, {useState} from 'react';
 import {Link} from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css'
 import {SignallingChannel} from "./connections/SignallingChannel";
+import Canvas from "./Canvas";
 
 const Room = (props: { name: string, roomCode: string, socket: SignallingChannel }) => {
     let [message, setMessage] = useState("");
@@ -33,44 +34,43 @@ const Room = (props: { name: string, roomCode: string, socket: SignallingChannel
     }
 
     const toggleMembers = () => {
-        if (memberListShown == "grid")
-        {
+        if (memberListShown == "grid") {
             setListShown("none");
-        }
-        else
-        {
+        } else {
             setListShown("grid");
         }
     }
 
     const toggleChat = () => {
-        if (chatDisplay == "flex")
-        {
+        if (chatDisplay == "flex") {
             setChatDisplay("none");
             setWrapperGrid("min-content 3fr 0fr");
-        }
-        else
-        {
+        } else {
             setChatDisplay("flex");
             setWrapperGrid("min-content 3fr 1fr");
         }
     }
 
     return (
-        <div id="room-wrapper" style={{gridTemplateColumns:wrapperGrid}}>
-            <div style={{display: "grid", gridTemplateRows: "40px 40px 90px", gridTemplateColumns: "40px", gridGap: "10px"}}>
+        <div id="room-wrapper" style={{gridTemplateColumns: wrapperGrid}}>
+            <div style={{
+                display: "grid",
+                gridTemplateRows: "40px 40px 90px",
+                gridTemplateColumns: "40px",
+                gridGap: "10px"
+            }}>
                 <button className={"squircle-button red"}>
-                    <i className={"fa fa-chevron-left block"}></i>
+                    <i className={"fa fa-chevron-left block"}/>
                 </button>
                 <Link to={"/"} className={"squircle-button button red"}>
-                        <i className={"fa fa-home block"}/>
+                    <i className={"fa fa-home block"}/>
                 </Link>
                 <button className={"squircle-button red"} onClick={toggleChat} style={{marginTop: "50px"}}>
-                    <i className={"fa fa-comment block"}></i>
+                    <i className={"fa fa-comment block"}/>
                 </button>
             </div>
-            <canvas style={{width:"100%", height:"100%", background:"white", borderRadius: "15px", borderColor:"#444", borderStyle:"solid"}}></canvas>
-            <div id={"chat"} style={{display:chatDisplay}}>
+            <Canvas id={"canvas"} width={1600} height={800}/>
+            <div id={"chat"} style={{display: chatDisplay}}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"} style={{display: memberListShown}}>
                     <p>{props.name}</p>
@@ -83,14 +83,22 @@ const Room = (props: { name: string, roomCode: string, socket: SignallingChannel
                 </div>
                 <div>
                     <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
-                        placeholder={"Type message"}
-                        onChange={(e) => setMessage(e.target.value)}/>
+                           placeholder={"Type message"}
+                           onChange={(e) => setMessage(e.target.value)}/>
                     <button id={"send-message-button"} className={"green"} onClick={sendMessage}>
                         <i className={"fa fa-send block"}/>
                     </button>
                 </div>
             </div>
-            <div id={"controls"} style={{width:"100%", height:"100px", background:"white", borderRadius: "15px", borderColor:"#444", borderStyle:"solid", gridArea:"2/2"}}>
+            <div id={"controls"} style={{
+                width: "100%",
+                height: "100px",
+                background: "white",
+                borderRadius: "15px",
+                borderColor: "#444",
+                borderStyle: "solid",
+                gridArea: "2/2"
+            }}>
 
             </div>
         </div>

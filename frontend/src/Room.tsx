@@ -5,7 +5,7 @@ import './css/General.css'
 import {SignallingChannel} from "./connections/SignallingChannel";
 import Audio from "./audio/Audio";
 
-const Lobby = (props: { name: string, roomCode: string, socket: SignallingChannel }) => {
+const Room = (props: { name: string, roomCode: string, socket: SignallingChannel }) => {
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
 
@@ -46,9 +46,8 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
                     <i className={"fa fa-home"}/>
                 </button>
             </Link>
-            <h1>Welcome, {props.name}</h1>
-            <h3>Invite your friends using the code below</h3>
-            <CopyField id={"copy-field"} value={props.roomCode}/>
+            <h1>Get Riffring!</h1>
+            Someone please make up a better motto...
             <div>
                 <div id={"member-list"}>
                     <p><b>Members</b>: {props.name}, Freddie</p>
@@ -65,11 +64,6 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
                     <i className={"fa fa-send"}/>
                 </button>
             </div>
-            <Link to={`/room/${props.roomCode}/${props.name}`}>
-                <button>
-                    Start
-                </button>
-            </Link>
         </div>
     )
 }
@@ -91,4 +85,4 @@ const CopyField = (props: { id: string, value: string }) => {
     );
 }
 
-export default Lobby;
+export default Room;

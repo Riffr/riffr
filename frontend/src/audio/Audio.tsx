@@ -1,10 +1,11 @@
 import React, {useEffect, useRef, useState} from 'react';
 import Recorder, {RecordType} from './Recorder';
 import Clip from './Clip';
+import {Peer} from "../connections/Peer";
 
 declare var MediaRecorder: any;
 
-const Audio = () => {
+const Audio = (props: {peer: Peer | undefined}) => {
     let audioContext: AudioContext = new window.AudioContext();
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
@@ -28,7 +29,16 @@ const Audio = () => {
         setPermission(true);
     }
 
+    const addOwnSound = (record: RecordType) => {
+        if (props.peer!=undefined)
+            props.peer.send("data", record.blob)
+
+        addToPlaylist(record);
+    }
+
     const addToPlaylist = (record: RecordType) => {
+        console.log("Received sound")
+
         record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then(buffer => {
             setSounds(prev => [...prev, buffer]);
             //Timing will be a bit off, but will resolve after 1 bar
@@ -60,6 +70,18 @@ const Audio = () => {
         barCount.current = barCount.current + 1;
     }
 
+    //Todo: Might wanna handle this another way
+    useEffect(() => {
+        if (props.peer!= undefined)
+            props.peer.on("channelData", (_, channel, data) => {
+            console.log(`Recieved ${ data } from channel ${ channel.label }`);
+            if (channel.label=="data"){
+                console.log(data);
+                //todo: Take blob, run addToPlayList on it, done!
+            }
+        })
+    }, [props.peer])
+
     useEffect(() => {
 
         let i1 = setInterval(runBar, loopLength * 1000);
@@ -74,7 +96,7 @@ const Audio = () => {
             <Recorder
                 recorder={mediaRecorder}
                 audioCtx={audioContext}
-                addToPlaylist={addToPlaylist}
+                addToPlaylist={addOwnSound}
                 loopLength={loopLength}
                 permission={permission}
             />

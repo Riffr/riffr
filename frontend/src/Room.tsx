@@ -190,8 +190,9 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                   borderStyle: "solid",
                   gridArea: "2/2"
               }}>
-                  <Audio/>
+                  <Audio peer={peer}/>
                   <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} />
+                  <Button text={"Send dummy audio"} onClick={() => {if (peer!=undefined) peer.send("data", "test")}} />
             </div>
         </div>
     )

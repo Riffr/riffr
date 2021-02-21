@@ -25,7 +25,6 @@ class CanvasGrid extends CanvasObject {
     horizontal: number;
     color: string;
     thickness: number;
-    private theta: number;
 
     constructor(x: number, y: number, vertical: number, horizontal: number, color: string, thickness: number) {
         super(x, y);
@@ -33,7 +32,6 @@ class CanvasGrid extends CanvasObject {
         this.horizontal = horizontal;
         this.color = color;
         this.thickness = thickness;
-        this.theta = 0;
     }
 
     draw(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number): void {
@@ -91,6 +89,36 @@ class ScanLine extends CanvasObject {
 
 }
 
+class CanvasText extends CanvasObject {
+    private text: string;
+    private font: string;
+    private color: string;
+    private counter: number;
+
+    constructor(x: number, y: number, text: string, fontSize: number, color: string) {
+        super(x, y);
+        this.text = text;
+        this.font = `${fontSize}px Arial`;
+        this.color = color;
+        this.counter = 0;
+    }
+
+    draw(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number): void {
+        ctx.font = this.font;
+        ctx.fillStyle = this.color;
+        ctx.fillText(this.text, this.x, this.y)
+    }
+
+    update(): boolean {
+        this.counter += 1;
+        console.log(this.counter);
+        return this.counter > 100;
+        // return false;
+    }
+
+
+}
+
 class Canvas extends React.Component<CanvasProps> {
     private ctx: any;
     private c: any;
@@ -104,7 +132,8 @@ class Canvas extends React.Component<CanvasProps> {
 
         let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
         let line: ScanLine = new ScanLine(0, 0, 8, this.props.width, "#00ff00", 4);
-        this.canvasObjects = [grid, line];
+        let text: CanvasText = new CanvasText(100, 100, "Hello World", 30, "red");
+        this.canvasObjects = [grid, line, text];
     }
 
     componentDidMount() {
@@ -121,9 +150,7 @@ class Canvas extends React.Component<CanvasProps> {
     }
 
     updateObjects() {
-        for (let obj of this.canvasObjects) {
-            obj.update();
-        }
+        this.canvasObjects = this.canvasObjects.filter((obj) => (!obj.update()));
     }
 
     drawObjects() {

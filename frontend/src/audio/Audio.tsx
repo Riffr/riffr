@@ -20,7 +20,9 @@ declare var MediaRecorder: any;
 
 const Audio = (props: {signal: SignallingChannel, initiator: boolean}) => {
 
-    let audioContext: AudioContext = new window.AudioContext();
+    let AudioContext: any = window.AudioContext // Default
+        || (window as any).webkitAudioContext // Safari
+    let audioContext: AudioContext = new AudioContext();
     
    
 

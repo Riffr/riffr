@@ -111,7 +111,6 @@ class CanvasText extends CanvasObject {
 
     update(): boolean {
         this.counter += 1;
-        console.log(this.counter);
         return this.counter > 100;
         // return false;
     }
@@ -131,7 +130,7 @@ class Canvas extends React.Component<CanvasProps> {
         this.aspectRatio = 12.5 / 17;
 
         let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
-        let line: ScanLine = new ScanLine(0, 0, 8, this.props.width, "#00ff00", 4);
+        let line: ScanLine = new ScanLine(0, 0, 4, this.props.width, "#00ff00", 4);
         let text: CanvasText = new CanvasText(100, 100, "Hello World", 30, "red");
         this.canvasObjects = [grid, line, text];
     }

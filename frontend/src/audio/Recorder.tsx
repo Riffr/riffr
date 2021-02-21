@@ -86,9 +86,8 @@ const Recorder = (props: RecorderProps) => {
 
     useEffect(() => {
         let i1 = setInterval(runBar, props.loopLength * 1000);
-        let i2 = setInterval(() => setTimer((prev) => prev+1), props.loopLength * 10);
 
-        return () => {clearInterval(i1); clearInterval(i2);}
+        return () => {clearInterval(i1);}
     }, [props])
 
 

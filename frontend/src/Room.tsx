@@ -20,62 +20,62 @@ interface SignallingPayload {
     payload: SignalPayload,
 };
 
-var peer : Peer | undefined; 
+// var peer : Peer | undefined; 
 
-const initPeer = (name: string, signal: SignallingChannel) => {
+// const initPeer = (name: string, signal: SignallingChannel) => {
 
-    let initiator = (name == "offerer");
-    console.log(`[isOfferer] ${ initiator }`);
-    let p = new Peer({
-        id: name,
-        initiator,
-    });
-    peer = p;
-    console.log(p);
+//     let initiator = (name == "offerer");
+//     console.log(`[isOfferer] ${ initiator }`);
+//     let p = new Peer({
+//         id: name,
+//         initiator,
+//     });
+//     peer = p;
+//     console.log(p);
 
-    p.on("error", (e) => {
-        console.log(`Error: ${ e }`);
-    });
+//     p.on("error", (e) => {
+//         console.log(`Error: ${ e }`);
+//     });
 
-    p.on("signal", (_, payload: SignalPayload) => {
-        signal.sendMessage({
-            type: "signal",
-            payload
-        });
-    });
+//     p.on("signal", (_, payload: SignalPayload) => {
+//         signal.sendMessage({
+//             type: "signal",
+//             payload
+//         });
+//     });
 
-    if (initiator) {
-        p.on("connection", (_, state: RTCIceConnectionState) => {
-            if (state == "connected") {
-                console.log("Connected via WebRTC :)");
-            }
-        });
+//     if (initiator) {
+//         p.on("connection", (_, state: RTCIceConnectionState) => {
+//             if (state == "connected") {
+//                 console.log("Connected via WebRTC :)");
+//             }
+//         });
     
-        p.on("channelOpen", (_, channel) => {
-            console.log(`connected with ${ channel.label } and ready to send data!`);
-            p.send(channel.label, `Hello World`);
-        });
+//         p.on("channelOpen", (_, channel) => {
+//             console.log(`connected with ${ channel.label } and ready to send data!`);
+//             p.send(channel.label, `Hello World`);
+//         });
 
-    }
+//     }
 
-    p.on("channelData", (_, channel, data) => {
-        console.log(`Recieved ${ data } from channel ${ channel.label }`);
-    });
+//     p.on("channelData", (_, channel, data) => {
+//         console.log(`Recieved ${ data } from channel ${ channel.label }`);
+//     });
     
 
-};
+// };
 
-const onSignal = (payload: SignalPayload) => {
-    if (peer === undefined) {
-        console.log("Peer is undefined :("); 
-        console.log("peer:");
-        console.log(peer);
-        return;
-    }
+// const onSignal = (payload: SignalPayload) => {
+//     if (peer === undefined) {
+//         console.log("Peer is undefined :("); 
+//         console.log("peer:");
+//         console.log(peer);
+//         return;
+//     }
 
-    console.log("[onSignal] Signalling payload received")
-    peer.dispatch(payload);        
-};
+//     console.log("[onSignal] Signalling payload received")
+//     peer.dispatch(payload);        
+// };
 
 const Room = (props: { name: string, roomCode: string, signal: SignallingChannel }) => {
     let [message, setMessage] = useState("");
@@ -86,7 +86,10 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
 
     const sendMessage = () => {
         let msg = message;
-        props.signal.sendMessage(msg);
+        props.signal.sendMessage({
+            type: "chat",
+            msg
+        });
         // @ts-ignore
         setMessages(prev => [{message: msg}, ...prev]);
         setMessage("");
@@ -102,11 +105,10 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
             console.log("registering...");
             props.signal.addMessageHandler((payload: MessagePayload) => {
                 switch (payload.type) {
-                    case "signal":
-                        onSignal(payload.payload);
-                        break;
                     case "chat":
                         onMessageReceived(payload.payload);
+                        break;
+                    default:
                         break;
                 }
             });
@@ -190,8 +192,8 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                   borderStyle: "solid",
                   gridArea: "2/2"
               }}>
-                  <Audio/>
-                  <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} />
+                  <Audio signal={props.signal} initiator={props.name == "offerer"}/>
+                  {/* <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} /> */}
             </div>
         </div>
     )

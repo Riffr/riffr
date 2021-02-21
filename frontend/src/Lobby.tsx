@@ -1,21 +1,14 @@
-import React, {RefObject, useEffect, useRef, useState} from 'react';
+import React, {RefObject, useCallback, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import './css/Lobby.css';
 import './css/General.css'
 import {SignallingChannel} from "./connections/SignallingChannel";
-import Audio from "./audio/Audio";
 
-const Lobby = (props: { name: string, roomCode: string, socket: SignallingChannel }) => {
+
+const Lobby = (props: { name: string, roomCode: string, signal: SignallingChannel }) => {
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
 
-    const sendMessage = () => {
-        let msg = message;
-        props.socket.sendMessage(msg);
-        // @ts-ignore
-        setMessages(prev => [{message: msg}, ...prev]);
-        setMessage("");
-    }
 
     const onMessageReceived = (e: any) => {
         // I promise I'll be good later...
@@ -23,13 +16,26 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
         setMessages(prev => [{message: e}, ...prev]);
     }
 
+
+    const sendMessage = () => {
+        let msg = message;
+        props.signal.sendMessage({ type: "chat", payload: msg });
+        // @ts-ignore
+        setMessages(prev => [{message: msg}, ...prev]);
+        setMessage("");
+    }
+
+
+
     useEffect(() => {
             console.log("registering...");
-            props.socket.addMessageHandler(onMessageReceived);
-            props.socket.joinRoom(props.roomCode).then((e) => console.log(e));
-            return () => props.socket.clearMessageHandlers(); //Should remove handler in return
+            props.signal.addMessageHandler(onMessageReceived);
+
+            props.signal.joinRoom(props.roomCode).then((e) => console.log(e));
+
+            return () => props.signal.clearMessageHandlers(); //Should remove handler in return
         }
-        , [props.name]);
+        , [props.signal, props.name]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {

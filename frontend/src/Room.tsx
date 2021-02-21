@@ -1,17 +1,92 @@
 import React, {RefObject, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import './css/Lobby.css';
-import './css/General.css'
+import './css/Room.css';
+import './css/General.css';
 import {SignallingChannel} from "./connections/SignallingChannel";
 import Audio from "./audio/Audio";
 
-const Room = (props: { name: string, roomCode: string, socket: SignallingChannel }) => {
+import { Peer, SignalPayload } from "./connections/Peer";
+import { Button } from './Button';
+import Canvas from "./Canvas";
+
+type MessagePayload = ChatPayload | SignallingPayload;
+
+interface ChatPayload {
+    type: "chat",
+    payload: any
+};
+interface SignallingPayload {
+    type: "signal",
+    payload: SignalPayload,
+};
+
+var peer : Peer | undefined; 
+
+const initPeer = (name: string, signal: SignallingChannel) => {
+
+    let initiator = (name == "offerer");
+    console.log(`[isOfferer] ${ initiator }`);
+    let p = new Peer({
+        id: name,
+        initiator,
+    });
+    peer = p;
+    console.log(p);
+
+    p.on("error", (e) => {
+        console.log(`Error: ${ e }`);
+    });
+
+    p.on("signal", (_, payload: SignalPayload) => {
+        signal.sendMessage({
+            type: "signal",
+            payload
+        });
+    });
+
+    if (initiator) {
+        p.on("connection", (_, state: RTCIceConnectionState) => {
+            if (state == "connected") {
+                console.log("Connected via WebRTC :)");
+            }
+        });
+    
+        p.on("channelOpen", (_, channel) => {
+            console.log(`connected with ${ channel.label } and ready to send data!`);
+            p.send(channel.label, `Hello World`);
+        });
+
+    }
+
+    p.on("channelData", (_, channel, data) => {
+        console.log(`Recieved ${ data } from channel ${ channel.label }`);
+    });
+    
+
+};
+
+const onSignal = (payload: SignalPayload) => {
+    if (peer === undefined) {
+        console.log("Peer is undefined :("); 
+        console.log("peer:");
+        console.log(peer);
+        return;
+    }
+
+    console.log("[onSignal] Signalling payload received")
+    peer.dispatch(payload);        
+};
+
+const Room = (props: { name: string, roomCode: string, signal: SignallingChannel }) => {
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
+    let [memberListShown, setListShown] = useState("grid");
+    let [chatDisplay, setChatDisplay] = useState("flex");
+    let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
 
     const sendMessage = () => {
         let msg = message;
-        props.socket.sendMessage(msg);
+        props.signal.sendMessage(msg);
         // @ts-ignore
         setMessages(prev => [{message: msg}, ...prev]);
         setMessage("");
@@ -25,9 +100,18 @@ const Room = (props: { name: string, roomCode: string, socket: SignallingChannel
 
     useEffect(() => {
             console.log("registering...");
-            props.socket.addMessageHandler(onMessageReceived);
-            props.socket.joinRoom(props.roomCode).then((e) => console.log(e));
-            return () => props.socket.clearMessageHandlers(); //Should remove handler in return
+            props.signal.addMessageHandler((payload: MessagePayload) => {
+                switch (payload.type) {
+                    case "signal":
+                        onSignal(payload.payload);
+                        break;
+                    case "chat":
+                        onMessageReceived(payload.payload);
+                        break;
+                }
+            });
+            props.signal.joinRoom(props.roomCode).then((e) => console.log(e));
+            return () => props.signal.clearMessageHandlers(); //Should remove handler in return
         }
         , [props.name]);
 
@@ -38,51 +122,79 @@ const Room = (props: { name: string, roomCode: string, socket: SignallingChannel
         }
     }
 
+
+    const toggleMembers = () => {
+        if (memberListShown == "grid") {
+            setListShown("none");
+        } else {
+            setListShown("grid");
+        }
+    }
+
+    const toggleChat = () => {
+        if (chatDisplay == "flex") {
+            setChatDisplay("none");
+            setWrapperGrid("min-content 3fr 0fr");
+        } else {
+            setChatDisplay("flex");
+            setWrapperGrid("min-content 3fr 1fr");
+        }
+    }
+
     return (
-        <div id="lobby-wrapper">
-            <Audio/>
-            <Link to={"/"}>
-                <button className={"squircle-button red"} id={"home-button"}>
-                    <i className={"fa fa-home"}/>
+        <div id="room-wrapper" style={{gridTemplateColumns: wrapperGrid}}>
+
+            <div style={{
+                display: "grid",
+                gridTemplateRows: "40px 40px 90px",
+                gridTemplateColumns: "40px",
+                gridGap: "10px"
+            }}>
+                <button className={"squircle-button red"}>
+                    <i className={"fa fa-chevron-left block"}/>
                 </button>
-            </Link>
-            <h1>Get Riffring!</h1>
-            Someone please make up a better motto...
-            <div>
-                <div id={"member-list"}>
-                    <p><b>Members</b>: {props.name}, Freddie</p>
+                <Link to={"/"} className={"squircle-button button red"}>
+                    <i className={"fa fa-home block"}/>
+                </Link>
+                <button className={"squircle-button red"} onClick={toggleChat} style={{marginTop: "50px"}}>
+                    <i className={"fa fa-comment block"}/>
+                </button>
+            </div>
+            <Canvas id={"canvas"} width={1600} height={800}/>
+            <div id={"chat"} style={{display: chatDisplay}}>
+                <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
+                <div id={"member-list"} style={{display: memberListShown}}>
+                    <p>{props.name}</p>
+                    <p>Freddie</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: any) => <div className={"messageWrapper"}>
                         <p className={"chat-message"}><b>{props.name}</b>: {x.message}</p>
                     </div>)}
                 </div>
-                <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
-                       placeholder={"Type message"}
-                       onChange={(e) => setMessage(e.target.value)}/>
-                <button id={"send-message-button"} className={"green"} onClick={sendMessage}>
-                    <i className={"fa fa-send"}/>
-                </button>
+                <div>
+                    <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
+                           placeholder={"Type message"}
+                           onChange={(e) => setMessage(e.target.value)}/>
+                    <button id={"send-message-button"} className={"green"} onClick={sendMessage}>
+                        <i className={"fa fa-send block"}/>
+                    </button>
+                </div>
+            </div>
+              <div id={"controls"} style={{
+                  width: "100%",
+                  height: "100px",
+                  background: "white",
+                  borderRadius: "15px",
+                  borderColor: "#444",
+                  borderStyle: "solid",
+                  gridArea: "2/2"
+              }}>
+                  <Audio/>
+                  <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} />
             </div>
         </div>
     )
-}
-
-const CopyField = (props: { id: string, value: string }) => {
-    const textFieldRef: RefObject<HTMLInputElement> = useRef(null);
-    return (
-        <div id={props.id}>
-            <input id={"copy-input"} className={"text-input"} type={"textField"} ref={textFieldRef}
-                   value={props.value}/>
-            <button className={"circle-button circle-overlay-button blue"} style={{gridRow: 1, gridColumn: 2}}
-                    onClick={() => {
-                        textFieldRef?.current?.select();
-                        document.execCommand('copy');
-                    }}>
-                <i className={"fa fa-copy"}/>
-            </button>
-        </div>
-    );
 }
 
 export default Room;

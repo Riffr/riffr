@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import {useEffect, useRef} from 'react';
 
 export interface ClipProps {
     audioCtx: AudioContext;
@@ -11,19 +11,19 @@ export interface ClipProps {
 
 const Clip = (props: ClipProps) => {
     let audioBuffer: AudioBuffer;
-    let playStart: number = props.loopLength - (props.recordEnd - props.recordStart);
-    let nextLoop = useRef(playStart + props.audioCtx.currentTime);
+    let loopNumber: number = Math.floor(props.audioCtx.currentTime / props.loopLength);
+    let nextLoop = useRef(loopNumber * props.loopLength);
 
     const onBufferSuccess = (buffer: AudioBuffer) => {
         audioBuffer = buffer;
+        //Might be slightly out of time
+        getNextLoop();
     }
 
     const getNextLoop = () => {
-        if (nextLoop.current < props.audioCtx.currentTime + 0.1) {
-            console.log(nextLoop);
-            nextLoop.current = nextLoop.current + props.loopLength;
-            playSound(nextLoop.current);
-        }
+        console.log(nextLoop);
+        playSound(nextLoop.current);
+        nextLoop.current = nextLoop.current + props.loopLength;
     }
 
     const playSound = (startTime: number) => {
@@ -35,7 +35,7 @@ const Clip = (props: ClipProps) => {
     }
 
     useEffect(() => {
-        const interval = setInterval(() => getNextLoop(), 1000);
+        const interval = setInterval(() => getNextLoop(), props.loopLength*1000);
         return () => clearInterval(interval);
     });
 

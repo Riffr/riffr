@@ -9,6 +9,7 @@ const Audio = () => {
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [playlist, setplaylist] = useState<RecordType[]>([]);
+    const [permission, setPermission] = useState(false);
 
     const init = () => {
         navigator.mediaDevices.getUserMedia({ audio: true, video: false })
@@ -21,16 +22,20 @@ const Audio = () => {
 
     const onRecorderSuccess = (mediaStream: MediaStream) => {
         setMediaRecorder(new MediaRecorder(mediaStream));
+        setPermission(true);
     }
 
     const addToPlaylist = (record: RecordType) => {
-        setplaylist(playlist.concat(record));
+        console.log("BROADCAST!")
+        setplaylist(prev => [...prev, record]);
     }
 
     const changeLoopLength = (length: number) => {
         setLoopLength(length);
     }
 
+
+    console.log(playlist)
 
     return (
         <div>
@@ -50,8 +55,9 @@ const Audio = () => {
                 audioCtx={audioContext}
                 addToPlaylist={addToPlaylist}
                 loopLength={loopLength}
+                permission={permission}
             />
-            <button onClick={init}>Grant permission</button>
+            <button disabled={permission} onClick={init}>Grant permission</button>
         </div>
     );
 }

@@ -13,6 +13,7 @@ interface RecorderProps {
     audioCtx: AudioContext;
     addToPlaylist(record: RecordType): void;
     loopLength: number;
+    permission: boolean;
 }
 
 const Recorder = (props: RecorderProps) => {
@@ -61,12 +62,14 @@ const Recorder = (props: RecorderProps) => {
     }
 
     const saveRecording = () => {
+        console.log(props.loopLength)
+        console.log(startTime.current)
         const clip: RecordType = {
             blob: new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' }),
             start: startTime.current % props.loopLength,
             end: stopTime.current % props.loopLength
         };
-        // console.log(clip);
+        console.log(clip);
         props.addToPlaylist(clip);
         chunks = [];
     }
@@ -76,6 +79,7 @@ const Recorder = (props: RecorderProps) => {
         props.recorder.onstop = saveRecording;
 
         props.recorder.ondataavailable = (evt: BlobEvent) => {
+            console.log("Saving")
             chunks.push(evt.data);
         }
     }
@@ -95,7 +99,7 @@ const Recorder = (props: RecorderProps) => {
                 <div style={{width: "20px", height: "100%", backgroundColor: recording?"#ff0000":"#0000ff", marginLeft: "calc("+timer+"% - 10px)"}}/>
             </div>
 
-            <button disabled={recordNext} onClick={() => setRecordNext(true)}>Jam in</button>
+            <button disabled={!props.permission || recordNext} onClick={() => setRecordNext(true)}>Jam in</button>
         </div>
     );
 }

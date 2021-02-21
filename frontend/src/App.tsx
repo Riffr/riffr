@@ -5,6 +5,7 @@ import Lobby from "./Lobby";
 import Room from "./Room";
 
 import { SignallingChannel } from './connections/SignallingChannel';
+import Audio from "./audio/Audio";
 
 const App = () => {
   let socket: SignallingChannel;
@@ -15,11 +16,18 @@ const App = () => {
       <div className="App">
         <Route path="/" exact render={() => <Home socket={socket}/>}/>
         <Route path="/lobby/:code/:name" render={({match}) => (
-          <Lobby
-            roomCode={match.params.code}
-            name={match.params.name}
-            socket={socket}
-          />
+            <Lobby
+                roomCode={match.params.code}
+                name={match.params.name}
+                socket={socket}
+            />
+        )}/>
+        <Route path="/room/:code/:name" render={({match}) => (
+            <Room
+                roomCode={match.params.code}
+                name={match.params.name}
+                socket={socket}
+            />
         )}/>
         <Route path="/room/:code/:name" render={({match}) => (
           <Room

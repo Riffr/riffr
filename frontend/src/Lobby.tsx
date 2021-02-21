@@ -3,6 +3,7 @@ import {Link} from 'react-router-dom';
 import './css/Lobby.css';
 import './css/General.css'
 import {SignallingChannel} from "./connections/SignallingChannel";
+import Audio from "./audio/Audio";
 
 const Lobby = (props: { name: string, roomCode: string, socket: SignallingChannel }) => {
     let [message, setMessage] = useState("");
@@ -63,6 +64,11 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
                     <i className={"fa fa-send"}/>
                 </button>
             </div>
+            <Link to={`/room/${props.roomCode}/${props.name}`}>
+                <button>
+                    Start
+                </button>
+            </Link>
         </div>
     )
 }

@@ -5,7 +5,7 @@ import './css/General.css'
 import {SignallingChannel} from "./connections/SignallingChannel";
 
 
-const Home = (props: { socket: SignallingChannel }) => {
+const Home = (props: { signal: SignallingChannel }) => {
   const [name, setName] = useState("User");
   const [lobbyName, setLobbyName] = useState("");
 
@@ -14,7 +14,7 @@ const Home = (props: { socket: SignallingChannel }) => {
 
   const newRoomClick = () => {
     console.log(props)
-    props.socket.createRoom(randomRoomName).then((e) => console.log(e));
+    props.signal.createRoom(randomRoomName).then((e) => console.log(e));
   }
 
   return (

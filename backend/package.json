@@ -11,9 +11,12 @@
   "author": "Alistair O'Brien",
   "license": "ISC",
   "dependencies": {
-    "socket.io": "^3.1.0"
+    "socket.io": "^3.1.0",
+    "strict-event-emitter-types": "^2.0.0",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
+    "@types/uuid": "^8.3.0",
     "@types/socket.io": "^2.1.13"
   },
   "exports": {

@@ -23,10 +23,8 @@ const Home = (props: { signal: SignallingChannel }) => {
       <TextInput id={"name-input"} placeholder={"Enter name"} parentCallback={setName}/>
       <div className={"lobby-container"} id={"join-lobby"}>
         <TextInput id={"lobby-input"} placeholder={"Enter lobby name"} parentCallback={setLobbyName}/>
-        <Link to={`/lobby/${lobbyName}/${name}`}>
-          <button className={"circle-button blue white-text"} id={"join-button"}>
-            <i className={"fa fa-send"}/>
-          </button>
+        <Link to={`/lobby/${lobbyName}/${name}`} className={"circle-button button blue white-text"} id={"join-button"}>
+            <i className={"fa fa-send block"}/>
         </Link>
       </div>
       <div>

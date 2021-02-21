@@ -10,20 +10,29 @@
     background-color: #d28004;
 }
 
-button:hover {
+a.button {
+    display: inline-block;
+    text-decoration: none;
+}
+
+button i.block, a.button i.block {
+    display: block;
+}
+
+button:hover, a.button:hover {
     cursor: pointer;
     transition: 0.15s;
     filter: brightness(110%);
 }
 
-button:active {
+button:active, a.button:active {
     filter: brightness(90%);
     outline: none;
 }
 
-a:focus-visible button, button:focus-visible:not(:active){
+/*a:focus-visible button, button:focus-visible:not(:active){
     border-color: aqua !important;
-}
+}*/
 
 .title {
     font-size: 80px;

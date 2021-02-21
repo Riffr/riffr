@@ -46,11 +46,11 @@ const Lobby = (props: { name: string, roomCode: string, signal: SignallingChanne
 
     return (
         <div id="lobby-wrapper">
-            <Link to={"/"}>
-                <button className={"squircle-button red"} id={"home-button"}>
-                    <i className={"fa fa-home"}/>
-                </button>
-            </Link>
+            <div>
+                <Link to={"/"} className={"squircle-button button red"} id={"home-button"}>
+                    <i className={"fa fa-home block"}/>
+                </Link>
+            </div>
             <h1>Welcome, {props.name}</h1>
             <h3>Invite your friends using the code below</h3>
             <CopyField id={"copy-field"} value={props.roomCode}/>

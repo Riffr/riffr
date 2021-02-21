@@ -40,7 +40,6 @@ const Lobby = (props: { name: string, roomCode: string, socket: SignallingChanne
 
     return (
         <div id="lobby-wrapper">
-            <Audio/>
             <Link to={"/"}>
                 <button className={"squircle-button red"} id={"home-button"}>
                     <i className={"fa fa-home"}/>

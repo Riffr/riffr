@@ -16,6 +16,7 @@ interface RecorderProps {
     permission: boolean;
 }
 
+//Todo: Not really synced with the audio player, might have to move logic here into audio as well
 const Recorder = (props: RecorderProps) => {
     let chunks: BlobPart[] = [];
     const startTime = useRef(0);
@@ -48,7 +49,6 @@ const Recorder = (props: RecorderProps) => {
             setTimeout(stopRecording, props.loopLength * 1000);
             startTime.current = props.audioCtx.currentTime;
             props.recorder.start();
-
         }
     }
 

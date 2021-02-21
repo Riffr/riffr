@@ -95,10 +95,6 @@ const Recorder = (props: RecorderProps) => {
 
     return (
         <div>
-            <div style={{width: "400px", height: "60px", backgroundColor: "#ffffff"}}>
-                <div style={{width: "20px", height: "100%", backgroundColor: recording?"#ff0000":"#0000ff", marginLeft: "calc("+timer+"% - 10px)"}}/>
-            </div>
-
             <button disabled={!props.permission || recordNext} onClick={() => setRecordNext(true)}>Jam in</button>
         </div>
     );

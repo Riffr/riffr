@@ -1,12 +1,13 @@
 import React, {RefObject, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
-import './css/Lobby.css';
-import './css/General.css'
+import './css/Room.css';
+import './css/General.css';
 import {SignallingChannel} from "./connections/SignallingChannel";
 import Audio from "./audio/Audio";
 
 import { Peer, SignalPayload } from "./connections/Peer";
 import { Button } from './Button';
+import Canvas from "./Canvas";
 
 type MessagePayload = ChatPayload | SignallingPayload;
 
@@ -79,6 +80,9 @@ const onSignal = (payload: SignalPayload) => {
 const Room = (props: { name: string, roomCode: string, signal: SignallingChannel }) => {
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
+    let [memberListShown, setListShown] = useState("grid");
+    let [chatDisplay, setChatDisplay] = useState("flex");
+    let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
 
     const sendMessage = () => {
         let msg = message;
@@ -139,7 +143,7 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
 
     return (
         <div id="room-wrapper" style={{gridTemplateColumns: wrapperGrid}}>
-            <Audio/>
+
             <div style={{
                 display: "grid",
                 gridTemplateRows: "40px 40px 90px",
@@ -186,9 +190,8 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                   borderStyle: "solid",
                   gridArea: "2/2"
               }}>
-            </div>
-            <div>
-                <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)}/>
+                  <Audio/>
+                  <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} />
             </div>
         </div>
     )

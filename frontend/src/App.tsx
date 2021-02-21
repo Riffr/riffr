@@ -27,13 +27,6 @@ const App = () => {
                 signal={signal}
             />
         )}/>
-        <Route path="/room/:code/:name" render={({match}) => (
-          <Room
-            roomCode={match.params.code}
-            name={match.params.name}
-            socket={socket}
-          />
-        )}/>
       </div>
     </Router>
   );

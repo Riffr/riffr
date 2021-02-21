@@ -2,9 +2,9 @@ import React, {useEffect} from 'react';
 import {BrowserRouter as Router, Route} from "react-router-dom";
 import Home from "./Home";
 import Lobby from "./Lobby";
+import Room from "./Room";
 
 import { SignallingChannel } from './connections/SignallingChannel';
-import { Button } from './Button';
 
 const App = () => {
   const signal = new SignallingChannel("127.0.0.1:10000");
@@ -14,11 +14,18 @@ const App = () => {
       <div className="App">
         <Route path="/" exact render={() => <Home signal={signal}/>}/>
         <Route path="/lobby/:code/:name" render={({match}) => (
-          <Lobby
-            roomCode={match.params.code}
-            name={match.params.name}
-            signal={signal}
-          />
+            <Lobby
+                roomCode={match.params.code}
+                name={match.params.name}
+                signal={signal}
+            />
+        )}/>
+        <Route path="/room/:code/:name" render={({match}) => (
+            <Room
+                roomCode={match.params.code}
+                name={match.params.name}
+                signal={signal}
+            />
         )}/>
       </div>
     </Router>

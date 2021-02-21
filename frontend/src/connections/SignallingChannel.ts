@@ -59,7 +59,7 @@ class Room {
 
 class SignallingChannel {
 
-    private readonly onMessageHandlers: Array<onMessageHandler> = new Array();
+    private onMessageHandlers: Array<onMessageHandler> = new Array();
     private socket: Socket;
     private room?: Room = undefined;
 
@@ -96,7 +96,7 @@ class SignallingChannel {
 
     //We should probably allow removing individual handlers, but meh
     public clearMessageHandlers(){
-        this.onMessageHandlers.filter(x => false);
+        this.onMessageHandlers = this.onMessageHandlers.filter(x => false);
     }
 
 }

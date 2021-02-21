@@ -53,11 +53,11 @@ const onLeaveRoom = (ctx: Context, callback: any) => {
 };
 
 const onMessage = (ctx: Context, message: any) => {
-    console.log(`[onMessage] Client sending message: ${ message }`);
+    console.log(`[onMessage] Client sending message: ${ JSON.stringify(message) }`);
 
     const room: string = Store.of(ctx).get("room");
     if (room) {
-        ctx.socket.to(room).emit(SignallingEvent.Message, message);
+        ctx.socket.to(room).broadcast.emit(SignallingEvent.Message, message);
     }
 };
 

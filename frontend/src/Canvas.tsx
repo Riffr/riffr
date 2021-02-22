@@ -1,9 +1,11 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 
 interface CanvasProps {
     id: string;
     width: number;
     height: number;
+    time: number;
+    loopLength: number;
 }
 
 abstract class CanvasObject {
@@ -118,52 +120,42 @@ class CanvasText extends CanvasObject {
 
 }
 
-class Canvas extends React.Component<CanvasProps> {
-    private ctx: any;
-    private c: any;
-    private aspectRatio: number;
-    private canvasObjects: Array<CanvasObject>;
+const Canvas = (props: CanvasProps) => {
+    let aspectRatio = 12.5 / 17;
 
-    constructor(props: CanvasProps) {
-        super(props);
-        /* Todo: set this properly */
-        this.aspectRatio = 12.5 / 17;
+    let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
+    let text: CanvasText = new CanvasText(100, 100, "Hello World", 30, "red");
+    let canvasObjects = [grid, text];
 
-        let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
-        let line: ScanLine = new ScanLine(0, 0, 4, this.props.width, "#00ff00", 4);
-        let text: CanvasText = new CanvasText(100, 100, "Hello World", 30, "red");
-        this.canvasObjects = [grid, line, text];
-    }
+    const canvasRef = React.useRef(null)
 
-    componentDidMount() {
-        this.c = document.getElementById("canvas");
-        this.ctx = this.c.getContext("2d");
-
-        setInterval(() => (this.updateObjects()), 20);
-        setInterval(() => (this.drawObjects()), 20);
-        this.updateObjects();
-    }
-
-    componentDidUpdate() {
-        this.updateObjects();
-    }
-
-    updateObjects() {
-        this.canvasObjects = this.canvasObjects.filter((obj) => (!obj.update()));
-    }
-
-    drawObjects() {
-        this.ctx.clearRect(0, 0, this.props.width, this.props.height);
-        for (let obj of this.canvasObjects) {
-            obj.draw(this.ctx, this.props.width, this.props.height);
+    //Initial draw
+    useEffect(() => {
+        // @ts-ignore
+        let ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, props.width, props.height);
+        for (let obj of canvasObjects) {
+            obj.draw(ctx, props.width, props.height);
         }
-    }
 
-    render() {
-        return (
-            <canvas ref="canvas" id={this.props.id} width={this.props.width} height={this.props.height}/>
-        );
-    }
+    }, [])
+
+    //Redraw with scanline
+    useEffect(() => {
+        // @ts-ignore
+        let ctx = canvasRef.current.getContext("2d");
+        ctx.clearRect(0, 0, props.width, props.height);
+        let line: ScanLine = new ScanLine((props.time*props.width/props.loopLength)%props.width, 0, 0, props.width, "#00ff00", 4);
+        for (let obj of [...canvasObjects, line]) {
+            obj.draw(ctx, props.width, props.height);
+        }
+    }, [props.time])
+
+    return (
+        <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height}/>
+    );
+
 }
+
 
 export default Canvas;

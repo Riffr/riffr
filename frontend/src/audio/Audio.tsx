@@ -2,15 +2,17 @@ import React, {useEffect, useRef, useState} from 'react';
 import Recorder, {RecordType} from './Recorder';
 import Clip from './Clip';
 import {Peer} from "../connections/Peer";
+import Canvas from "../Canvas";
 
 declare var MediaRecorder: any;
 
-const Audio = (props: {peer: Peer | undefined}) => {
+const Audio = (props: { peer: Peer | undefined }) => {
     let audioContext: AudioContext = new window.AudioContext();
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<AudioBuffer[]>([]);
     const [permission, setPermission] = useState(false);
+    const [time, setTime] = useState(0);
     let barCount = useRef(1);
 
     const init = () => {
@@ -30,7 +32,7 @@ const Audio = (props: {peer: Peer | undefined}) => {
     }
 
     const addOwnSound = (record: RecordType) => {
-        if (props.peer!=undefined)
+        if (props.peer != undefined)
             props.peer.send("data", record.blob)
 
         addToPlaylist(record);
@@ -58,6 +60,17 @@ const Audio = (props: {peer: Peer | undefined}) => {
     }
 
 
+    //Todo: Might wanna handle this another way
+    useEffect(() => {
+        if (props.peer != undefined)
+            props.peer.on("channelData", (_, channel, data) => {
+                console.log(`Recieved ${data} from channel ${channel.label}`);
+                if (channel.label == "data") {
+                    console.log(data);
+                    //todo: Take blob, run addToPlayList on it, done!
+                }
+            })
+    }, [props.peer])
     const runBar = () => {
         //Bit ugly but lets us read state easily
         setSounds(sounds => {
@@ -70,37 +83,35 @@ const Audio = (props: {peer: Peer | undefined}) => {
         barCount.current = barCount.current + 1;
     }
 
-    //Todo: Might wanna handle this another way
-    useEffect(() => {
-        if (props.peer!= undefined)
-            props.peer.on("channelData", (_, channel, data) => {
-            console.log(`Recieved ${ data } from channel ${ channel.label }`);
-            if (channel.label=="data"){
-                console.log(data);
-                //todo: Take blob, run addToPlayList on it, done!
-            }
-        })
-    }, [props.peer])
-
+    const update = () => {
+        setTime(audioContext.currentTime);
+    }
     useEffect(() => {
 
         let i1 = setInterval(runBar, loopLength * 1000);
+        let i2 = setInterval(update, 100);
 
         return () => {
             clearInterval(i1);
+            clearInterval(i2);
         }
     }, [])
 
+    //Todo: Turn recorder into inner class, make recording dependent on the update function,
+    //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
     return (
-        <div>
-            <Recorder
-                recorder={mediaRecorder}
-                audioCtx={audioContext}
-                addToPlaylist={addOwnSound}
-                loopLength={loopLength}
-                permission={permission}
-            />
-            <button disabled={permission} onClick={init}>Grant permission</button>
+        <div style={{position: "relative"}}>
+            <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength}/>
+            <div style={{position: "absolute", right: "0px", top: "0px"}}>
+                <Recorder
+                    recorder={mediaRecorder}
+                    audioCtx={audioContext}
+                    addToPlaylist={addOwnSound}
+                    loopLength={loopLength}
+                    permission={permission}
+                />
+                <button disabled={permission} onClick={init}>Grant permission</button>
+            </div>
         </div>
     );
 }

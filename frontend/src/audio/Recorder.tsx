@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
+import {SignallingChannel} from "../connections/SignallingChannel";
 
 type BlobEvent = { data: Blob; }
 
@@ -98,6 +99,5 @@ const Recorder = (props: RecorderProps) => {
         </div>
     );
 }
-
 
 export default Recorder;

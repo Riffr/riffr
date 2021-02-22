@@ -28,6 +28,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<AudioBuffer[]>([]);
     const [permission, setPermission] = useState(false);
+    const [peer, setPeer] = useState<Peer | undefined>(undefined);
     const [time, setTime] = useState(0);
     let barCount = useRef(1);
 
@@ -134,18 +135,6 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         sourceNode.start(time);
     }
 
-
-    //Todo: Might wanna handle this another way
-    useEffect(() => {
-        if (props.peer != undefined)
-            props.peer.on("channelData", (_, channel, data) => {
-                console.log(`Recieved ${data} from channel ${channel.label}`);
-                if (channel.label == "data") {
-                    console.log(data);
-                    //todo: Take blob, run addToPlayList on it, done!
-                }
-            })
-    }, [props.peer])
     const runBar = () => {
         //Bit ugly but lets us read state easily
         setSounds(sounds => {

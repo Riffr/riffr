@@ -162,7 +162,7 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                     <i className={"fa fa-comment block"}/>
                 </button>
             </div>
-            <Audio peer={peer}/>
+            <Audio signal={props.signal} initiator={props.name == "offerer"}/>
             <div id={"chat"} style={{display: chatDisplay}}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"} style={{display: memberListShown}}>
@@ -192,8 +192,6 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                   borderStyle: "solid",
                   gridArea: "2/2"
               }}>
-                  <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} />
-                  <Button text={"Send dummy audio"} onClick={() => {if (peer!=undefined) peer.send("data", "test")}} />
             </div>
         </div>
     )

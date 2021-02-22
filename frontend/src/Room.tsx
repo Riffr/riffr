@@ -88,17 +88,20 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
         let msg = message;
         props.signal.sendMessage({
             type: "chat",
-            msg
+            payload: {
+                user: props.name,
+                message: msg
+            }
         });
         // @ts-ignore
-        setMessages(prev => [{message: msg}, ...prev]);
+        setMessages(prev => [{message: msg, user: props.name}, ...prev]);
         setMessage("");
     }
 
     const onMessageReceived = (e: any) => {
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev => [{message: e}, ...prev]);
+        setMessages(prev => [e, ...prev]);
     }
 
     useEffect(() => {
@@ -171,7 +174,7 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: any) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{props.name}</b>: {x.message}</p>
+                        <p className={"chat-message"}><b>{x.user}</b>: {x.message}</p>
                     </div>)}
                 </div>
                 <div>

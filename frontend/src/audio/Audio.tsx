@@ -1,13 +1,29 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import Recorder, {RecordType} from './Recorder';
 import Clip from './Clip';
-import {Peer} from "../connections/Peer";
 import Canvas from "../Canvas";
+import { Peer, SignalPayload } from "../connections/Peer";
+import { SignallingChannel } from '../connections/SignallingChannel';
+
+
+// TODO. IMPORT TYPES, DONT DUPE THEM
+type MessagePayload = ChatPayload | SignallingPayload;
+interface ChatPayload {
+    type: "chat",
+    payload: any
+}
+
+interface SignallingPayload {
+    type: "signal",
+    payload: SignalPayload,
+}
 
 declare var MediaRecorder: any;
 
-const Audio = (props: { peer: Peer | undefined }) => {
-    let audioContext: AudioContext = new window.AudioContext();
+const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
+    let AudioContext: any = window.AudioContext // Default
+        || (window as any).webkitAudioContext // Safari
+    let audioContext: AudioContext = new AudioContext();
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<AudioBuffer[]>([]);
@@ -26,17 +42,76 @@ const Audio = (props: { peer: Peer | undefined }) => {
         }
     }
 
+    const initPeer = useCallback(() => {
+        let p = new Peer({ initiator: props.initiator });
+
+        p.on("error", (e) => {
+            console.log(`Error: ${ JSON.stringify(e) }`);
+        });
+
+        p.on("signal", (_, payload: SignalPayload) => {
+            props.signal.sendMessage({
+                type: "signal",
+                payload
+            });
+        })
+
+        props.signal.addMessageHandler((payload: MessagePayload) => {
+            switch (payload.type) {
+                case "signal":
+                    console.log("[onSignal] Signalling payload received")
+                    p.dispatch(payload.payload);
+                    break;
+                default:
+                    break;
+            }
+        });
+
+
+
+        if (props.initiator) {
+            p.on("connection", (_, state: RTCIceConnectionState) => {
+                if (state == "connected") {
+                    console.log("Connected via WebRTC :)");
+                }
+            });
+
+            p.on("channelOpen", (_, channel) => {
+                console.log(`connected with ${ channel.label } and ready to send data!`);
+                p.send("data", `Hello World`);
+            });
+        }
+
+        p.addDataChannel("audio");
+        p.on("channelData", (_, channel, data) => {
+            console.log(`[AUDIO] Recieved ${ data } from channel ${ channel.label }`);
+            if (channel.label == "audio"){
+                console.log(data);
+                addToPlaylist({blob: new Blob([data]), start: 0, end: 0} as RecordType);
+                //todo: Take blob, run addToPlayList on it, done!
+            }
+        });
+
+        setPeer(p);
+        return () => props.signal.clearMessageHandlers();
+    }, [props.initiator, props.signal]);
+
+
     const onRecorderSuccess = (mediaStream: MediaStream) => {
         setMediaRecorder(new MediaRecorder(mediaStream));
         setPermission(true);
     }
 
-    const addOwnSound = (record: RecordType) => {
-        if (props.peer != undefined)
-            props.peer.send("data", record.blob)
+    const addOwnSound = useCallback(async (record: RecordType) => {
+        console.log("[addOwnSound] sending to peer")
+        // WTF CHROME DOESN'T SUPPORT BLOBS. NOT IMPLEMENTED ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if (peer != undefined) {
+            const buf = await record.blob.arrayBuffer();
+            peer.send("audio", buf);
+        }
 
         addToPlaylist(record);
-    }
+    }, [peer]);
 
     const addToPlaylist = (record: RecordType) => {
         console.log("Received sound")
@@ -102,7 +177,7 @@ const Audio = (props: { peer: Peer | undefined }) => {
     return (
         <div style={{position: "relative"}}>
             <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength}/>
-            <div style={{position: "absolute", right: "0px", top: "0px"}}>
+            <div id={"audio"} style={{position: "absolute", right: "0px", top: "0px"}}>
                 <Recorder
                     recorder={mediaRecorder}
                     audioCtx={audioContext}
@@ -110,7 +185,9 @@ const Audio = (props: { peer: Peer | undefined }) => {
                     loopLength={loopLength}
                     permission={permission}
                 />
-                <button disabled={permission} onClick={init}>Grant permission</button>
+                <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant permission</button>
+                <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
+                <button className={"squircle-button light-blue"} onClick={() => {if (peer != undefined) peer.send("data", "test")}}>Send Dummy Audio</button>
             </div>
         </div>
     );

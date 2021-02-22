@@ -1,14 +1,16 @@
 
 import { Socket } from './Socket';
 
-enum SignallingEvent {
-    CreateRoom              = "signalling:create_room",
-    JoinRoom                = "signalling:join_room",
-    RemoveClientFromRoom    = "signalling:remove_client_from_room",
-    AddClientToRoom         = "signalling:add_client_to_room",
-    LeaveRoom               = "signalling:leave_room",
-    Message                 = "signalling:message"
-} //Plz don't hate me Alistair
+import { SignallingEvent } from '@riffr/backend';
+
+// enum SignallingEvent {
+//     CreateRoom              = "signalling:create_room",
+//     JoinRoom                = "signalling:join_room",
+//     RemoveClientFromRoom    = "signalling:remove_client_from_room",
+//     AddClientToRoom         = "signalling:add_client_to_room",
+//     LeaveRoom               = "signalling:leave_room",
+//     Message                 = "signalling:message"
+// } //Plz don't hate me Alistair
 
 // TODO: Define a type for Message (and it's handlers)
 type onMessageHandler = (message: any) => void;

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Group project",
   "scripts": {
-    "construct": "npm install & cd backend & npm install & cd ../frontend & npm install",
-    "start": "concurrently \"(cd backend & tsc & node ./dist/init.js)\" \"npm start --prefix ./frontend\""
+    "construct": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "start": "concurrently \"(cd ./backend && npm run build && node ./dist/init.js)\" \"npm start --prefix ./frontend\""
   },
   "author": "The Riffr Squad",
   "license": "ISC",

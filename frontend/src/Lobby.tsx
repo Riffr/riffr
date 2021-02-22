@@ -66,13 +66,14 @@ const Lobby = (props: { name: string, roomCode: string, signal: SignallingChanne
                 <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
                        placeholder={"Type message"}
                        onChange={(e) => setMessage(e.target.value)}/>
-                <button id={"send-message-button"} className={"green"} onClick={sendMessage}>
+                <button id={"send-message-button"} className={"blue"} onClick={sendMessage}>
                     <i className={"fa fa-send"}/>
                 </button>
             </div>
             <Link to={`/room/${props.roomCode}/${props.name}`}>
-                <button>
+                <button id={"start-button"} className={"squircle-button green"}>
                     Start
+                    <i className={"fa fa-play"} />
                 </button>
             </Link>
         </div>

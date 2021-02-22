@@ -10,11 +10,12 @@ type MessagePayload = ChatPayload | SignallingPayload;
 interface ChatPayload {
     type: "chat",
     payload: any
-};
+}
+
 interface SignallingPayload {
     type: "signal",
     payload: SignalPayload,
-};
+}
 
 declare var MediaRecorder: any;
 
@@ -160,7 +161,7 @@ const Audio = (props: {signal: SignallingChannel, initiator: boolean}) => {
     }, [])
 
     return (
-        <div>
+        <div id={"audio"}>
             <Recorder
                 recorder={mediaRecorder}
                 audioCtx={audioContext}
@@ -168,9 +169,9 @@ const Audio = (props: {signal: SignallingChannel, initiator: boolean}) => {
                 loopLength={loopLength}
                 permission={permission}
             />
-            <button disabled={permission} onClick={init}>Grant permission</button>
-            <button onClick={initPeer}>Init Peer</button>
-            <button onClick={() => {if (peer != undefined) peer.send("data", "test")}}>Send Dummy Audio</button>
+            <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant permission</button>
+            <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
+            <button className={"squircle-button light-blue"} onClick={() => {if (peer != undefined) peer.send("data", "test")}}>Send Dummy Audio</button>
         </div>
     );
 }

@@ -14,11 +14,11 @@ type MessagePayload = ChatPayload | SignallingPayload;
 interface ChatPayload {
     type: "chat",
     payload: any
-};
+}
 interface SignallingPayload {
     type: "signal",
     payload: SignalPayload,
-};
+}
 
 // var peer : Peer | undefined; 
 
@@ -183,15 +183,7 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                     </button>
                 </div>
             </div>
-              <div id={"controls"} style={{
-                  width: "100%",
-                  height: "100px",
-                  background: "white",
-                  borderRadius: "15px",
-                  borderColor: "#444",
-                  borderStyle: "solid",
-                  gridArea: "2/2"
-              }}>
+            <div id={"controls"}>
                   <Audio signal={props.signal} initiator={props.name == "offerer"}/>
                   {/* <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} /> */}
             </div>

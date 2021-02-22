@@ -83,6 +83,10 @@ button:active, a.button:active {
     font-size: medium;
 }
 
+.squircle-button:focus {
+    outline: none;
+}
+
 /* Colors */
 .red {
     background-color: #e53935;
@@ -96,6 +100,16 @@ button:active, a.button:active {
 
 .blue {
     background-color: #077ce0;
+    color: #e8e8e8;
+}
+
+.light-blue {
+    background-color: #7cf3ff;
+    /*color: #d8d8d8;*/
+}
+
+.purple {
+    background-color: #9c27b0;
     color: #e8e8e8;
 }
 

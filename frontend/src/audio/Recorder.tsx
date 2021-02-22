@@ -94,7 +94,7 @@ const Recorder = (props: RecorderProps) => {
 
     return (
         <div>
-            <button disabled={!props.permission || recordNext} onClick={() => setRecordNext(true)}>Jam in</button>
+            <button className={"squircle-button light-blue"} disabled={!props.permission || recordNext} onClick={() => setRecordNext(true)}>Jam in</button>
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import { Server } from "./Server";
-import { signallingModule } from "./Signalling";
+import { signallingModule, chatModule } from "./Modules";
 
 import { Server as IOServer } from "socket.io";
 
@@ -14,6 +14,8 @@ const start = () => {
 
     console.log(`Attaching signalling module...`);
     server.attachModule(signallingModule);
+    console.log(`Attaching chat module...`);
+    server.attachModule(chatModule);
 
     server.start();
 };

@@ -5,6 +5,7 @@ interface CanvasProps {
     width: number;
     height: number;
     time: number;
+    // deltaTime: number;
     loopLength: number;
 }
 
@@ -81,6 +82,14 @@ class ScanLine extends CanvasObject {
         ctx.stroke();
     }
 
+    setX(x: number) : void {
+        this.x = x;
+    }
+
+    setVelocity(velocity: number) : void {
+        this.velocity = velocity;
+    }
+
     update(): boolean {
         this.x += this.velocity;
         if (this.x > this.range) {
@@ -149,6 +158,7 @@ const Canvas = (props: CanvasProps) => {
         for (let obj of [...canvasObjects, line]) {
             obj.draw(ctx, props.width, props.height);
         }
+        // console.log(props.time);
     }, [props.time])
 
     return (

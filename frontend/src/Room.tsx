@@ -6,8 +6,6 @@ import {SignallingChannel} from "./connections/SignallingChannel";
 import Audio from "./audio/Audio";
 
 import { Peer, SignalPayload } from "./connections/Peer";
-import { Button } from './Button';
-import Canvas from "./Canvas";
 
 type MessagePayload = ChatPayload | SignallingPayload;
 
@@ -185,16 +183,6 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                         <i className={"fa fa-send block"}/>
                     </button>
                 </div>
-            </div>
-              <div id={"controls"} style={{
-                  width: "100%",
-                  height: "100px",
-                  background: "white",
-                  borderRadius: "15px",
-                  borderColor: "#444",
-                  borderStyle: "solid",
-                  gridArea: "2/2"
-              }}>
             </div>
         </div>
     )

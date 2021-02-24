@@ -2,12 +2,13 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import Recorder, {RecordType} from './Recorder';
 import Clip from './Clip';
 import Canvas from "../Canvas";
-import { Peer, SignalPayload } from "../connections/Peer";
-import { SignallingChannel } from '../connections/SignallingChannel';
+import {Peer, SignalPayload} from "../connections/Peer";
+import {SignallingChannel} from '../connections/SignallingChannel';
 
 
 // TODO. IMPORT TYPES, DONT DUPE THEM
 type MessagePayload = ChatPayload | SignallingPayload;
+
 interface ChatPayload {
     type: "chat",
     payload: any
@@ -44,10 +45,10 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     }
 
     const initPeer = useCallback(() => {
-        let p = new Peer({ initiator: props.initiator });
+        let p = new Peer({initiator: props.initiator});
 
         p.on("error", (e) => {
-            console.log(`Error: ${ JSON.stringify(e) }`);
+            console.log(`Error: ${JSON.stringify(e)}`);
         });
 
         p.on("signal", (_, payload: SignalPayload) => {
@@ -69,7 +70,6 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         });
 
 
-
         if (props.initiator) {
             p.on("connection", (_, state: RTCIceConnectionState) => {
                 if (state == "connected") {
@@ -78,15 +78,15 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
             });
 
             p.on("channelOpen", (_, channel) => {
-                console.log(`connected with ${ channel.label } and ready to send data!`);
+                console.log(`connected with ${channel.label} and ready to send data!`);
                 p.send("data", `Hello World`);
             });
         }
 
         p.addDataChannel("audio");
         p.on("channelData", (_, channel, data) => {
-            console.log(`[AUDIO] Recieved ${ data } from channel ${ channel.label }`);
-            if (channel.label == "audio"){
+            console.log(`[AUDIO] Recieved ${data} from channel ${channel.label}`);
+            if (channel.label == "audio") {
                 console.log(data);
                 addToPlaylist({blob: new Blob([data]), start: 0, end: 0} as RecordType);
                 //todo: Take blob, run addToPlayList on it, done!
@@ -166,17 +166,25 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     return (
         <div style={{position: "relative"}}>
             <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength}/>
-            <div id={"audio"} style={{position: "absolute", right: "0px", top: "0px"}}>
-                <Recorder
-                    recorder={mediaRecorder}
-                    audioCtx={audioContext}
-                    addToPlaylist={addOwnSound}
-                    loopLength={loopLength}
-                    permission={permission}
-                />
-                <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant permission</button>
-                <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
-                <button className={"squircle-button light-blue"} onClick={() => {if (peer != undefined) peer.send("data", "test")}}>Send Dummy Audio</button>
+            <div id={"controls"}>
+                <div id={"audio"}>
+                    <Recorder
+                        recorder={mediaRecorder}
+                        audioCtx={audioContext}
+                        addToPlaylist={addOwnSound}
+                        loopLength={loopLength}
+                        permission={permission}
+                    />
+                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant
+                        permission
+                    </button>
+                    <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
+                    <button className={"squircle-button light-blue"} onClick={() => {
+                        if (peer != undefined) peer.send("data", "test")
+                    }}>Send Dummy Audio
+                    </button>
+                </div>
+
             </div>
         </div>
     );

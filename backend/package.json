@@ -2,8 +2,8 @@
   "name": "@riffr/backend",
   "version": "1.0.0",
   "description": "Group project backend",
-  "main": "./dist/",
-  "types": "./dist/",
+  "main": "./dist/*",
+  "types": "./dist/*",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "tsc"

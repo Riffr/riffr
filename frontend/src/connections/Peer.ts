@@ -3,12 +3,9 @@ import StrictEventEmitter from "strict-event-emitter-types"
 import { v4 as uuidv4 } from "uuid";
 
 import {
-    SignalPayload,
-    SignalPayloadType,
-    OfferPayload,
-    AnswerPayload,
-    CandidatePayload
-} from '@riffr/backend/modules/signalling/Peer';
+    Peer as P
+} from '@riffr/backend';
+
 
 interface Config {
     readonly id?: string,
@@ -21,7 +18,7 @@ interface Config {
 // Event Emitters
 
 interface PeerEvents {
-    signal: (peer: Peer, payload: SignalPayload) => void;
+    signal: (peer: Peer, payload: P.SignalPayload) => void;
     connection: (peer: Peer, state: RTCIceConnectionState) => void;
 
     channelOpen: (peer: Peer, channel: RTCDataChannel) => void;
@@ -90,7 +87,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
 
     // Arrow functions are used to avoid weird JS this. bindings
     private onIceCandidate = (event: RTCPeerConnectionIceEvent) => {
-        const payload = { type: SignalPayloadType.Candidate, candidate: event.candidate } as CandidatePayload;
+        const payload = { type: P.SignalPayloadType.Candidate, candidate: event.candidate } as P.CandidatePayload;
         this.emit("signal", this, payload);
     };
 
@@ -124,7 +121,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
         console.log("[createOffer] offer created.");
 
         const { type, sdp } = offer;
-        this.emit("signal", this, { type, sdp } as OfferPayload);
+        this.emit("signal", this, { type, sdp } as P.OfferPayload);
         console.log("[sendOffer] sending offer..."); 
     };
 
@@ -157,7 +154,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
 
         const { type, sdp } = answer;
         console.log("[handleOffer] Sending Answer..."); 
-        this.emit("signal", this, { type, sdp } as AnswerPayload);
+        this.emit("signal", this, { type, sdp } as P.AnswerPayload);
     };
 
     private handleAnswer = async (sdpInit : RTCSessionDescriptionInit) => {
@@ -227,17 +224,17 @@ class Peer extends (EventEmitter as PeerEmitter) {
         this.channels.get(label)?.send(data);
     }
 
-    public async dispatch(payload: SignalPayload) {
+    public async dispatch(payload: P.SignalPayload) {
         switch (payload.type) {
-            case SignalPayloadType.Offer:
+            case P.SignalPayloadType.Offer:
                 console.log("Offer payload received....");
                 await this.handleOffer(payload);
                 break;
-            case SignalPayloadType.Candidate:
+            case P.SignalPayloadType.Candidate:
                 console.log("Candidate payload received....");
                 await this.handleCandidate(payload.candidate);
                 break;
-            case SignalPayloadType.Answer:
+            case P.SignalPayloadType.Answer:
                 console.log("Answer payload received....");
                 this.handleAnswer(payload);
                 break;

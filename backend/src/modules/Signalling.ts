@@ -16,7 +16,8 @@ import {
     ClosePeerPayload,
 
     SignalPayload,
-    SignalPayloadType as MeshSignalPayloadType 
+    SignalPayloadType as MeshSignalPayloadType, 
+    MeshMessagePayload
 } from './signalling/Mesh';
 
 
@@ -53,7 +54,7 @@ const hasMesh = (f: (mesh: Mesh) => Handler) => {
     }
 }
 
-const acceptPeer = inRoom((room: Room<string>) => 
+const acceptPeer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) => 
     (ctx: Context, peer: Peer, requestor: string) => {
         const { peerId } = peer;
 
@@ -67,6 +68,7 @@ const acceptPeer = inRoom((room: Room<string>) =>
             meshId: rmesh.id, 
             peerId: peerId,
         } as PeerAcceptedPayload);
+        mesh.peers.set(peerId, requestor);
 
         // Requesting mesh accepts the peer
         room.unicast(ctx, requestor, SignalEvent.Signal, { 
@@ -75,8 +77,8 @@ const acceptPeer = inRoom((room: Room<string>) =>
         } as AcceptPeerPayload);
 
         // Associate peerId with requestor (socketId)
-        rmesh.peers.set(peerId, requestor);
-    });
+        rmesh.peers.set(peerId, ctx.socket.id);
+    }));
 
 const handleCandidate = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) => 
     (ctx: Context, payload: CandidatePayload) => {
@@ -157,6 +159,7 @@ const handleInit = inRoom((room: Room<string>) =>
                 } else {
                     acceptPeer(rctx, peer, ctx.socket.id);
                 }
+                rctx.socket.emit(SignalEvent.Signal, { type: MeshMessageType.RequestPeer } as MeshMessagePayload);
             });
 
             const rctx = Context.of(ctx, socketId)!; 

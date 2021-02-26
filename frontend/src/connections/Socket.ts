@@ -14,9 +14,11 @@ type Function = (...args: any[]) => void;
 
 class Socket {
 
+    public uri: string;
     private socket: SocketIOClient.Socket;
 
     constructor(uri: string, opts?: SocketIOClient.ConnectOpts) {
+        this.uri = uri;
         this.socket = io(uri, opts);
     }
 

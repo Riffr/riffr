@@ -3,20 +3,16 @@ import StrictEventEmitter from "strict-event-emitter-types"
 import { v4 as uuidv4 } from "uuid";
 
 import { 
-    SignalPayload, 
-    SignalPayloadType,
-    MeshPayload,
-    MeshMessageType
-} from '@riffr/backend/modules/signalling/Mesh';
+    Peer as P,
+    Mesh as M,
+} from '@riffr/backend';
 
-
-import * as P from './Peer';
-import { Peer } from './Peer';
+import { Peer, Config as PeerConfig } from './Peer';
 
 
 
 interface MeshEvents {
-    signal: (payload: SignalPayload) => void;
+    signal: (payload: M.SignalPayload) => void;
     connection: (peer: MeshedPeer, state: RTCIceConnectionState) => void;
 
     channelOpen: (peer: MeshedPeer, channel: RTCDataChannel) => void;
@@ -32,15 +28,15 @@ class MeshedPeer extends Peer {
 
     public meshId?: string;
 
-    constructor(config: P.Config) {
+    constructor(config: PeerConfig) {
         super(config);
     }
 
 }
 
-interface Config extends P.Config {
-    maxPeers?: number
-    roomId?: string
+interface Config extends PeerConfig {
+    maxPeers?: number;
+    peerBufferSize?: number;
 };
 
 class Mesh extends (EventEmitter as MeshEmitter) {
@@ -50,24 +46,32 @@ class Mesh extends (EventEmitter as MeshEmitter) {
     private peers : Map<string, MeshedPeer> = new Map();
 
     private maxPeers : number;
+    private peerBufferSize: number;
 
-    private peerConfig : P.Config;
+    private peerConfig : PeerConfig;
 
     constructor(config: Config = {}) {
         super();
         
         const { 
             id = uuidv4(),
-            roomId = uuidv4(),
-            maxPeers = 128, 
+            maxPeers = 128,
+            peerBufferSize = 1, 
             ...peerConfig
         } = config;
 
         this.id = id;
         this.maxPeers = maxPeers;
+        this.peerBufferSize = peerBufferSize; 
         this.peerConfig = peerConfig;
 
-        setTimeout(() => this.emit("signal", { type: SignalPayloadType.Init, meshId: id, roomId} as SignalPayload));
+
+        setTimeout(() => {
+            this.emit("signal", { type: M.SignalPayloadType.Init, meshId: this.id} as M.SignalPayload);
+            for (let i = 0; i < this.peerBufferSize; i++) {
+                this.createInitiator();
+            }
+        });
 
     }
 
@@ -81,10 +85,10 @@ class Mesh extends (EventEmitter as MeshEmitter) {
         this.peers.set(id, peer);
     }
 
-    private createPeer(config: P.Config) {
+    private createPeer(config: PeerConfig) {
         const peer = new MeshedPeer(config);
         peer.on("signal", (peer : Peer, payload: P.SignalPayload) => {
-            this.emit("signal", { ...payload, id: peer.id } as SignalPayload);
+            this.emit("signal", { ...payload, id: peer.id } as M.SignalPayload);
         });
 
         peer.on("connection", (peer: MeshedPeer, state: RTCIceConnectionState) => {
@@ -112,11 +116,15 @@ class Mesh extends (EventEmitter as MeshEmitter) {
         return peer;
     }
 
+    public addDataChannel(label: string, channelInit?: RTCDataChannelInit) {
+        this.peers.forEach(peer => peer.addDataChannel(label, channelInit))
+    }
+
     public send(label: string, data: any) {
         this.peers.forEach(peer => peer.send(label, data));
     }
 
-    public async dispatch(payload: MeshPayload) {
+    public async dispatch(payload: M.MeshPayload) {
         switch (payload.type) {
             case P.SignalPayloadType.Offer:
             case P.SignalPayloadType.Answer:
@@ -126,16 +134,16 @@ class Mesh extends (EventEmitter as MeshEmitter) {
                 peer?.dispatch(peerPayload as P.SignalPayload);
                 break;
             }
-            case MeshMessageType.PeerAcceptedPayload: {
+            case M.MeshMessageType.PeerAccepted: {
                 const { meshId, peerId } = payload;
                 const peer = this.peers.get(peerId);
                 if (peer) peer.meshId = meshId;
                 break;
             }
-            case MeshMessageType.RequestPeer:
+            case M.MeshMessageType.RequestPeer:
                 this.createInitiator();
                 break;
-            case MeshMessageType.AcceptPeer: {
+            case M.MeshMessageType.AcceptPeer: {
                 const { peer: {meshId, peerId, signals} } = payload;
                 
                 const peer = this.createPeer({
@@ -145,13 +153,13 @@ class Mesh extends (EventEmitter as MeshEmitter) {
                 peer.meshId = meshId;
 
                 this.peers.set(peerId, peer);
-                signals.forEach((signal: SignalPayload) => {
+                signals.forEach((signal: M.PeerSignalPayload) => {
                     this.dispatch(signal);
                 });
 
                 break;
             }
-            case MeshMessageType.ClosePeerPayload: {
+            case M.MeshMessageType.ClosePeer: {
                 const peer = this.peers.get(payload.peerId);
                 peer?.close();
                 break;

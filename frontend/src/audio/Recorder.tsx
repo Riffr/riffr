@@ -12,7 +12,7 @@ export interface RecordType {
 interface RecorderProps {
     recorder: any;
     audioCtx: AudioContext;
-    addToPlaylist(record: RecordType): void;
+    sendToPeers(record: RecordType): void;
     loopLength: number;
     permission: boolean;
 }
@@ -71,7 +71,7 @@ const Recorder = (props: RecorderProps) => {
             end: stopTime.current % props.loopLength
         };
         console.log(clip);
-        props.addToPlaylist(clip);
+        props.sendToPeers(clip);
         chunks = [];
     }
 

@@ -87,9 +87,8 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         p.on("channelData", (_, channel, data) => {
             console.log(`[AUDIO] Recieved ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
-                console.log(data);
-                addToPlaylist({blob: new Blob([data]), start: 0, end: 0} as RecordType);
-                //todo: Take blob, run addToPlayList on it, done!
+                // TODO confirm that p.id is the actual sender ID
+                addToPlaylist({blob: new Blob([data]), start: 0, end: 0} as RecordType, p.id);
             }
         });
 
@@ -103,7 +102,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         setPermission(true);
     }
 
-    const addOwnSound = useCallback(async (record: RecordType) => {
+    const sendToPeers = useCallback(async (record: RecordType) => {
         console.log("[addOwnSound] sending to peer")
         // WTF CHROME DOESN'T SUPPORT BLOBS. NOT IMPLEMENTED ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         if (peer != undefined) {
@@ -111,19 +110,17 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
             peer.send("audio", buf);
             console.log("Sending audio")
         }
-
-        //addToPlaylist(record);
     }, [peer]);
 
-    const addToPlaylist = (record: RecordType) => {
-        console.log("Received sound")
+    const addToPlaylist = (record: RecordType, peerID: string) => {
+        console.log("Received sound from ", peerID)
 
         record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then(buffer => {
-            sounds.get("test")?.push(buffer)
+            if (!(peerID in sounds)) {
+                sounds.set(peerID, [])
+            }
+            sounds.get(peerID)!.push(buffer)
         }));
-            //Timing will be a bit off, but will resolve after 1 bar
-            //playSound(buffer, 0)
-        //}));
     }
 
     const changeLoopLength = (length: number) => {
@@ -149,8 +146,6 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
                 }
             }
         });
-
-        //barCount.current = barCount.current + 1;
     }
 
     const update = () => {
@@ -177,7 +172,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
                     <Recorder
                         recorder={mediaRecorder}
                         audioCtx={audioContext}
-                        addToPlaylist={addOwnSound}
+                        sendToPeers={sendToPeers}
                         loopLength={loopLength}
                         permission={permission}
                     />

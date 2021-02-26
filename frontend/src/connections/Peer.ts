@@ -6,7 +6,7 @@ interface Config {
     readonly id?: string,
     readonly initiator?: boolean,
     readonly rtcConfig?: RTCConfiguration,
-};
+}
 
 // Signalling payloads
 
@@ -19,15 +19,15 @@ enum SignalPayloadType {
 interface CandidatePayload {
     readonly type: SignalPayloadType.Candidate;
     readonly candidate?: RTCIceCandidateInit;
-};
+}
 interface OfferPayload {
     readonly type: SignalPayloadType.Offer;
     readonly sdp: string;
-};
+}
 interface AnswerPayload {
     readonly type: SignalPayloadType.Answer;
     readonly sdp: string;
-};
+}
 
 
 // Event Emitters
@@ -43,7 +43,7 @@ interface PeerEvents {
     error: (peer: Peer, error: Error) => void;
 
     iceComplete: () => void;
-};
+}
 type PeerEmitter = {new (): StrictEventEmitter<EventEmitter, PeerEvents>};
 
 // Peer
@@ -64,7 +64,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
     };
 
 
-    private readonly id: string;
+    readonly id: string;
     private readonly initiator: boolean;
 
     private channels: Map<string, RTCDataChannel> = new Map();

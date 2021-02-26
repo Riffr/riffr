@@ -81,8 +81,10 @@ class Store<T> {
         };
     } 
 
+    // Nasty but... does the job. TODO: Refactor later
     public static of<T>(ctx: Context): T {
-        const socket = (ctx.socket as Socket<T>);
+        // const isContext = (x: Context | Socket<T>): x is Context => 'io' in x;
+        const socket = ctx.socket as Socket<T>;
         return socket.store;
     }
 
@@ -93,6 +95,15 @@ type Handler = (client: Context, ...args: any[]) => void;
 interface Context {
     io: IONamespace;
     socket: IOSocket;
+}
+
+class Context {
+    public static of(ctx: Context, socketId: string) {
+        const socket = ctx.io.sockets.get(socketId);
+        if (!socket) return;
+
+        return { io: ctx.io, socket } as Context;
+    }
 }
 
 
@@ -174,12 +185,12 @@ export {
     Server,
     Module, 
     Store,
+    Context,
     ResultStatus,
     success, error
 };
 
 export type {
-    Context,
     Handler,
     Result, 
 };

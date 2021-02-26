@@ -1,21 +1,25 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {Link} from "react-router-dom";
 import './css/Home.css'
 import './css/General.css'
-import {SignallingChannel} from "./connections/SignallingChannel";
 
 
-const Home = (props: { signal: SignallingChannel }) => {
+import { Socket } from "./connections/Socket";
+import { Room } from "./connections/Room";
+
+
+const Home = (props: { socket: Socket, setCreate: (create: boolean) => void }) => {
   const [name, setName] = useState("User");
   const [lobbyName, setLobbyName] = useState("");
 
 
   let randomRoomName = generateRandomRoomName();
 
-  const newRoomClick = () => {
+  const newRoomClick = useCallback(() => {
     console.log(props)
-    props.signal.createRoom(randomRoomName).then((e) => console.log(e));
-  }
+    props.setCreate(true);
+    // Room.createRoom(props.socket, randomRoomName, name).then((e) => console.log(e));
+  }, [name]);
 
   return (
     <div id={"home-wrapper"}>

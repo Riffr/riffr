@@ -2,23 +2,12 @@ import React, {RefObject, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
-import {SignallingChannel} from "./connections/SignallingChannel";
+
 import Audio from "./audio/Audio";
 
-import { Peer, SignalPayload } from "./connections/Peer";
-import { Button } from './Button';
 import Canvas from "./Canvas";
+import { Socket } from './connections/Socket';
 
-type MessagePayload = ChatPayload | SignallingPayload;
-
-interface ChatPayload {
-    type: "chat",
-    payload: any
-};
-interface SignallingPayload {
-    type: "signal",
-    payload: SignalPayload,
-};
 
 // var peer : Peer | undefined; 
 
@@ -77,7 +66,7 @@ interface SignallingPayload {
 //     peer.dispatch(payload);        
 // };
 
-const Room = (props: { name: string, roomCode: string, signal: SignallingChannel }) => {
+const Room = (props: { name: string, roomCode: string, socket: Socket }) => {
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
     let [memberListShown, setListShown] = useState("grid");
@@ -86,10 +75,10 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
 
     const sendMessage = () => {
         let msg = message;
-        props.signal.sendMessage({
-            type: "chat",
-            msg
-        });
+        // props.socket.signal({
+        //     type: "chat",
+        //     payload: msg
+        // });
         // @ts-ignore
         setMessages(prev => [{message: msg}, ...prev]);
         setMessage("");
@@ -102,18 +91,19 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
     }
 
     useEffect(() => {
-            console.log("registering...");
-            props.signal.addMessageHandler((payload: MessagePayload) => {
-                switch (payload.type) {
-                    case "chat":
-                        onMessageReceived(payload.payload);
-                        break;
-                    default:
-                        break;
-                }
-            });
-            props.signal.joinRoom(props.roomCode).then((e) => console.log(e));
-            return () => props.signal.clearMessageHandlers(); //Should remove handler in return
+            // console.log("registering...");
+            // props.socket.addMessageHandler((payload: MessagePayload) => {
+            //     console.log(`Payload: ${ JSON.stringify(payload) }`);
+            //     switch (payload.type) {
+            //         case "chat":
+            //             onMessageReceived(payload.payload);
+            //             break;
+            //         default:
+            //             break;
+            //     }
+            // });
+            // props.socket.joinRoom(props.roomCode, props.name).then((e) => console.log(e));
+            // return () => props.socket.clearMessageHandlers(); //Should remove handler in return
         }
         , [props.name]);
 
@@ -192,7 +182,7 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                   borderStyle: "solid",
                   gridArea: "2/2"
               }}>
-                  <Audio signal={props.signal} initiator={props.name == "offerer"}/>
+                  {/* <Audio signal={props.socket}/> */}
                   {/* <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} /> */}
             </div>
         </div>

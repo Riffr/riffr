@@ -2,40 +2,61 @@ import React, {RefObject, useCallback, useEffect, useRef, useState} from 'react'
 import {Link} from 'react-router-dom';
 import './css/Lobby.css';
 import './css/General.css'
-import {SignallingChannel} from "./connections/SignallingChannel";
+
+import { Socket } from './connections/Socket';
+
+import { ChatEvent, User, Message } from '@riffr/backend';
 
 
-const Lobby = (props: { name: string, roomCode: string, signal: SignallingChannel }) => {
+const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: boolean }) => {
+    
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
+    let [members, setMembers] = useState<Array<string>>([]);
 
-
-    const onMessageReceived = (e: any) => {
+    const onMessageReceived = (message: Message) => {
         // I promise I'll be good later...
         // @ts-ignore
         setMessages(prev => [{message: e}, ...prev]);
     }
 
 
-    const sendMessage = () => {
+    const sendMessage = useCallback(() => {
         let msg = message;
-        props.signal.sendMessage({ type: "chat", payload: msg });
+        // if (!chatClient) return;
+        // // Add some UI for pending messages?
+
+        // chatClient.send(msg);
         // @ts-ignore
-        setMessages(prev => [{message: msg}, ...prev]);
+        setMessages(prev => [{from: props.name, content: msg} as Message, ...prev]);
         setMessage("");
-    }
+    }, [props.socket, message]);
 
 
 
     useEffect(() => {
-            console.log("registering...");
-            props.signal.addMessageHandler(onMessageReceived);
+            // (async () => {
+                    
+            // //     console.log("registering...");
 
-            props.signal.joinRoom(props.roomCode).then((e) => console.log(e));
+            // //     const chatClient = await (props.create 
+            // //         ? ChatClient.createRoom(props.socket, props.roomCode, { id: props.name })
+            // //         : ChatClient.createRoom(props.socket, props.roomCode, { id: props.name }));
+                
+            // //     setChatClient(chatClient);
+            // //     setMembers(chatClient.room.members);
+            // //     chatClient.room.on("membersUpdated", (room: Room<User>) => {
+            // //         setMembers(room.members);
+            // //     })
 
-            return () => props.signal.clearMessageHandlers(); //Should remove handler in return
+            // //     chatClient.on("message", (_, message: Message) => {
+            // //         onMessageReceived(message);
+            // //     });
+
+            // //     return () => { chatClient.removeAllListeners("message"); chatClient.room.removeAllListeners("membersUpdated"); }; //Should remove handler in return
+            // // }) ();
         }
-        , [props.signal, props.name]);
+        , [props.socket, props.name, props.roomCode, props.create]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
@@ -56,11 +77,11 @@ const Lobby = (props: { name: string, roomCode: string, signal: SignallingChanne
             <CopyField id={"copy-field"} value={props.roomCode}/>
             <div>
                 <div id={"member-list"}>
-                    <p><b>Members</b>: {props.name}, Freddie</p>
+                    <p><b>Members</b>{members.join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
-                    {messages.map((x: any) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{props.name}</b>: {x.message}</p>
+                    {messages.map((x: Message) => <div className={"messageWrapper"}>
+                        <p className={"chat-message"}><b>{x.from}</b>: {x.content}</p>
                     </div>)}
                 </div>
                 <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}

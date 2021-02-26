@@ -1,30 +1,35 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {BrowserRouter as Router, Route} from "react-router-dom";
 import Home from "./Home";
 import Lobby from "./Lobby";
 import Room from "./Room";
 
-import { SignallingChannel } from './connections/SignallingChannel';
+import { Socket } from "./connections/Socket";
 
 const App = () => {
-  const signal = new SignallingChannel("127.0.0.1:10000");
+  const socket = new Socket("127.0.0.1:10000");
+  const [create, setCreate] = useState(false);
+
+  // let [chatClient, setChatClient] = useState<ChatClient|undefined>(undefined);
+
 
   return (
     <Router>
       <div className="App">
-        <Route path="/" exact render={() => <Home signal={signal}/>}/>
+        <Route path="/" exact render={() => <Home socket={socket} setCreate={setCreate}/>}/>
         <Route path="/lobby/:code/:name" render={({match}) => (
             <Lobby
                 roomCode={match.params.code}
                 name={match.params.name}
-                signal={signal}
+                socket={socket}
+                create={create}
             />
         )}/>
         <Route path="/room/:code/:name" render={({match}) => (
             <Room
                 roomCode={match.params.code}
                 name={match.params.name}
-                signal={signal}
+                socket={socket}
             />
         )}/>
       </div>

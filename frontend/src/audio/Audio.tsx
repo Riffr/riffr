@@ -27,7 +27,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     let audioContext: AudioContext = new AudioContext();
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
-    const [sounds, setSounds] = useState<AudioBuffer[]>([]);
+    const [sounds, setSounds] = useState<Map<string, AudioBuffer[]>>(new Map());  // string : AudioBuffer
     const [permission, setPermission] = useState(false);
     const [peer, setPeer] = useState<Peer | undefined>(undefined);
     const [time, setTime] = useState(0);
@@ -109,19 +109,21 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         if (peer != undefined) {
             const buf = await record.blob.arrayBuffer();
             peer.send("audio", buf);
+            console.log("Sending audio")
         }
 
-        addToPlaylist(record);
+        //addToPlaylist(record);
     }, [peer]);
 
     const addToPlaylist = (record: RecordType) => {
         console.log("Received sound")
 
         record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then(buffer => {
-            setSounds(prev => [...prev, buffer]);
-            //Timing will be a bit off, but will resolve after 1 bar
-            playSound(buffer, 0)
+            sounds.get("test")?.push(buffer)
         }));
+            //Timing will be a bit off, but will resolve after 1 bar
+            //playSound(buffer, 0)
+        //}));
     }
 
     const changeLoopLength = (length: number) => {
@@ -135,16 +137,20 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         sourceNode.start(time);
     }
 
-    const runBar = () => {
-        //Bit ugly but lets us read state easily
-        setSounds(sounds => {
-            sounds.forEach(sound => {
-                playSound(sound, loopLength * barCount.current);
-            });
-            return sounds;
+    const onHalfSectionStart = () => {
+        // Bit ugly but lets us read state easily
+
+        // Find and play the correct tracks from other peers
+        sounds.forEach((soundList) => {
+            if (soundList != undefined) {
+                let sound = soundList.pop()
+                if (sound != undefined) {
+                    playSound(sound, 0);
+                }
+            }
         });
 
-        barCount.current = barCount.current + 1;
+        //barCount.current = barCount.current + 1;
     }
 
     const update = () => {
@@ -152,7 +158,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     }
     useEffect(() => {
 
-        let i1 = setInterval(runBar, loopLength * 1000);
+        let i1 = setInterval(onHalfSectionStart, loopLength * 1000 / 2);
         let i2 = setInterval(update, 100);
 
         return () => {
@@ -180,7 +186,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
                     </button>
                     <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
                     <button className={"squircle-button light-blue"} onClick={() => {
-                        if (peer != undefined) peer.send("data", "test")
+                        peer?.send("data", "test")
                     }}>Send Dummy Audio
                     </button>
                 </div>

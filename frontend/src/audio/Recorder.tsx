@@ -26,7 +26,7 @@ const Recorder = (props: RecorderProps) => {
     const [recording, setRecording] = useState(false);
     const [timer, setTimer] = useState(0);
 
-    const runBar = () => {
+    const onHalfSectionStart = () => {
         console.log("Running bar")
         setTimer(0);
         setRecordNext(prev => {
@@ -86,7 +86,7 @@ const Recorder = (props: RecorderProps) => {
     }
 
     useEffect(() => {
-        let i1 = setInterval(runBar, props.loopLength * 1000);
+        let i1 = setInterval(onHalfSectionStart, props.loopLength * 1000 / 2);
 
         return () => {clearInterval(i1);}
     }, [props])

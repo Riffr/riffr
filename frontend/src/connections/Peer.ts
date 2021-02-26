@@ -2,32 +2,20 @@ import EventEmitter from "events";
 import StrictEventEmitter from "strict-event-emitter-types"
 import { v4 as uuidv4 } from "uuid";
 
+import {
+    SignalPayload,
+    SignalPayloadType,
+    OfferPayload,
+    AnswerPayload,
+    CandidatePayload
+} from '@riffr/backend/modules/signalling/Peer';
+
 interface Config {
     readonly id?: string,
     readonly initiator?: boolean,
     readonly rtcConfig?: RTCConfiguration,
 };
 
-// Signalling payloads
-
-type SignalPayload = CandidatePayload | OfferPayload | AnswerPayload;
-enum SignalPayloadType {
-    Candidate   = "candidate",
-    Offer       = "offer",
-    Answer      = "answer",
-}
-interface CandidatePayload {
-    readonly type: SignalPayloadType.Candidate;
-    readonly candidate?: RTCIceCandidateInit;
-};
-interface OfferPayload {
-    readonly type: SignalPayloadType.Offer;
-    readonly sdp: string;
-};
-interface AnswerPayload {
-    readonly type: SignalPayloadType.Answer;
-    readonly sdp: string;
-};
 
 
 // Event Emitters
@@ -41,8 +29,6 @@ interface PeerEvents {
     channelClose: (peer: Peer, channel: RTCDataChannel) => void;
 
     error: (peer: Peer, error: Error) => void;
-
-    iceComplete: () => void;
 };
 type PeerEmitter = {new (): StrictEventEmitter<EventEmitter, PeerEvents>};
 
@@ -64,7 +50,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
     };
 
 
-    private readonly id: string;
+    public readonly id: string;
     private readonly initiator: boolean;
 
     private channels: Map<string, RTCDataChannel> = new Map();
@@ -77,9 +63,13 @@ class Peer extends (EventEmitter as PeerEmitter) {
         super();
 
         // Initialize private fields
-        const { id, initiator, rtcConfig = {} } = config;
-        this.id = id || uuidv4();
-        this.initiator = initiator || false;
+        const { 
+            id = uuidv4(), 
+            initiator = false, 
+            rtcConfig = {} 
+        } = config;
+        this.id = id;
+        this.initiator = initiator;
         
         // Initialize connection
         this.connection = new RTCPeerConnection({
@@ -258,15 +248,10 @@ class Peer extends (EventEmitter as PeerEmitter) {
 
 export {
     Peer, 
-    SignalPayloadType,
 };
 
 export type {
     Config,
-    SignalPayload,
-    CandidatePayload,
-    OfferPayload,
-    AnswerPayload,
     PeerEvents,
     PeerEmitter,
 };

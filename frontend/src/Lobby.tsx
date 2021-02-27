@@ -7,12 +7,23 @@ import { Socket } from './connections/Socket';
 
 import { ChatEvent, User, Message } from '@riffr/backend';
 
+class Player implements User {
+    id: string;
+    name: string;
 
-const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: boolean }) => {
+    constructor(id: string, name: string) {
+        this.id = id;
+        this.name = name;
+    }
+
+}
+
+const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: boolean, setUser: (user: User) => void }) => {
     
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
     let [members, setMembers] = useState<Array<string>>([]);
+    let [user] = useState<User>(new Player(props.name, props.name));
 
     const onMessageReceived = (message: Message) => {
         // I promise I'll be good later...
@@ -28,13 +39,17 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
 
         // chatClient.send(msg);
         // @ts-ignore
-        setMessages(prev => [{from: props.name, content: msg} as Message, ...prev]);
+        setMessages(prev => [...prev, {from: props.name, content: msg} as Message]);
         setMessage("");
+
+
     }, [props.socket, message]);
 
 
 
     useEffect(() => {
+        props.setUser(user);
+        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
             // (async () => {
                     
             // //     console.log("registering...");
@@ -56,12 +71,11 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             // //     return () => { chatClient.removeAllListeners("message"); chatClient.room.removeAllListeners("membersUpdated"); }; //Should remove handler in return
             // // }) ();
         }
-        , [props.socket, props.name, props.roomCode, props.create]);
+        , [props.socket, props.name, props.roomCode, props.create, messages]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
             sendMessage();
-            document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
         }
     }
 

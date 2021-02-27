@@ -6,7 +6,10 @@ import './css/General.css';
 import Audio from "./audio/Audio";
 
 import Canvas from "./Canvas";
-import { Socket } from './connections/Socket';
+import {Socket} from './connections/Socket';
+import {SignallingChannel} from "./connections/SignallingChannel";
+import {User} from "@riffr/backend";
+import {sign} from "crypto";
 
 
 // var peer : Peer | undefined; 
@@ -39,7 +42,7 @@ import { Socket } from './connections/Socket';
 //                 console.log("Connected via WebRTC :)");
 //             }
 //         });
-    
+
 //         p.on("channelOpen", (_, channel) => {
 //             console.log(`connected with ${ channel.label } and ready to send data!`);
 //             p.send(channel.label, `Hello World`);
@@ -50,7 +53,7 @@ import { Socket } from './connections/Socket';
 //     p.on("channelData", (_, channel, data) => {
 //         console.log(`Recieved ${ data } from channel ${ channel.label }`);
 //     });
-    
+
 
 // };
 
@@ -66,12 +69,15 @@ import { Socket } from './connections/Socket';
 //     peer.dispatch(payload);        
 // };
 
-const Room = (props: { name: string, roomCode: string, socket: Socket }) => {
+
+const Room = (props: { roomCode: string, name: string, user: User, socket: Socket, create: boolean }) => {
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
     let [memberListShown, setListShown] = useState("grid");
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
+    let [signallingChannel, setSignallingChannel] = useState<SignallingChannel>();
+    let [audio, setAudio] = useState(<div/>);
 
     const sendMessage = () => {
         let msg = message;
@@ -90,22 +96,33 @@ const Room = (props: { name: string, roomCode: string, socket: Socket }) => {
         setMessages(prev => [{message: e}, ...prev]);
     }
 
+
     useEffect(() => {
-            // console.log("registering...");
-            // props.socket.addMessageHandler((payload: MessagePayload) => {
-            //     console.log(`Payload: ${ JSON.stringify(payload) }`);
-            //     switch (payload.type) {
-            //         case "chat":
-            //             onMessageReceived(payload.payload);
-            //             break;
-            //         default:
-            //             break;
-            //     }
-            // });
-            // props.socket.joinRoom(props.roomCode, props.name).then((e) => console.log(e));
-            // return () => props.socket.clearMessageHandlers(); //Should remove handler in return
+        // console.log("registering...");
+        // props.socket.addMessageHandler((payload: MessagePayload) => {
+        //     console.log(`Payload: ${ JSON.stringify(payload) }`);
+        //     switch (payload.type) {
+        //         case "chat":
+        //             onMessageReceived(payload.payload);
+        //             break;
+        //         default:
+        //             break;
+        //     }
+        // });
+        // props.socket.joinRoom(props.roomCode, props.name).then((e) => console.log(e));
+        // return () => props.socket.clearMessageHandlers(); //Should remove handler in return
+        if (props.create && signallingChannel) {
+            SignallingChannel.createRoom(props.socket, props.roomCode, props.user).then((res: SignallingChannel) => {
+                setSignallingChannel(res);
+                setAudio(<Audio signal={res}/>);
+            });
+        } else {
+            SignallingChannel.joinRoom(props.socket, props.roomCode, props.user).then((res: SignallingChannel) => {
+                setSignallingChannel(res);
+                setAudio(<Audio signal={res}/>);
+            });
         }
-        , [props.name]);
+    }, [props.user]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
@@ -116,6 +133,7 @@ const Room = (props: { name: string, roomCode: string, socket: Socket }) => {
 
 
     const toggleMembers = () => {
+        // console.log(props.create);
         if (memberListShown == "grid") {
             setListShown("none");
         } else {
@@ -173,17 +191,17 @@ const Room = (props: { name: string, roomCode: string, socket: Socket }) => {
                     </button>
                 </div>
             </div>
-              <div id={"controls"} style={{
-                  width: "100%",
-                  height: "100px",
-                  background: "white",
-                  borderRadius: "15px",
-                  borderColor: "#444",
-                  borderStyle: "solid",
-                  gridArea: "2/2"
-              }}>
-                  {/* <Audio signal={props.socket}/> */}
-                  {/* <Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} /> */}
+            <div id={"controls"} style={{
+                width: "100%",
+                height: "100px",
+                background: "white",
+                borderRadius: "15px",
+                borderColor: "#444",
+                borderStyle: "solid",
+                gridArea: "2/2"
+            }}>
+                {audio}
+                {/*<Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} />*/}
             </div>
         </div>
     )

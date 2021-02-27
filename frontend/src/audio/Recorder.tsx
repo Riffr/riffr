@@ -51,6 +51,10 @@ const Recorder = (props: RecorderProps) => {
             startTime.current = props.audioCtx.currentTime;
             props.recorder.start();
         }
+        else {
+            console.log("Recording failed")
+            console.log(props.recorder)
+        }
     }
 
     const stopRecording = () => {
@@ -87,9 +91,9 @@ const Recorder = (props: RecorderProps) => {
 
     useEffect(() => {
         let i1 = setInterval(onHalfSectionStart, props.loopLength * 1000 / 2);
-
+        console.log(props.recorder)
         return () => {clearInterval(i1);}
-    }, [props])
+    }, [props.loopLength, props.recorder])
 
 
 

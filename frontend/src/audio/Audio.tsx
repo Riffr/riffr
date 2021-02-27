@@ -105,6 +105,12 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     const sendToPeers = useCallback(async (record: RecordType) => {
         console.log("[addOwnSound] sending to peer")
         // WTF CHROME DOESN'T SUPPORT BLOBS. NOT IMPLEMENTED ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then(buffer => {
+            sounds.set("self", [])
+            sounds.get("self")!.push(buffer)
+        }));
         if (peer != undefined) {
             const buf = await record.blob.arrayBuffer();
             peer.send("audio", buf);
@@ -138,9 +144,11 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         // Bit ugly but lets us read state easily
 
         // Find and play the correct tracks from other peers
+        console.log(sounds)
         sounds.forEach((soundList) => {
             if (soundList != undefined) {
                 let sound = soundList.pop()
+                console.log(sound)
                 if (sound != undefined) {
                     playSound(sound, 0);
                 }

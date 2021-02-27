@@ -5,20 +5,17 @@ import './css/General.css'
 
 
 import { Socket } from "./connections/Socket";
-import { Room } from "./connections/Room";
 
 
 const Home = (props: { socket: Socket, setCreate: (create: boolean) => void }) => {
   const [name, setName] = useState("User");
   const [lobbyName, setLobbyName] = useState("");
 
-
   let randomRoomName = generateRandomRoomName();
 
   const newRoomClick = useCallback(() => {
     console.log(props)
     props.setCreate(true);
-    // Room.createRoom(props.socket, randomRoomName, name).then((e) => console.log(e));
   }, [name]);
 
   return (
@@ -43,7 +40,6 @@ const Home = (props: { socket: Socket, setCreate: (create: boolean) => void }) =
   );
 }
 
-//Just some random algorithm
 const generateRandomRoomName = () => {
   let words = ["cat", "dog", "hammer", "jack", "tape", "driver", "word", "can", "wheel"];
   return words[Math.floor(Math.random() * words.length)] + "-" + words[Math.floor(Math.random() * words.length)] + "-" + words[Math.floor(Math.random() * words.length)];

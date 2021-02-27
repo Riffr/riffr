@@ -76,7 +76,6 @@ const Room = (props: { roomCode: string, name: string, user: User, socket: Socke
     let [memberListShown, setListShown] = useState("grid");
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
-    let [signallingChannel, setSignallingChannel] = useState<SignallingChannel>();
     let [audio, setAudio] = useState(<div/>);
 
     const sendMessage = () => {
@@ -111,14 +110,12 @@ const Room = (props: { roomCode: string, name: string, user: User, socket: Socke
         // });
         // props.socket.joinRoom(props.roomCode, props.name).then((e) => console.log(e));
         // return () => props.socket.clearMessageHandlers(); //Should remove handler in return
-        if (props.create && signallingChannel) {
+        if (props.create) {
             SignallingChannel.createRoom(props.socket, props.roomCode, props.user).then((res: SignallingChannel) => {
-                setSignallingChannel(res);
                 setAudio(<Audio signal={res}/>);
             });
         } else {
             SignallingChannel.joinRoom(props.socket, props.roomCode, props.user).then((res: SignallingChannel) => {
-                setSignallingChannel(res);
                 setAudio(<Audio signal={res}/>);
             });
         }

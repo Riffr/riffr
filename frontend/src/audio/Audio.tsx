@@ -1,10 +1,9 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import Recorder, {RecordType} from './Recorder';
-import Clip from './Clip';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import Recorder, { RecordType } from './Recorder';
 import Canvas from "../Canvas";
-import {Peer, SignalPayload} from "../connections/Peer";
-import {SignallingChannel} from '../connections/SignallingChannel';
-
+import { Peer, SignalPayload } from "../connections/Peer";
+import { SignallingChannel } from '../connections/SignallingChannel';
+// import AudioUpload from './AudioUpload';
 
 // TODO. IMPORT TYPES, DONT DUPE THEM
 type MessagePayload = ChatPayload | SignallingPayload;
@@ -27,10 +26,11 @@ export interface DecodedRecord {
 
 declare var MediaRecorder: any;
 
+let AudioContext: any = window.AudioContext // Default
+    || (window as any).webkitAudioContext // Safari
+let audioContext: AudioContext = new AudioContext();
+
 const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
-    let AudioContext: any = window.AudioContext // Default
-        || (window as any).webkitAudioContext // Safari
-    let audioContext: AudioContext = new AudioContext();
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());  // string : AudioBuffer
@@ -40,7 +40,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     let barCount = useRef(1);
 
     const init = () => {
-        navigator.mediaDevices.getUserMedia({audio: true, video: false})
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
             .then(onRecorderSuccess)
             .catch((err) => {
                 console.log('The following error occured: ' + err);
@@ -51,7 +51,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     }
 
     const initPeer = useCallback(() => {
-        let p = new Peer({initiator: props.initiator});
+        let p = new Peer({ initiator: props.initiator });
 
         p.on("error", (e) => {
             console.log(`Error: ${JSON.stringify(e)}`);
@@ -94,7 +94,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
             console.log(`[AUDIO] Recieved ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
                 // TODO confirm that p.id is the actual sender ID
-                addToPlaylist({blob: new Blob([data]), startOffset: 0, endOffset: 0} as RecordType, p.id);
+                addToPlaylist({ blob: new Blob([data]), startOffset: 0, endOffset: 0 } as RecordType, p.id);
             }
         });
 
@@ -153,11 +153,14 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         console.log(audioContext.currentTime)
     }
 
-    const playSound = (record: DecodedRecord) => {
+    const playSound = (record: DecodedRecord, volume: number = 1) => {
         let sourceNode = audioContext.createBufferSource();
+        let gainNode = audioContext.createGain();
         sourceNode.buffer = record.buffer;
-        sourceNode.connect(audioContext.destination);
-        sourceNode.start(loopLength*barCount.current, record.startOffset, loopLength);
+        sourceNode.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        gainNode.gain.value = volume;
+        sourceNode.start(loopLength * barCount.current, record.startOffset, loopLength);
     }
 
     const onHalfSectionStart = () => {
@@ -175,7 +178,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
                 }
             }
         });
-        barCount.current +=1
+        barCount.current += 1
     }
 
     const update = () => {
@@ -196,10 +199,11 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     //Todo: Turn recorder into inner class, make recording dependent on the update function,
     //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
     return (
-        <div style={{position: "relative"}}>
-            <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength}/>
+        <div style={{ position: "relative" }}>
+            <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength} />
             <div id={"controls"}>
                 <div id={"audio"}>
+                    {/* <AudioUpload audioCtx={audioContext} /> */}
                     <Recorder
                         recorder={mediaRecorder}
                         audioCtx={audioContext}
@@ -208,7 +212,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
                         permission={permission}
                     />
                     <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant
-                        permission
+                    permission
                     </button>
                     <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
                     <button className={"squircle-button light-blue"} onClick={() => {

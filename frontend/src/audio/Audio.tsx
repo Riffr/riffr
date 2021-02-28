@@ -158,7 +158,7 @@ const Audio = (props: {signal: SignallingChannel}) => {
                         permission
                     </button>
                     <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
-                    <button onClick={() => {mesh?.send("data", "test")}}>Send Dummy Audio</button>
+                    <button className={"squircle-button light-blue"} onClick={() => {mesh?.send("data", "test")}}>Send Dummy Audio</button>
                 </div>
 
             </div>

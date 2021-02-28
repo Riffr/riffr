@@ -19,6 +19,12 @@ interface SignallingPayload {
     payload: SignalPayload,
 }
 
+export interface DecodedRecord {
+    buffer: AudioBuffer;
+    startOffset: number;
+    endOffset: number;
+}
+
 declare var MediaRecorder: any;
 
 const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
@@ -27,7 +33,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     let audioContext: AudioContext = new AudioContext();
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
-    const [sounds, setSounds] = useState<Map<string, AudioBuffer[]>>(new Map());  // string : AudioBuffer
+    const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());  // string : AudioBuffer
     const [permission, setPermission] = useState(false);
     const [peer, setPeer] = useState<Peer | undefined>(undefined);
     const [time, setTime] = useState(0);
@@ -88,7 +94,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
             console.log(`[AUDIO] Recieved ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
                 // TODO confirm that p.id is the actual sender ID
-                addToPlaylist({blob: new Blob([data]), start: 0, end: 0} as RecordType, p.id);
+                addToPlaylist({blob: new Blob([data]), startOffset: 0, endOffset: 0} as RecordType, p.id);
             }
         });
 
@@ -109,7 +115,12 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
 
         record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then(buffer => {
             sounds.set("self", [])
-            sounds.get("self")!.push(buffer)
+            let decodedRecord: DecodedRecord = {
+                buffer: buffer,
+                startOffset: record.startOffset,
+                endOffset: 0 //Not currently using this
+            }
+            sounds.get("self")!.push(decodedRecord)
         }));
         if (peer != undefined) {
             const buf = await record.blob.arrayBuffer();
@@ -125,7 +136,12 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
             if (!(peerID in sounds)) {
                 sounds.set(peerID, [])
             }
-            sounds.get(peerID)!.push(buffer)
+            let decodedRecord: DecodedRecord = {
+                buffer: buffer,
+                startOffset: record.startOffset,
+                endOffset: 0 //Not currently using this
+            }
+            sounds.get(peerID)!.push(decodedRecord)
         }));
     }
 
@@ -133,35 +149,42 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         setLoopLength(length);
     }
 
-    const playSound = (sound: AudioBuffer, time: number) => {
+    let checkRecording = () => {
+        console.log(audioContext.currentTime)
+    }
+
+    const playSound = (record: DecodedRecord) => {
         let sourceNode = audioContext.createBufferSource();
-        sourceNode.buffer = sound;
+        sourceNode.buffer = record.buffer;
         sourceNode.connect(audioContext.destination);
-        sourceNode.start(time);
+        sourceNode.start(loopLength*barCount.current, record.startOffset, loopLength);
     }
 
     const onHalfSectionStart = () => {
         // Bit ugly but lets us read state easily
 
         // Find and play the correct tracks from other peers
-        console.log(sounds)
+        console.log("Playing sounds")
         sounds.forEach((soundList) => {
             if (soundList != undefined) {
-                let sound = soundList.pop()
+                //For testing purposes
+                let sound = soundList[0]
                 console.log(sound)
                 if (sound != undefined) {
-                    playSound(sound, 0);
+                    playSound(sound);
                 }
             }
         });
+        barCount.current +=1
     }
 
     const update = () => {
         setTime(audioContext.currentTime);
     }
+
     useEffect(() => {
 
-        let i1 = setInterval(onHalfSectionStart, loopLength * 1000 / 2);
+        let i1 = setInterval(onHalfSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
 
         return () => {

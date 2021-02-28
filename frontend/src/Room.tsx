@@ -128,9 +128,7 @@ const Room = (props: { roomCode: string, name: string, user: User, socket: Socke
         }
     }
 
-
     const toggleMembers = () => {
-        // console.log(props.create);
         if (memberListShown == "grid") {
             setListShown("none");
         } else {
@@ -167,7 +165,7 @@ const Room = (props: { roomCode: string, name: string, user: User, socket: Socke
                     <i className={"fa fa-comment block"}/>
                 </button>
             </div>
-            <Canvas id={"canvas"} width={1600} height={800}/>
+            {audio}
             <div id={"chat"} style={{display: chatDisplay}}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"} style={{display: memberListShown}}>
@@ -187,18 +185,6 @@ const Room = (props: { roomCode: string, name: string, user: User, socket: Socke
                         <i className={"fa fa-send block"}/>
                     </button>
                 </div>
-            </div>
-            <div id={"controls"} style={{
-                width: "100%",
-                height: "100px",
-                background: "white",
-                borderRadius: "15px",
-                borderColor: "#444",
-                borderStyle: "solid",
-                gridArea: "2/2"
-            }}>
-                {audio}
-                {/*<Button text={"Init Peer"} onClick={() => initPeer(props.name, props.signal)} />*/}
             </div>
         </div>
     )

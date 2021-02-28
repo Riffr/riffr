@@ -5,6 +5,7 @@ import Clip from './Clip';
 // import { SignalPayload } from "@riffr/backend/modules/Mesh";
 import { Mesh } from "../connections/Mesh";
 import { SignallingChannel } from "../connections/SignallingChannel";
+import Canvas from "../Canvas";
 
 declare var MediaRecorder: any;
 
@@ -13,15 +14,12 @@ const Audio = (props: {signal: SignallingChannel}) => {
     let AudioContext: any = window.AudioContext // Default
         || (window as any).webkitAudioContext // Safari
     let audioContext: AudioContext = new AudioContext();
-    
-   
-
 
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<AudioBuffer[]>([]);
     const [permission, setPermission] = useState(false);
-
+    const [time, setTime] = useState(0);
     const [mesh, setMesh] = useState<Mesh | undefined>(undefined);
     let barCount = useRef(1);
 
@@ -62,7 +60,7 @@ const Audio = (props: {signal: SignallingChannel}) => {
         //     console.log(`connected with ${ channel.label } and ready to send data!`);
         //     m.send("data", `Hello World from ${ m.id }`);
         // });
-    
+
     
         // m.addDataChannel("audio");
         // m.on("channelData", (_, channel, data) => {
@@ -129,27 +127,41 @@ const Audio = (props: {signal: SignallingChannel}) => {
         barCount.current = barCount.current + 1;
     }
 
+    const update = () => {
+        setTime(audioContext.currentTime);
+    }
+
     useEffect(() => {
 
         let i1 = setInterval(runBar, loopLength * 1000);
+        let i2 = setInterval(update, 20);
 
         return () => {
             clearInterval(i1);
+            clearInterval(i2);
         }
     }, [])
 
     return (
-        <div>
-            <Recorder
-                recorder={mediaRecorder}
-                audioCtx={audioContext}
-                addToPlaylist={addOwnSound}
-                loopLength={loopLength}
-                permission={permission}
-            />
-            <button disabled={permission} onClick={init}>Grant permission</button>
-            <button onClick={initPeer}>Init Peer</button>
-            <button onClick={() => {mesh?.send("data", "test")}}>Send Dummy Audio</button>
+        <div style={{position: "relative"}}>
+            <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength}/>
+            <div id={"controls"}>
+                <div id={"audio"}>
+                    <Recorder
+                        recorder={mediaRecorder}
+                        audioCtx={audioContext}
+                        addToPlaylist={addOwnSound}
+                        loopLength={loopLength}
+                        permission={permission}
+                    />
+                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant
+                        permission
+                    </button>
+                    <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
+                    <button onClick={() => {mesh?.send("data", "test")}}>Send Dummy Audio</button>
+                </div>
+
+            </div>
         </div>
     );
 }

@@ -33,7 +33,8 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     let audioContext: AudioContext = new AudioContext();
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
-    const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());  // string : AudioBuffer
+    const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
+    const [previousSounds, setPreviousSounds] = useState<Map<string, DecodedRecord>>(new Map());
     const [permission, setPermission] = useState(false);
     const [peer, setPeer] = useState<Peer | undefined>(undefined);
     const [time, setTime] = useState(0);
@@ -165,17 +166,23 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
 
         // Find and play the correct tracks from other peers
         console.log("Playing sounds")
-        sounds.forEach((soundList) => {
+        sounds.forEach((soundList, peerID) => {
             if (soundList != undefined) {
-                //For testing purposes
-                let sound = soundList[0]
-                console.log(sound)
+                let sound;
+                if (soundList.length) {
+                    sound = soundList.shift()  // Returns and removes the first item in the list
+                } else {
+                    sound = previousSounds.get(peerID)
+                }
                 if (sound != undefined) {
+                    // Keep the previous sound around so that we can still play it next iteration if needed
+                    previousSounds.set(peerID, sound);
+
                     playSound(sound);
                 }
             }
         });
-        barCount.current +=1
+        barCount.current += 1
     }
 
     const update = () => {

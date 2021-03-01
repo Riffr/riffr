@@ -11,7 +11,7 @@ interface Config {
     readonly id?: string,
     readonly initiator?: boolean,
     readonly rtcConfig?: RTCConfiguration,
-};
+}
 
 
 

@@ -41,8 +41,11 @@ const Home = (props: { socket: Socket, setCreate: (create: boolean) => void }) =
 }
 
 const generateRandomRoomName = () => {
-  let words = ["cat", "dog", "hammer", "jack", "tape", "driver", "word", "can", "wheel"];
-  return words[Math.floor(Math.random() * words.length)] + "-" + words[Math.floor(Math.random() * words.length)] + "-" + words[Math.floor(Math.random() * words.length)];
+  let words = ["cat", "dog", "tape", "word", "wheel", "tree", "apple", "mouse", "golf", "van", "lock", "nest", "prawn", "crow", "atom", "year"];
+  // Gets a random word and removes it from the list to avoid duplicates
+  return words.splice(Math.floor(Math.random() * words.length), 1)[0] + "-" +
+         words.splice(Math.floor(Math.random() * words.length), 1)[0] + "-" +
+         words.splice(Math.floor(Math.random() * words.length), 1)[0];
 }
 
 const TextInput = (props: { id: string, placeholder: string, parentCallback: (arg0: string) => void }) => {

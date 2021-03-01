@@ -81,6 +81,14 @@ class ScanLine extends CanvasObject {
         ctx.stroke();
     }
 
+    setX(x: number) : void {
+        this.x = x;
+    }
+
+    setVelocity(velocity: number) : void {
+        this.velocity = velocity;
+    }
+
     update(): boolean {
         this.x += this.velocity;
         if (this.x > this.range) {
@@ -124,8 +132,8 @@ const Canvas = (props: CanvasProps) => {
     let aspectRatio = 12.5 / 17;
 
     let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
-    let text: CanvasText = new CanvasText(100, 100, "Hello World", 30, "red");
-    let canvasObjects = [grid, text];
+    // let text: CanvasText = new CanvasText(100, 100, "Hello World", 30, "red");
+    let canvasObjects = [grid]; //, text];
 
     const canvasRef = React.useRef(null)
 
@@ -157,5 +165,6 @@ const Canvas = (props: CanvasProps) => {
     );
 
 }
+
 
 export default Canvas;

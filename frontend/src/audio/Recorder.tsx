@@ -1,17 +1,20 @@
-import {useEffect, useRef, useState} from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { SignallingChannel } from "../connections/SignallingChannel";
 
 type BlobEvent = { data: Blob; }
 
 export interface RecordType {
     blob: Blob;
-    start: number;
-    end: number;
+    startOffset: number;
+    endOffset: number;
 }
 
 interface RecorderProps {
     recorder: any;
     audioCtx: AudioContext;
-    addToPlaylist(record: RecordType): void;
+
+    sendToPeers(record: RecordType): void;
+
     loopLength: number;
     permission: boolean;
 }
@@ -19,25 +22,24 @@ interface RecorderProps {
 //Todo: Not really synced with the audio player, might have to move logic here into audio as well
 const Recorder = (props: RecorderProps) => {
     let chunks: BlobPart[] = [];
-    const startTime = useRef(0);
-    const stopTime = useRef(0);
+    const startOffset = useRef(0);
+    const stopOffset = useRef(0);
     const [recordNext, setRecordNext] = useState(false);
     const [recording, setRecording] = useState(false);
-    const [timer, setTimer] = useState(0);
 
-    const runBar = () => {
-        console.log("Running bar")
-        setTimer(0);
-        setRecordNext(prev => {
-            if (prev){
+    const checkRecord = () => {
+        // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime)
+
+        if (props.loopLength - props.audioCtx.currentTime % props.loopLength <= props.loopLength / (10 * 4)) {
+            console.log("Checking recordNext")
+            if (recordNext) {
+                console.log("We should!")
+                setRecordNext(false);
                 startRecording();
                 console.log("We're recording!")
-                setRecording(true);
                 return false;
             }
-            return false;
-        })
-
+        }
     }
 
     const startRecording = () => {
@@ -46,9 +48,13 @@ const Recorder = (props: RecorderProps) => {
         }
         if (props.recorder !== null && props.recorder.state !== 'recording') {
             console.log("Start recording...");
-            setTimeout(stopRecording, props.loopLength * 1000);
-            startTime.current = props.audioCtx.currentTime;
             props.recorder.start();
+            startOffset.current = props.loopLength - props.audioCtx.currentTime % props.loopLength;
+            setTimeout(stopRecording, props.loopLength * 1000 + startOffset.current * 1000);
+            setRecording(true);
+        } else {
+            console.log("Recording failed")
+            console.log(props.recorder)
         }
     }
 
@@ -57,20 +63,18 @@ const Recorder = (props: RecorderProps) => {
             console.log("Stop recording");
             setRecording(false);
             props.recorder.stop();
-            stopTime.current = props.audioCtx.currentTime;
+            stopOffset.current = props.audioCtx.currentTime % props.loopLength;
         }
     }
 
     const saveRecording = () => {
-        console.log(props.loopLength)
-        console.log(startTime.current)
         const clip: RecordType = {
             blob: new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' }),
-            start: startTime.current % props.loopLength,
-            end: stopTime.current % props.loopLength
+            startOffset: startOffset.current,
+            endOffset: stopOffset.current
         };
-        console.log(clip);
-        props.addToPlaylist(clip);
+        console.log(clip)
+        props.sendToPeers(clip);
         chunks = [];
     }
 
@@ -85,19 +89,23 @@ const Recorder = (props: RecorderProps) => {
     }
 
     useEffect(() => {
-        let i1 = setInterval(runBar, props.loopLength * 1000);
-
-        return () => {clearInterval(i1);}
-    }, [props.permission])
-
+        let i1 = setInterval(checkRecord, props.loopLength * 10);
+        console.log(props.recorder)
+        return () => {
+            clearInterval(i1);
+        }
+    }, [props.loopLength, props.recorder, props.permission, recordNext])
 
 
     return (
         <div>
-            <button className={"squircle-button light-blue"} disabled={!props.permission || recordNext} onClick={() => setRecordNext(true)}>Jam in</button>
+            <label hidden={!recording}>Recording</label>
+            <label hidden={recording}>Not recording</label>
+            <button className={"squircle-button light-blue"} disabled={!props.permission || recordNext}
+                onClick={() => setRecordNext(true)}>Record next loop
+            </button>
         </div>
     );
 }
-
 
 export default Recorder;

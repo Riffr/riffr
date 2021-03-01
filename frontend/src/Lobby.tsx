@@ -98,7 +98,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
                 <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
                        placeholder={"Type message"}
                        onChange={(e) => setMessage(e.target.value)}/>
-                <button id={"send-message-button"} className={"green"} onClick={sendMessage}>
+                <button id={"send-message-button"} className={"blue"} onClick={sendMessage}>
                     <i className={"fa fa-send"}/>
                 </button>
             </div>

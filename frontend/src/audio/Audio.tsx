@@ -134,7 +134,7 @@ const Audio = (props: {signal: SignallingChannel}) => {
     useEffect(() => {
 
         let i1 = setInterval(runBar, loopLength * 1000);
-        let i2 = setInterval(update, 20);
+        let i2 = setInterval(update, 30);
 
         return () => {
             clearInterval(i1);

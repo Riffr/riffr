@@ -88,7 +88,7 @@ const Recorder = (props: RecorderProps) => {
         let i1 = setInterval(runBar, props.loopLength * 1000);
 
         return () => {clearInterval(i1);}
-    }, [props])
+    }, [props.permission])
 
 
 

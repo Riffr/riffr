@@ -20,7 +20,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
     const onMessageReceived = (message: Message) => {
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev => [message, ...prev]);
+        setMessages(prev => [...prev, message]);
     }
 
     const sendMessage = useCallback(() => {
@@ -38,7 +38,6 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
     }, [props.socket, message, props.chatClient]);
 
     useEffect(() => {
-        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
         (async () => {
             console.log("registering...");
             const client = await (props.create 
@@ -65,6 +64,10 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             props.chatClient?.leave();
         };
     }, []);
+
+    useEffect(() => {
+        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
+    }, [messages]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
@@ -99,7 +102,10 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
                 </button>
             </div>
             <Link to={`/room/${props.roomCode}/${props.name}`}>
-                <button>Start</button>
+                <button id={"start-button"} className={"squircle-button green"}>
+                    Start
+                    <i className={"fa fa-play"} />
+                </button>
             </Link>
         </div>
     );

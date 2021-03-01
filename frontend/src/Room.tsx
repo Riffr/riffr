@@ -2,17 +2,11 @@ import React, {RefObject, useCallback, useEffect, useRef, useState} from 'react'
 import {Link} from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
-
 import Audio from "./audio/Audio";
-
-import Canvas from "./Canvas";
 import {Socket} from './connections/Socket';
 import {SignallingChannel} from "./connections/SignallingChannel";
 import {Message, User} from "@riffr/backend";
-import {sign} from "crypto";
 import {ChatClient} from './connections/ChatClient';
-
-import {Room as CRoom} from './connections/Room';
 
 const Room = (props: { roomCode: string, name: string, socket: Socket, create: boolean, chatClient?: ChatClient }) => {
 
@@ -31,7 +25,7 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
     const onMessageReceived = (message: Message) => {
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev => [message, ...prev]);
+        setMessages(prev => [...prev, message]);
     }
 
     const sendMessage = useCallback(() => {
@@ -70,10 +64,13 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
 
     }, []);
 
+    useEffect(() => {
+        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
+    }, [messages]);
+
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
             sendMessage();
-            document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
         }
     }
 

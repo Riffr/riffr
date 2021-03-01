@@ -4,36 +4,57 @@ import './css/Lobby.css';
 import './css/General.css'
 import {SignallingChannel} from "./connections/SignallingChannel";
 
+import { Peer, SignalPayload } from "./connections/Peer";
+
+type MessagePayload = ChatPayload | SignallingPayload;
+
+interface ChatPayload {
+    type: "chat",
+    payload: any
+}
+interface SignallingPayload {
+    type: "signal",
+    payload: SignalPayload,
+}
+
 
 const Lobby = (props: { name: string, roomCode: string, signal: SignallingChannel }) => {
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
 
+    const sendMessage = () => {
+        let msg = message;
+        props.signal.sendMessage({
+            type: "chat",
+            payload: {
+                user: props.name,
+                message: msg
+            }
+        });
+        // @ts-ignore
+        setMessages(prev => [{message: msg, user: props.name}, ...prev]);
+        setMessage("");
+    }
 
     const onMessageReceived = (e: any) => {
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev => [{message: e}, ...prev]);
+        setMessages(prev => [e, ...prev]);
     }
-
-
-    const sendMessage = () => {
-        let msg = message;
-        props.signal.sendMessage({ type: "chat", payload: msg });
-        // @ts-ignore
-        setMessages(prev => [{message: msg}, ...prev]);
-        setMessage("");
-    }
-
-
 
     useEffect(() => {
-            console.log("registering...");
-            props.signal.addMessageHandler(onMessageReceived);
-
-            props.signal.joinRoom(props.roomCode).then((e) => console.log(e));
-
-            return () => props.signal.clearMessageHandlers(); //Should remove handler in return
+        console.log("registering...");
+        props.signal.addMessageHandler((payload: MessagePayload) => {
+            switch (payload.type) {
+                case "chat":
+                    onMessageReceived(payload.payload);
+                    break;
+                default:
+                    break;
+            }
+        });
+        props.signal.joinRoom(props.roomCode).then((e) => console.log(e));
+        return () => props.signal.clearMessageHandlers(); //Should remove handler in return
         }
         , [props.signal, props.name]);
 
@@ -60,7 +81,7 @@ const Lobby = (props: { name: string, roomCode: string, signal: SignallingChanne
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: any) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{props.name}</b>: {x.message}</p>
+                        <p className={"chat-message"}><b>{x.user}</b>: {x.message}</p>
                     </div>)}
                 </div>
                 <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}

@@ -168,7 +168,6 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"} style={{display: memberListShown}}>
                     <p>{props.name}</p>
-                    <p>Freddie</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: any) => <div className={"messageWrapper"}>

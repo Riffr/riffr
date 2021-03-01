@@ -203,7 +203,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     //Todo: Turn recorder into inner class, make recording dependent on the update function,
     //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
     return (
-        <div style={{position: "relative"}}>
+        <div style={{position: "relative", gridRow: "1 /span 2", gridColumn: "2"}}>
             <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength}/>
             <div id={"controls"}>
                 <div id={"audio"}>

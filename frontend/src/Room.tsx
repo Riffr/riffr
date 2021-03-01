@@ -12,6 +12,8 @@ import {Message, User} from "@riffr/backend";
 import {sign} from "crypto";
 import { ChatClient } from './connections/ChatClient';
 
+import { Room as CRoom } from './connections/Room';
+
 
 // var peer : Peer | undefined; 
 
@@ -74,13 +76,22 @@ import { ChatClient } from './connections/ChatClient';
 const Room = (props: { roomCode: string, name: string, socket: Socket, create: boolean, chatClient?: ChatClient }) => {
     
     let [message, setMessage] = useState("");
-    let [messages, setMessages] = useState([]);
+    let [messages, setMessages] = useState<Array<Message>>([]);
+
+    let [members, setMembers] = useState<Array<User>>([]);
     let [memberListShown, setListShown] = useState("grid");
+    
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
     let [audio, setAudio] = useState(<div/>);
 
     const user: User = { id: props.name };
+
+    const onMessageReceived = (message: Message) => {
+        // I promise I'll be good later...
+        // @ts-ignore
+        setMessages(prev => [message, ...prev]);
+    }
 
 
     const sendMessage = useCallback(() => {
@@ -90,17 +101,13 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
         if (!props.chatClient) return;
         props.chatClient.send(message);
 
-
+        // chatClient.send(msg);
         // @ts-ignore
-        setMessages(prev => [{message: msg}, ...prev]);
+        setMessages(prev => [...prev, {from: user, content: msg} as Message]);
         setMessage("");
-    }, [message, props.chatClient]);
 
-    const onMessageReceived = (e: any) => {
-        // I promise I'll be good later...
-        // @ts-ignore
-        setMessages(prev => [{message: e}, ...prev]);
-    }
+
+    }, [props.socket, message, props.chatClient]);
 
 
     useEffect(() => {
@@ -112,11 +119,23 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
             setAudio(<Audio signal={channel} />);
         }) ();
         
+        setMembers(props.chatClient?.room.members || []);
+
+        // props.chatClient?.room.on("membersUpdated", (room: CRoom<User>) => {
+        //     setMembers(room.members);
+        // })
+
         props.chatClient?.on("message", (_, message: Message) => {
             onMessageReceived(message);
         });
 
-    }, [props.socket, props.roomCode]);
+        return () => { 
+            props.chatClient?.removeAllListeners("message"); 
+            props.chatClient?.room.removeAllListeners("membersUpdated"); 
+            props.chatClient?.leave();
+        }; //Should remove handler in return
+
+    }, []);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
@@ -166,13 +185,12 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
             <div id={"chat"} style={{display: chatDisplay}}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"} style={{display: memberListShown}}>
-                    <p>{props.name}</p>
-                    <p>Freddie</p>
+                    <p><b>Members </b>{members.map(user => user.id).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
-                    {messages.map((x: any) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{props.name}</b>: {x.message}</p>
-                    </div>)}
+                    {messages.map((x: Message) => <div className={"messageWrapper"}>
+                            <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
+                        </div>)}
                 </div>
                 <div>
                     <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}

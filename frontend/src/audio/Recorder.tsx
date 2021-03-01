@@ -60,7 +60,9 @@ const Recorder = (props: RecorderProps) => {
     const stopRecording = () => {
         if (props.recorder !== null && props.recorder.state !== 'inactive') {
             console.log("Stop recording");
-            setRecording(false);
+            if (muted) {
+                setRecording(false);
+            }
             props.recorder.stop();
             stopOffset.current = props.audioCtx.currentTime % props.loopLength;
         }

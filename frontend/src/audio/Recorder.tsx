@@ -24,17 +24,16 @@ const Recorder = (props: RecorderProps) => {
     let chunks: BlobPart[] = [];
     const startOffset = useRef(0);
     const stopOffset = useRef(0);
-    const [recordNext, setRecordNext] = useState(false);
+    const [muted, setMuted] = useState(true)
     const [recording, setRecording] = useState(false);
 
     const checkRecord = () => {
         // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime)
 
         if (props.loopLength - props.audioCtx.currentTime % props.loopLength <= props.loopLength / (10 * 4)) {
-            console.log("Checking recordNext")
-            if (recordNext) {
+            console.log("Checking muted")
+            if (!muted) {
                 console.log("We should!")
-                setRecordNext(false);
                 startRecording();
                 console.log("We're recording!")
                 return false;
@@ -94,15 +93,21 @@ const Recorder = (props: RecorderProps) => {
         return () => {
             clearInterval(i1);
         }
-    }, [props.loopLength, props.recorder, props.permission, recordNext])
+    }, [props.loopLength, props.recorder, props.permission, muted])
 
 
+    const getMuteStatus = () => {
+        return muted ? "Unmute" : "Mute"
+    }
+    const getRecordingStatus = () => {
+        return recording ? "Recording" : "Not recording"
+    }
+    // TODO stop recording immediately when pressing "Mute"
     return (
         <div>
-            <label hidden={!recording}>Recording</label>
-            <label hidden={recording}>Not recording</label>
-            <button className={"squircle-button light-blue"} disabled={!props.permission || recordNext}
-                onClick={() => setRecordNext(true)}>Record next loop
+            <label> {getRecordingStatus()}</label>
+            <button className={"squircle-button light-blue"} disabled={!props.permission}
+                onClick={() => setMuted(!muted)}>{getMuteStatus()}
             </button>
         </div>
     );

@@ -130,12 +130,16 @@ const handleAnswer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
 
 
 const handleInit = inRoom((room: Room<string>) => 
-    (ctx: Context, payload: InitPayload, callback: any) => {
+    (ctx: Context, payload: InitPayload) => {
+        console.log("Handling init");
         const { meshId } = payload;
 
         // If meshId is registered, ignore
-        if (Array.from(room.members.values()).filter(x => x == meshId)) 
-            callback(error(`Mesh with id ${ meshId } already initialized in room ${ room.id }`));
+        if (Array.from(room.members.values()).filter(x => x == meshId).length != 0) 
+            return;
+            // callback(error(`Mesh with id ${ meshId } already initialized in room ${ room.id }`));
+
+        console.log(`[Init] Initializing mesh with id ${ meshId }`);
 
         // initialize mesh state
         Store.of<SignalState>(ctx).mesh = { 
@@ -146,17 +150,26 @@ const handleInit = inRoom((room: Room<string>) =>
         };
 
 
+        console.log(`[Init] Requesting connections`)
+
         // now request connections
-        Array.from(room.members.values()).forEach(socketId => {
+        Array.from(room.members.keys()).forEach(socketId => {
             // Ignore current context. Requesting a connection from oneself is nonsensical
             if (socketId == ctx.socket.id) return;
 
+            console.log(`[Init] Requesting connection from socket ${ JSON.stringify(socketId) }`);
+
             const handle = hasMesh((mesh: Mesh) => (rctx: Context) => {
+                console.log(`Mesh: ${ JSON.stringify(mesh) }`);
+
                 const peer = mesh.peerBuffer.pop();
+                console.log(`Peer: ${ JSON.stringify(peer) }`);
                 if (!peer) {
+                    console.log(`Pushing to request buffer...`);
                     // No available peers yet, so we buffer the request
                     mesh.peerRequestBuffer.push(ctx.socket.id);
                 } else {
+                    console.log(`Accepting peer...`)
                     acceptPeer(rctx, peer, ctx.socket.id);
                 }
                 rctx.socket.emit(SignalEvent.Signal, { type: MeshMessageType.RequestPeer } as MeshMessagePayload);
@@ -184,6 +197,7 @@ const handleClose = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
 const signalling = room<User>("/signalling", SignalState);
 
 signalling.on(SignalEvent.Signal, (ctx: Context, payload: SignalPayload) => {
+    console.log(`Signal Payload: ${ JSON.stringify(payload.type) }`);
     switch (payload.type) {
         case PeerSignalPayloadType.Answer:
             handleAnswer(ctx, payload);

@@ -1,9 +1,9 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import Recorder, {RecordType} from './Recorder';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import Recorder, { RecordType } from './Recorder';
 import Clip from './Clip';
 import Canvas from "../Canvas";
-import {Peer, SignalPayload} from "../connections/Peer";
-import {SignallingChannel} from '../connections/SignallingChannel';
+import { Peer, SignalPayload } from "../connections/Peer";
+import { SignallingChannel } from '../connections/SignallingChannel';
 
 
 // TODO. IMPORT TYPES, DONT DUPE THEM
@@ -27,10 +27,11 @@ export interface DecodedRecord {
 
 declare var MediaRecorder: any;
 
+let AudioContext: any = window.AudioContext // Default
+    || (window as any).webkitAudioContext // Safari
+let audioContext = new AudioContext();
+
 const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
-    let AudioContext: any = window.AudioContext // Default
-        || (window as any).webkitAudioContext // Safari
-    let [audioContext, _] = useState<AudioContext>(new AudioContext());
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
@@ -41,7 +42,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     let barCount = useRef(1);
 
     const init = () => {
-        navigator.mediaDevices.getUserMedia({audio: true, video: false})
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
             .then(onRecorderSuccess)
             .catch((err) => {
                 console.log('The following error occured: ' + err);
@@ -53,7 +54,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
 
 
     const initPeer = useCallback(() => {
-        let p = new Peer({initiator: props.initiator});
+        let p = new Peer({ initiator: props.initiator });
 
         p.on("error", (e) => {
             console.log(`Error: ${JSON.stringify(e)}`);
@@ -96,7 +97,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
             console.log(`[AUDIO] Recieved ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
                 // TODO confirm that p.id is the actual sender ID
-                addToPlaylist({blob: new Blob([data]), startOffset: 0, endOffset: 0} as RecordType, p.id);
+                addToPlaylist({ blob: new Blob([data]), startOffset: 0, endOffset: 0 } as RecordType, p.id);
             }
         });
 
@@ -115,7 +116,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         // WTF CHROME DOESN'T SUPPORT BLOBS. NOT IMPLEMENTED ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then(buffer => {
+        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
             sounds.set("self", [])
             let decodedRecord: DecodedRecord = {
                 buffer: buffer,
@@ -134,7 +135,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     const addToPlaylist = (record: RecordType, peerID: string) => {
         console.log("Received sound from ", peerID)
 
-        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then(buffer => {
+        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
             if (!(peerID in sounds)) {
                 sounds.set(peerID, [])
             }
@@ -159,7 +160,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         let sourceNode = audioContext.createBufferSource();
         sourceNode.buffer = record.buffer;
         sourceNode.connect(audioContext.destination);
-        sourceNode.start(loopLength*barCount.current, record.startOffset, loopLength);
+        sourceNode.start(loopLength * barCount.current, record.startOffset, loopLength);
     }
 
     const onHalfSectionStart = () => {
@@ -204,8 +205,8 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     //Todo: Turn recorder into inner class, make recording dependent on the update function,
     //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
     return (
-        <div style={{position: "relative", gridRow: "1 /span 2", gridColumn: "2"}}>
-            <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength}/>
+        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2" }}>
+            <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength} />
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
@@ -216,7 +217,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
                         permission={permission}
                     />
                     <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant
-                        permission
+                    permission
                     </button>
                     <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
                     <button hidden className={"squircle-button light-blue"} onClick={() => {

@@ -1,5 +1,5 @@
-import {useEffect, useRef, useState} from 'react';
-import {SignallingChannel} from "../connections/SignallingChannel";
+import { useEffect, useRef, useState } from 'react';
+import { SignallingChannel } from "../connections/SignallingChannel";
 
 type BlobEvent = { data: Blob; }
 
@@ -28,9 +28,9 @@ const Recorder = (props: RecorderProps) => {
     const [recording, setRecording] = useState(false);
 
     const checkRecord = () => {
-        //console.log("Checking if we should start recording at time ", props.audioCtx.currentTime)
+        // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime)
 
-        if (props.loopLength - props.audioCtx.currentTime % props.loopLength <= props.loopLength / (10 * 2)) {
+        if (props.loopLength - props.audioCtx.currentTime % props.loopLength <= props.loopLength / (10 * 4)) {
             console.log("Checking recordNext")
             if (recordNext) {
                 console.log("We should!")
@@ -69,7 +69,7 @@ const Recorder = (props: RecorderProps) => {
 
     const saveRecording = () => {
         const clip: RecordType = {
-            blob: new Blob(chunks, {'type': 'audio/ogg; codecs=opus'}),
+            blob: new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' }),
             startOffset: startOffset.current,
             endOffset: stopOffset.current
         };
@@ -99,10 +99,10 @@ const Recorder = (props: RecorderProps) => {
 
     return (
         <div>
-            <label hidden = {!recording}>Recording</label>
-            <label hidden = {recording}>Not recording</label>
+            <label hidden={!recording}>Recording</label>
+            <label hidden={recording}>Not recording</label>
             <button className={"squircle-button light-blue"} disabled={!props.permission || recordNext}
-                    onClick={() => setRecordNext(true)}>Record next loop
+                onClick={() => setRecordNext(true)}>Record next loop
             </button>
         </div>
     );

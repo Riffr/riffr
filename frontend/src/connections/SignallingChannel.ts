@@ -24,15 +24,15 @@ class SignallingChannel extends (EventEmitter as SignallingChannelEmitter) {
     public room: Room<User>;
 
     static async createRoom(socket: Socket, roomId: string, user: User) {
-        const chatSocket = new Socket(`${socket.uri}/signalling`);
-        const room = await Room.createRoom<User>(chatSocket, roomId, user);
-        return new SignallingChannel(socket, user, room);
+        const signalSocket = new Socket(`${socket.uri}/signalling`);
+        const room = await Room.createRoom<User>(signalSocket, roomId, user);
+        return new SignallingChannel(signalSocket, user, room);
     }
 
     static async joinRoom(socket: Socket, roomId: string, user: User) {
-        const chatSocket = new Socket(`${socket.uri}/signalling`);
-        const room = await Room.joinRoom<User>(chatSocket, roomId, user);
-        return new SignallingChannel(socket, user, room);
+        const signalSocket = new Socket(`${socket.uri}/signalling`);
+        const room = await Room.joinRoom<User>(signalSocket, roomId, user);
+        return new SignallingChannel(signalSocket, user, room);
     }
 
     private constructor(socket: Socket, user: User, room: Room<User>) {

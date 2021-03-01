@@ -20,7 +20,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
     const onMessageReceived = (message: Message) => {
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev => [{message: e}, ...prev]);
+        setMessages(prev => [message, ...prev]);
     }
 
 
@@ -33,7 +33,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
 
         // chatClient.send(msg);
         // @ts-ignore
-        setMessages(prev => [...prev, {from: props.name, content: msg} as Message]);
+        setMessages(prev => [...prev, {from: user, content: msg} as Message]);
         setMessage("");
 
 
@@ -61,12 +61,13 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             props.setChatClient(client);
             setMembers(client.room.members || []);
 
-            return () => { 
-                client.removeAllListeners("message"); 
-                client.room.removeAllListeners("membersUpdated"); 
-                client.leave();
-            }; //Should remove handler in return
         }) ();
+
+        return () => { 
+            props.chatClient?.removeAllListeners("message"); 
+            props.chatClient?.room.removeAllListeners("membersUpdated"); 
+            props.chatClient?.leave();
+        }; //Should remove handler in return
         }
         , []);
 
@@ -88,11 +89,11 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             <CopyField id={"copy-field"} value={props.roomCode}/>
             <div>
                 <div id={"member-list"}>
-                    <p><b>Members</b>{members.map(user => user.id).join(", ")}</p>
+                    <p><b>Members </b>{members.map(user => user.id).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{x.from}</b>: {x.content}</p>
+                        <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
                     </div>)}
                 </div>
                 <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}

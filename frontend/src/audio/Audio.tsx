@@ -3,9 +3,11 @@ import Recorder, {RecordType} from './Recorder';
 import Clip from './Clip';
 
 // import { SignalPayload } from "@riffr/backend/modules/Mesh";
-import { Mesh } from "../connections/Mesh";
+import { Mesh, MeshedPeer } from "../connections/Mesh";
 import { SignallingChannel } from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
+
+import { Mesh as M } from '@riffr/backend';
 
 declare var MediaRecorder: any;
 
@@ -34,46 +36,46 @@ const Audio = (props: {signal: SignallingChannel}) => {
         }
     }
 
-    const initPeer = useCallback(() => {
-        // let m = new Mesh();
-        // console.log(`Initializing mesh with id: ${ m.id }`);
+    const initMesh = useCallback(() => {
+        let m = new Mesh();
+        console.log(`Initializing mesh with id: ${ m.id }`);
 
-        // m.on("error", (_, e: Error) => {
-        //     console.log(`Error: ${ JSON.stringify(e) }`);
-        // });
+        m.on("error", (_, e: Error) => {
+            console.log(`Error: ${ JSON.stringify(e) }`);
+        });
 
-        // m.on("signal", (_, payload: SignalPayload) => {
-        //     signal.send(payload);
-        // });
+        m.on("signal", (payload: M.SignalPayload) => {
+            props.signal.signal(payload);
+        });
 
-        // signal.on("signal", (payload: MeshPayload) => {
-        //     m.dispatch(payload);
-        // });
+        props.signal.on("signal", (_, payload: M.MeshPayload) => {
+            m.dispatch(payload);
+        });
         
-        // m.on("connection", (peer: MeshedPeer, state: RTCIceConnectionState) => {
-        //     if (state == "connected") {
-        //         console.log(`Mesh: ${ peer.mesh } connected via WebRTC :)`);
-        //     }
-        // });
+        m.on("connection", (peer: MeshedPeer, state: RTCIceConnectionState) => {
+            if (state == "connected") {
+                console.log(`Mesh: ${ peer.meshId } connected via WebRTC :)`);
+            }
+        });
     
-        // m.on("channelOpen", (_, channel: RTCDataChannel) => {
-        //     console.log(`connected with ${ channel.label } and ready to send data!`);
-        //     m.send("data", `Hello World from ${ m.id }`);
-        // });
+        m.on("channelOpen", (_, channel: RTCDataChannel) => {
+            console.log(`connected with ${ channel.label } and ready to send data!`);
+            m.send("data", `Hello World from ${ m.id }`);
+        });
 
     
-        // m.addDataChannel("audio");
-        // m.on("channelData", (_, channel, data) => {
-        //     console.log(`[AUDIO] Recieved ${ data } from channel ${ channel.label }`);
-        //     if (channel.label == "audio"){
-        //         console.log(data);
-        //         addToPlaylist({blob: new Blob([data]), start: 0, end: 0} as RecordType);
-        //         //todo: Take blob, run addToPlayList on it, done!
-        //     }
-        // });
+        m.addDataChannel("audio");
+        m.on("channelData", (_, channel, data) => {
+            console.log(`[AUDIO] Recieved ${ data } from channel ${ channel.label }`);
+            if (channel.label == "audio"){
+                console.log(data);
+                addToPlaylist({blob: new Blob([data]), start: 0, end: 0} as RecordType);
+                //todo: Take blob, run addToPlayList on it, done!
+            }
+        });
 
-        // setMesh(m);
-        // return () => props.signal.clearMessageHandlers();
+        setMesh(m);
+        return () => props.signal.removeAllListeners("signal");
     }, [props.signal]);
 
 
@@ -157,7 +159,7 @@ const Audio = (props: {signal: SignallingChannel}) => {
                     <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant
                         permission
                     </button>
-                    <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
+                    <button className={"squircle-button light-blue"} onClick={initMesh}>Init Mesh</button>
                     <button className={"squircle-button light-blue"} onClick={() => {mesh?.send("data", "test")}}>Send Dummy Audio</button>
                 </div>
 

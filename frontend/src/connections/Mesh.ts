@@ -42,7 +42,7 @@ interface Config extends PeerConfig {
 class Mesh extends (EventEmitter as MeshEmitter) {
 
     // 1-to-many relationship with peerIds
-    private id: string;
+    public id: string;
     private peers : Map<string, MeshedPeer> = new Map();
 
     private maxPeers : number;
@@ -171,4 +171,5 @@ class Mesh extends (EventEmitter as MeshEmitter) {
 
 export {
     Mesh,
+    MeshedPeer,
 };

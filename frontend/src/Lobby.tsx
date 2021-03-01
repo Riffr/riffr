@@ -18,6 +18,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
     const user: User = { id: props.name };
 
     const onMessageReceived = (message: Message) => {
+        console.log(messages);
         // I promise I'll be good later...
         // @ts-ignore
         setMessages(prev => [message, ...prev]);

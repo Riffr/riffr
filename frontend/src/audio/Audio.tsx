@@ -170,7 +170,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
         barCount.current += 1
     }
 
-
     const update = () => {
         setTime(audioContext.currentTime);
     }

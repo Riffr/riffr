@@ -1,4 +1,4 @@
-import React, {RefObject, useEffect, useRef, useState} from 'react';
+import React, {RefObject, useCallback, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
@@ -8,8 +8,9 @@ import Audio from "./audio/Audio";
 import Canvas from "./Canvas";
 import {Socket} from './connections/Socket';
 import {SignallingChannel} from "./connections/SignallingChannel";
-import {User} from "@riffr/backend";
+import {Message, User} from "@riffr/backend";
 import {sign} from "crypto";
+import { ChatClient } from './connections/ChatClient';
 
 
 // var peer : Peer | undefined; 
@@ -70,7 +71,8 @@ import {sign} from "crypto";
 // };
 
 
-const Room = (props: { roomCode: string, name: string, user: User, socket: Socket, create: boolean }) => {
+const Room = (props: { roomCode: string, name: string, socket: Socket, create: boolean, chatClient?: ChatClient }) => {
+    
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
     let [memberListShown, setListShown] = useState("grid");
@@ -78,16 +80,21 @@ const Room = (props: { roomCode: string, name: string, user: User, socket: Socke
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
     let [audio, setAudio] = useState(<div/>);
 
-    const sendMessage = () => {
+    const user: User = { id: props.name };
+
+
+    const sendMessage = useCallback(() => {
         let msg = message;
-        // props.socket.signal({
-        //     type: "chat",
-        //     payload: msg
-        // });
+
+        // Add some UI for pending messages?
+        if (!props.chatClient) return;
+        props.chatClient.send(message);
+
+
         // @ts-ignore
         setMessages(prev => [{message: msg}, ...prev]);
         setMessage("");
-    }
+    }, [message, props.chatClient]);
 
     const onMessageReceived = (e: any) => {
         // I promise I'll be good later...
@@ -97,29 +104,19 @@ const Room = (props: { roomCode: string, name: string, user: User, socket: Socke
 
 
     useEffect(() => {
-        // console.log("registering...");
-        // props.socket.addMessageHandler((payload: MessagePayload) => {
-        //     console.log(`Payload: ${ JSON.stringify(payload) }`);
-        //     switch (payload.type) {
-        //         case "chat":
-        //             onMessageReceived(payload.payload);
-        //             break;
-        //         default:
-        //             break;
-        //     }
-        // });
-        // props.socket.joinRoom(props.roomCode, props.name).then((e) => console.log(e));
-        // return () => props.socket.clearMessageHandlers(); //Should remove handler in return
-        if (props.create) {
-            SignallingChannel.createRoom(props.socket, props.roomCode, props.user).then((res: SignallingChannel) => {
-                setAudio(<Audio signal={res}/>);
-            });
-        } else {
-            SignallingChannel.joinRoom(props.socket, props.roomCode, props.user).then((res: SignallingChannel) => {
-                setAudio(<Audio signal={res}/>);
-            });
-        }
-    }, [props.user]);
+        (async () => {
+            const channel = await (props.create 
+                ? SignallingChannel.createRoom(props.socket, props.roomCode, user)
+                : SignallingChannel.joinRoom(props.socket, props.roomCode, user));
+            
+            setAudio(<Audio signal={channel} />);
+        }) ();
+        
+        props.chatClient?.on("message", (_, message: Message) => {
+            onMessageReceived(message);
+        });
+
+    }, [props.socket, props.roomCode]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {

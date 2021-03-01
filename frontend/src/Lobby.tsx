@@ -6,24 +6,16 @@ import './css/General.css'
 import { Socket } from './connections/Socket';
 
 import { ChatEvent, User, Message } from '@riffr/backend';
+import { ChatClient } from './connections/ChatClient';
+import { Room } from './connections/Room';
 
-class Player implements User {
-    id: string;
-    name: string;
-
-    constructor(id: string, name: string) {
-        this.id = id;
-        this.name = name;
-    }
-
-}
-
-const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: boolean, setUser: (user: User) => void }) => {
+const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: boolean, chatClient?: ChatClient, setChatClient: (chat?: ChatClient) => void }) => {
     
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
-    let [members, setMembers] = useState<Array<string>>([]);
-    let [user] = useState<User>(new Player(props.name, props.name));
+    let [members, setMembers] = useState<Array<User>>([]);
+    
+    const user: User = { id: props.name };
 
     const onMessageReceived = (message: Message) => {
         // I promise I'll be good later...
@@ -34,8 +26,10 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
 
     const sendMessage = useCallback(() => {
         let msg = message;
-        // if (!chatClient) return;
-        // // Add some UI for pending messages?
+
+        // Add some UI for pending messages?
+        if (!props.chatClient) return;
+        props.chatClient.send(message);
 
         // chatClient.send(msg);
         // @ts-ignore
@@ -43,35 +37,38 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
         setMessage("");
 
 
-    }, [props.socket, message]);
+    }, [props.socket, message, props.chatClient]);
 
 
 
     useEffect(() => {
-        props.setUser(user);
         document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
-            // (async () => {
-                    
-            // //     console.log("registering...");
+        (async () => {
+            console.log("registering...");
+            const client = await (props.create 
+                ? ChatClient.createRoom(props.socket, props.roomCode, user)
+                : ChatClient.joinRoom(props.socket, props.roomCode, user));
 
-            // //     const chatClient = await (props.create 
-            // //         ? ChatClient.createRoom(props.socket, props.roomCode, { id: props.name })
-            // //         : ChatClient.createRoom(props.socket, props.roomCode, { id: props.name }));
-                
-            // //     setChatClient(chatClient);
-            // //     setMembers(chatClient.room.members);
-            // //     chatClient.room.on("membersUpdated", (room: Room<User>) => {
-            // //         setMembers(room.members);
-            // //     })
+ 
+            client.room.on("membersUpdated", (room: Room<User>) => {
+                setMembers(room.members);
+            })
 
-            // //     chatClient.on("message", (_, message: Message) => {
-            // //         onMessageReceived(message);
-            // //     });
+            client.on("message", (_, message: Message) => {
+                onMessageReceived(message);
+            });
 
-            // //     return () => { chatClient.removeAllListeners("message"); chatClient.room.removeAllListeners("membersUpdated"); }; //Should remove handler in return
-            // // }) ();
+            props.setChatClient(client);
+            setMembers(client.room.members || []);
+
+            return () => { 
+                client.removeAllListeners("message"); 
+                client.room.removeAllListeners("membersUpdated"); 
+                client.leave();
+            }; //Should remove handler in return
+        }) ();
         }
-        , [props.socket, props.name, props.roomCode, props.create, messages]);
+        , []);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
@@ -91,7 +88,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             <CopyField id={"copy-field"} value={props.roomCode}/>
             <div>
                 <div id={"member-list"}>
-                    <p><b>Members</b>{members.join(", ")}</p>
+                    <p><b>Members</b>{members.map(user => user.id).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>
@@ -108,6 +105,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             <Link to={`/room/${props.roomCode}/${props.name}`}>
                 <button>
                     Start
+                    onClick={() => console.log("hello")}
                 </button>
             </Link>
         </div>

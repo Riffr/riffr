@@ -23,7 +23,7 @@
     grid-column: 3;
     grid-row: 1 /span 2;
     flex-direction: column;
-    overflow: hidden;
+    overflow: auto;
 }
 
 #chat #member-list {
@@ -84,6 +84,7 @@
     background: #fff;
     border-radius: 15px;
     border: 3px solid #444;
+    grid-area: 2/2;
     margin-top: 6px;
 }
 

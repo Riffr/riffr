@@ -2,66 +2,77 @@ import React, {RefObject, useCallback, useEffect, useRef, useState} from 'react'
 import {Link} from 'react-router-dom';
 import './css/Lobby.css';
 import './css/General.css'
-import {SignallingChannel} from "./connections/SignallingChannel";
 
-import { Peer, SignalPayload } from "./connections/Peer";
+import { Socket } from './connections/Socket';
 
-type MessagePayload = ChatPayload | SignallingPayload;
+import { ChatEvent, User, Message } from '@riffr/backend';
+import { ChatClient } from './connections/ChatClient';
+import { Room } from './connections/Room';
 
-interface ChatPayload {
-    type: "chat",
-    payload: any
-}
-interface SignallingPayload {
-    type: "signal",
-    payload: SignalPayload,
-}
-
-
-const Lobby = (props: { name: string, roomCode: string, signal: SignallingChannel }) => {
+const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: boolean, chatClient?: ChatClient, setChatClient: (chat?: ChatClient) => void }) => {
+    
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState([]);
+    let [members, setMembers] = useState<Array<User>>([]);
+    
+    const user: User = { id: props.name };
 
-    const sendMessage = () => {
-        let msg = message;
-        props.signal.sendMessage({
-            type: "chat",
-            payload: {
-                user: props.name,
-                message: msg
-            }
-        });
-        // @ts-ignore
-        setMessages(prev => [{message: msg, user: props.name}, ...prev]);
-        setMessage("");
-    }
-
-    const onMessageReceived = (e: any) => {
+    const onMessageReceived = (message: Message) => {
+        console.log(messages);
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev => [e, ...prev]);
+        setMessages(prev => [...prev, message]);
     }
 
+    const sendMessage = useCallback(() => {
+        let msg = message;
+
+        // Add some UI for pending messages?
+        if (!props.chatClient) return;
+        props.chatClient.send(message);
+
+        // @ts-ignore
+        setMessages(prev => [...prev, {from: user, content: msg} as Message]);
+        setMessage("");
+
+
+    }, [props.socket, message, props.chatClient]);
+
     useEffect(() => {
-        console.log("registering...");
-        props.signal.addMessageHandler((payload: MessagePayload) => {
-            switch (payload.type) {
-                case "chat":
-                    onMessageReceived(payload.payload);
-                    break;
-                default:
-                    break;
-            }
-        });
-        props.signal.joinRoom(props.roomCode).then((e) => console.log(e));
-        return () => props.signal.clearMessageHandlers(); //Should remove handler in return
-        }
-        , [props.signal, props.name]);
+        (async () => {
+            console.log("registering...");
+            const client = await (props.create 
+                ? ChatClient.createRoom(props.socket, props.roomCode, user)
+                : ChatClient.joinRoom(props.socket, props.roomCode, user));
+
+ 
+            client.room.on("membersUpdated", (room: Room<User>) => {
+                setMembers(room.members);
+            })
+
+            client.on("message", (_, message: Message) => {
+                onMessageReceived(message);
+            });
+
+            props.setChatClient(client);
+            setMembers(client.room.members || []);
+
+        }) ();
+
+        return () => { 
+            props.chatClient?.removeAllListeners("message"); 
+            props.chatClient?.room.removeAllListeners("membersUpdated"); 
+            props.chatClient?.leave();
+        };
+    }, []);
+
+    useEffect(() => {
+        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
+    }, [messages]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
             sendMessage();
-            document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
         }
     }
 
@@ -77,11 +88,11 @@ const Lobby = (props: { name: string, roomCode: string, signal: SignallingChanne
             <CopyField id={"copy-field"} value={props.roomCode}/>
             <div>
                 <div id={"member-list"}>
-                    <p><b>Members</b>: {props.name}, Freddie</p>
+                    <p><b>Members </b>{members.map(user => user.id).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
-                    {messages.map((x: any) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{x.user}</b>: {x.message}</p>
+                    {messages.map((x: Message) => <div className={"messageWrapper"}>
+                        <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
                     </div>)}
                 </div>
                 <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
@@ -98,7 +109,7 @@ const Lobby = (props: { name: string, roomCode: string, signal: SignallingChanne
                 </button>
             </Link>
         </div>
-    )
+    );
 }
 
 const CopyField = (props: { id: string, value: string }) => {

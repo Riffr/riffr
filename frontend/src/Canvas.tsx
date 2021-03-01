@@ -5,7 +5,6 @@ interface CanvasProps {
     width: number;
     height: number;
     time: number;
-    // deltaTime: number;
     loopLength: number;
 }
 

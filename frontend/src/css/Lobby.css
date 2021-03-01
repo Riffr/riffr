@@ -72,6 +72,18 @@
     height: 47px
 }
 
+#start-button {
+    width: 150px;
+    /*font-size: 150%;*/
+    font-weight: bolder;
+    margin-left: calc(50% - 75px);
+    margin-bottom: 20px;
+}
+
+#start-button>i {
+    padding-left: 12px;
+}
+
 @media only screen and (min-width: 600px) {
     #lobby-wrapper {
         position: absolute;

@@ -21,9 +21,8 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
         console.log(messages);
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev => [message, ...prev]);
+        setMessages(prev => [...prev, message]);
     }
-
 
     const sendMessage = useCallback(() => {
         let msg = message;
@@ -32,7 +31,6 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
         if (!props.chatClient) return;
         props.chatClient.send(message);
 
-        // chatClient.send(msg);
         // @ts-ignore
         setMessages(prev => [...prev, {from: user, content: msg} as Message]);
         setMessage("");
@@ -40,10 +38,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
 
     }, [props.socket, message, props.chatClient]);
 
-
-
     useEffect(() => {
-        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
         (async () => {
             console.log("registering...");
             const client = await (props.create 
@@ -68,9 +63,12 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             props.chatClient?.removeAllListeners("message"); 
             props.chatClient?.room.removeAllListeners("membersUpdated"); 
             props.chatClient?.leave();
-        }; //Should remove handler in return
-        }
-        , []);
+        };
+    }, []);
+
+    useEffect(() => {
+        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
+    }, [messages]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
@@ -105,13 +103,13 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
                 </button>
             </div>
             <Link to={`/room/${props.roomCode}/${props.name}`}>
-                <button>
+                <button id={"start-button"} className={"squircle-button green"}>
                     Start
-                    onClick={() => console.log("hello")}
+                    <i className={"fa fa-play"} />
                 </button>
             </Link>
         </div>
-    )
+    );
 }
 
 const CopyField = (props: { id: string, value: string }) => {

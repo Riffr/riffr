@@ -3,15 +3,15 @@ import { room, RoomState } from './Room';
 
 interface User {
     id: string
-};
+}
 interface Message {
     from: User,
     content: string
-};
+}
 
 enum ChatEvent {
     Message = "chat/message",
-};
+}
 
 const chat = room<User>("/chat", RoomState<User>());
 chat.on(ChatEvent.Message, (ctx: Context, message: Message) => {

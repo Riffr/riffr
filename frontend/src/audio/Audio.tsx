@@ -30,7 +30,7 @@ declare var MediaRecorder: any;
 const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     let AudioContext: any = window.AudioContext // Default
         || (window as any).webkitAudioContext // Safari
-    let audioContext: AudioContext = new AudioContext();
+    let [audioContext, _] = useState<AudioContext>(new AudioContext());
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
@@ -50,6 +50,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
             audioContext.resume();
         }
     }
+
 
     const initPeer = useCallback(() => {
         let p = new Peer({initiator: props.initiator});
@@ -119,7 +120,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
             let decodedRecord: DecodedRecord = {
                 buffer: buffer,
                 startOffset: record.startOffset,
-                endOffset: 0 //Not currently using this
+                endOffset: 0  // Not currently using this
             }
             sounds.get("self")!.push(decodedRecord)
         }));
@@ -218,7 +219,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
                         permission
                     </button>
                     <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
-                    <button className={"squircle-button light-blue"} onClick={() => {
+                    <button hidden className={"squircle-button light-blue"} onClick={() => {
                         peer?.send("data", "test")
                     }}>Send Dummy Audio
                     </button>

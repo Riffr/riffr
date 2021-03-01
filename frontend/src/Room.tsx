@@ -10,82 +10,23 @@ import {Socket} from './connections/Socket';
 import {SignallingChannel} from "./connections/SignallingChannel";
 import {Message, User} from "@riffr/backend";
 import {sign} from "crypto";
-import { ChatClient } from './connections/ChatClient';
+import {ChatClient} from './connections/ChatClient';
 
-import { Room as CRoom } from './connections/Room';
-
-
-// var peer : Peer | undefined; 
-
-// const initPeer = (name: string, signal: SignallingChannel) => {
-
-//     let initiator = (name == "offerer");
-//     console.log(`[isOfferer] ${ initiator }`);
-//     let p = new Peer({
-//         id: name,
-//         initiator,
-//     });
-//     peer = p;
-//     console.log(p);
-
-//     p.on("error", (e) => {
-//         console.log(`Error: ${ e }`);
-//     });
-
-//     p.on("signal", (_, payload: SignalPayload) => {
-//         signal.sendMessage({
-//             type: "signal",
-//             payload
-//         });
-//     });
-
-//     if (initiator) {
-//         p.on("connection", (_, state: RTCIceConnectionState) => {
-//             if (state == "connected") {
-//                 console.log("Connected via WebRTC :)");
-//             }
-//         });
-
-//         p.on("channelOpen", (_, channel) => {
-//             console.log(`connected with ${ channel.label } and ready to send data!`);
-//             p.send(channel.label, `Hello World`);
-//         });
-
-//     }
-
-//     p.on("channelData", (_, channel, data) => {
-//         console.log(`Recieved ${ data } from channel ${ channel.label }`);
-//     });
-
-
-// };
-
-// const onSignal = (payload: SignalPayload) => {
-//     if (peer === undefined) {
-//         console.log("Peer is undefined :("); 
-//         console.log("peer:");
-//         console.log(peer);
-//         return;
-//     }
-
-//     console.log("[onSignal] Signalling payload received")
-//     peer.dispatch(payload);        
-// };
-
+import {Room as CRoom} from './connections/Room';
 
 const Room = (props: { roomCode: string, name: string, socket: Socket, create: boolean, chatClient?: ChatClient }) => {
-    
+
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState<Array<Message>>([]);
 
     let [members, setMembers] = useState<Array<User>>([]);
     let [memberListShown, setListShown] = useState("grid");
-    
+
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
     let [audio, setAudio] = useState(<div/>);
 
-    const user: User = { id: props.name };
+    const user: User = {id: props.name};
 
     const onMessageReceived = (message: Message) => {
         // I promise I'll be good later...
@@ -93,15 +34,12 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
         setMessages(prev => [message, ...prev]);
     }
 
-
     const sendMessage = useCallback(() => {
         let msg = message;
 
         // Add some UI for pending messages?
         if (!props.chatClient) return;
         props.chatClient.send(message);
-
-        // chatClient.send(msg);
         // @ts-ignore
         setMessages(prev => [...prev, {from: user, content: msg} as Message]);
         setMessage("");
@@ -109,31 +47,26 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
 
     }, [props.socket, message, props.chatClient]);
 
-
     useEffect(() => {
         (async () => {
-            const channel = await (props.create 
+            const channel = await (props.create
                 ? SignallingChannel.createRoom(props.socket, props.roomCode, user)
                 : SignallingChannel.joinRoom(props.socket, props.roomCode, user));
-            
-            setAudio(<Audio signal={channel} />);
-        }) ();
-        
-        setMembers(props.chatClient?.room.members || []);
 
-        // props.chatClient?.room.on("membersUpdated", (room: CRoom<User>) => {
-        //     setMembers(room.members);
-        // })
+            setAudio(<Audio signal={channel}/>);
+        })();
+
+        setMembers(props.chatClient?.room.members || []);
 
         props.chatClient?.on("message", (_, message: Message) => {
             onMessageReceived(message);
         });
 
-        return () => { 
-            props.chatClient?.removeAllListeners("message"); 
-            props.chatClient?.room.removeAllListeners("membersUpdated"); 
+        return () => {
+            props.chatClient?.removeAllListeners("message");
+            props.chatClient?.room.removeAllListeners("membersUpdated");
             props.chatClient?.leave();
-        }; //Should remove handler in return
+        };
 
     }, []);
 
@@ -189,8 +122,8 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>
-                            <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
-                        </div>)}
+                        <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
+                    </div>)}
                 </div>
                 <div>
                     <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}

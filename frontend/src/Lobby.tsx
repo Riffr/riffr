@@ -23,7 +23,6 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
         setMessages(prev => [message, ...prev]);
     }
 
-
     const sendMessage = useCallback(() => {
         let msg = message;
 
@@ -31,15 +30,12 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
         if (!props.chatClient) return;
         props.chatClient.send(message);
 
-        // chatClient.send(msg);
         // @ts-ignore
         setMessages(prev => [...prev, {from: user, content: msg} as Message]);
         setMessage("");
 
 
     }, [props.socket, message, props.chatClient]);
-
-
 
     useEffect(() => {
         document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
@@ -67,9 +63,8 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             props.chatClient?.removeAllListeners("message"); 
             props.chatClient?.room.removeAllListeners("membersUpdated"); 
             props.chatClient?.leave();
-        }; //Should remove handler in return
-        }
-        , []);
+        };
+    }, []);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
@@ -104,13 +99,10 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
                 </button>
             </div>
             <Link to={`/room/${props.roomCode}/${props.name}`}>
-                <button>
-                    Start
-                    onClick={() => console.log("hello")}
-                </button>
+                <button>Start</button>
             </Link>
         </div>
-    )
+    );
 }
 
 const CopyField = (props: { id: string, value: string }) => {

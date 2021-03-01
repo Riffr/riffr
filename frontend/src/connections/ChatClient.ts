@@ -46,7 +46,6 @@ class ChatClient extends (EventEmitter as ChatEmitter) {
     public send(message: string) {
         console.log("ChatClient send")
         console.log(this.socket);
-        this.socket.emit("chat/message", "test");
         this.socket.emit(ChatEvent.Message, { from: this.user, content: message } as Message);
     }
 

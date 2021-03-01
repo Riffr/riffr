@@ -8,22 +8,10 @@ import {Socket} from "./connections/Socket";
 import {User} from "@riffr/backend";
 import { ChatClient } from './connections/ChatClient';
 
-// class BasicUser implements User {
-//     id: string;
-
-//     constructor(id: string) {
-//         this.id = id;
-//     }
-// }
-
 const App = () => {
     const socket = new Socket("127.0.0.1:10000");
     const [create, setCreate] = useState(false);
-
     const [chatClient, setChatClient] = useState<ChatClient|undefined>(undefined);
-    
-    // let [chatClient, setChatClient] = useState<ChatClient|undefined>(undefined);
-
 
     return (
         <Router>

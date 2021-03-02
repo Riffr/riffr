@@ -17,12 +17,11 @@ export interface DecodedRecord {
 
 declare var MediaRecorder: any;
 
-const Audio = (props: { signal: SignallingChannel }) => {
-    let AudioContext: any = window.AudioContext // Default
-        || (window as any).webkitAudioContext // Safari
-    let audioContext: AudioContext = new AudioContext();
+let AudioContext: any = window.AudioContext // Default
+    || (window as any).webkitAudioContext // Safari
+let audioContext: AudioContext = new AudioContext();
 
-    
+const Audio = (props: { signal: SignallingChannel }) => {
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
@@ -45,10 +44,10 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     const initMesh = useCallback(() => {
         let m = new Mesh();
-        console.log(`Initializing mesh with id: ${ m.id }`);
+        console.log(`Initializing mesh with id: ${m.id}`);
 
         m.on("error", (_, e: Error) => {
-            console.log(`Error: ${ JSON.stringify(e) }`);
+            console.log(`Error: ${JSON.stringify(e)}`);
         });
 
         m.on("signal", (payload: M.SignalPayload) => {
@@ -58,25 +57,25 @@ const Audio = (props: { signal: SignallingChannel }) => {
         props.signal.on("signal", (_, payload: M.MeshPayload) => {
             m.dispatch(payload);
         });
-        
+
         m.on("connection", (peer: MeshedPeer, state: RTCIceConnectionState) => {
             if (state == "connected") {
-                console.log(`Mesh: ${ peer.meshId } connected via WebRTC :)`);
+                console.log(`Mesh: ${peer.meshId} connected via WebRTC :)`);
             }
         });
-    
+
         m.on("channelOpen", (_, channel: RTCDataChannel) => {
-            console.log(`connected with ${ channel.label } and ready to send data!`);
-            m.send("data", `Hello World from ${ m.id }`);
+            console.log(`connected with ${channel.label} and ready to send data!`);
+            m.send("data", `Hello World from ${m.id}`);
         });
 
-    
+
         m.addDataChannel("audio");
         m.on("channelData", (peer, channel, data) => {
-            console.log(`[AUDIO] Recieved ${ data } from channel ${ channel.label }`);
-            if (channel.label == "audio"){
+            console.log(`[AUDIO] Recieved ${data} from channel ${channel.label}`);
+            if (channel.label == "audio") {
                 console.log(data);
-                addToPlaylist({blob: new Blob([data]), startOffset: 0, endOffset: 0} as RecordType, peer.meshId!);
+                addToPlaylist({ blob: new Blob([data]), startOffset: 0, endOffset: 0 } as RecordType, peer.meshId!);
                 //todo: Take blob, run addToPlayList on it, done!
             }
         });
@@ -200,10 +199,10 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         permission={permission}
                     />
                     <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant
-                        permission
+                    permission
                     </button>
                     <button className={"squircle-button light-blue"} onClick={initMesh}>Init Mesh</button>
-                    <button className={"squircle-button light-blue"} onClick={() => {mesh?.send("data", "test")}}>Send Dummy Audio</button>
+                    <button className={"squircle-button light-blue"} onClick={() => { mesh?.send("data", "test") }}>Send Dummy Audio</button>
                 </div>
 
             </div>

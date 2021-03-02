@@ -1,108 +1,62 @@
+import {
+    User,
+    Mesh as M,
+    SignalEvent,
+} from '@riffr/backend';
 
+import EventEmitter from "events";
+import StrictEventEmitter from "strict-event-emitter-types";
+
+import { Room } from './Room';
 import { Socket } from './Socket';
 
-import { SignallingEvent } from '@riffr/backend';
 
-// enum SignallingEvent {
-//     CreateRoom              = "signalling:create_room",
-//     JoinRoom                = "signalling:join_room",
-//     RemoveClientFromRoom    = "signalling:remove_client_from_room",
-//     AddClientToRoom         = "signalling:add_client_to_room",
-//     LeaveRoom               = "signalling:leave_room",
-//     Message                 = "signalling:message"
-// } //Plz don't hate me Alistair
+interface SignallingChannelEvents {
+    signal: (channel: SignallingChannel, payload: M.MeshPayload) => void;
+}
+type SignallingChannelEmitter = {new (): StrictEventEmitter<EventEmitter, SignallingChannelEvents>};
 
-// TODO: Define a type for Message (and it's handlers)
-type onMessageHandler = (message: any) => void;
-class Room {
+class SignallingChannel extends (EventEmitter as SignallingChannelEmitter) {
 
-    // Factory methods
-    static async createRoom(socket: Socket, name: string) {
-        // Error handling? Promise may be rejected
-        await socket.request(SignallingEvent.CreateRoom, name);
-        return new Room(socket, name);
-    }
-
-    static async joinRoom(socket: Socket, name: string) {
-        await socket.request(SignallingEvent.JoinRoom, name);
-        return new Room(socket, name);
-    }
-
-    public name: string;
     private socket: Socket;
-    public members: Array<string> = new Array();
-    // Room class allows handling of room metadata
-    // e.g. Room members, etc
 
-    private constructor(socket: Socket, name: string) {
+    public user: User;
+    public room: Room<User>;
+
+    static async createRoom(socket: Socket, roomId: string, user: User) {
+        const signalSocket = new Socket(`${socket.uri}/signalling`);
+        const room = await Room.createRoom<User>(signalSocket, roomId, user);
+        return new SignallingChannel(signalSocket, user, room);
+    }
+
+    static async joinRoom(socket: Socket, roomId: string, user: User) {
+        const signalSocket = new Socket(`${socket.uri}/signalling`);
+        const room = await Room.joinRoom<User>(signalSocket, roomId, user);
+        return new SignallingChannel(signalSocket, user, room);
+    }
+
+    private constructor(socket: Socket, user: User, room: Room<User>) {
+        super();
+
         this.socket = socket;
-        this.name = name;
+        this.user = user;
+        this.room = room;
 
-        socket.on(SignallingEvent.AddClientToRoom, (id: string) => {
-            this.members.push(id);
-        });
+        this.socket.on(SignalEvent.Signal, (payload: M.MeshPayload) => {
+            this.emit("signal", this, payload);
+        })
+    }
 
-        socket.on(SignallingEvent.RemoveClientFromRoom, (id: string) => {
-            // Locking? This will lead to a race condition...
-            this.members = this.members.filter(x => x !== id);
-        });
-
+    public signal(payload: M.SignalPayload) {
+        this.socket.emit(SignalEvent.Signal, payload);
     }
 
     public async leave() {
-        await this.socket.request(SignallingEvent.LeaveRoom);
-    }
-
-    public sendMessage(message: any) {
-        this.socket.emit(SignallingEvent.Message, message);
-    }
-
-}
-
-class SignallingChannel {
-
-    private onMessageHandlers: Array<onMessageHandler> = new Array();
-    private socket: Socket;
-    private room?: Room = undefined;
-
-    constructor(uri: string) {
-        this.socket = new Socket(`${ uri }/signalling`);
-    
-        this.socket.on(SignallingEvent.Message, (message: any) => {
-            this.onMessageHandlers.forEach(handler => handler(message));
-        });
-    }
-
-    public async createRoom(name: string) {
-        if (this.room !== undefined) await this.room.leave();
-        this.room = await Room.createRoom(this.socket, name);
-    }
-
-    public async joinRoom(name: string) {
-        if (this.room !== undefined) await this.room.leave();
-        this.room = await Room.joinRoom(this.socket, name);
-    }
-
-    public async leaveRoom() {
-        if (this.room === undefined) return;
         await this.room.leave();
-    }    
-
-    public sendMessage(message: any) {
-        this.room?.sendMessage(message);
-    }
-
-    public addMessageHandler(handler: onMessageHandler) {
-        this.onMessageHandlers.push(handler);
-    }
-
-    //We should probably allow removing individual handlers, but meh
-    public clearMessageHandlers(){
-        this.onMessageHandlers = this.onMessageHandlers.filter(x => false);
     }
 
 }
 
 export {
     SignallingChannel,
-};
+}

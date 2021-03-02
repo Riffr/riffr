@@ -1,130 +1,78 @@
-import React, {RefObject, useEffect, useRef, useState} from 'react';
+import React, {RefObject, useCallback, useEffect, useRef, useState} from 'react';
 import {Link} from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
-import {SignallingChannel} from "./connections/SignallingChannel";
 import Audio from "./audio/Audio";
+import {Socket} from './connections/Socket';
+import {SignallingChannel} from "./connections/SignallingChannel";
+import {Message, User} from "@riffr/backend";
+import {ChatClient} from './connections/ChatClient';
 
-import { Peer, SignalPayload } from "./connections/Peer";
+const Room = (props: { roomCode: string, name: string, socket: Socket, create: boolean, chatClient?: ChatClient }) => {
 
-type MessagePayload = ChatPayload | SignallingPayload;
-
-interface ChatPayload {
-    type: "chat",
-    payload: any
-}
-interface SignallingPayload {
-    type: "signal",
-    payload: SignalPayload,
-}
-
-// var peer : Peer | undefined;
-
-// const initPeer = (name: string, signal: SignallingChannel) => {
-
-//     let initiator = (name == "offerer");
-//     console.log(`[isOfferer] ${ initiator }`);
-//     let p = new Peer({
-//         id: name,
-//         initiator,
-//     });
-//     peer = p;
-//     console.log(p);
-
-//     p.on("error", (e) => {
-//         console.log(`Error: ${ e }`);
-//     });
-
-//     p.on("signal", (_, payload: SignalPayload) => {
-//         signal.sendMessage({
-//             type: "signal",
-//             payload
-//         });
-//     });
-
-//     if (initiator) {
-//         p.on("connection", (_, state: RTCIceConnectionState) => {
-//             if (state == "connected") {
-//                 console.log("Connected via WebRTC :)");
-//             }
-//         });
-    
-//         p.on("channelOpen", (_, channel) => {
-//             console.log(`connected with ${ channel.label } and ready to send data!`);
-//             p.send(channel.label, `Hello World`);
-//         });
-
-//     }
-
-//     p.on("channelData", (_, channel, data) => {
-//         console.log(`Recieved ${ data } from channel ${ channel.label }`);
-//     });
-    
-
-// };
-
-// const onSignal = (payload: SignalPayload) => {
-//     if (peer === undefined) {
-//         console.log("Peer is undefined :(");
-//         console.log("peer:");
-//         console.log(peer);
-//         return;
-//     }
-
-//     console.log("[onSignal] Signalling payload received")
-//     peer.dispatch(payload);
-// };
-
-const Room = (props: { name: string, roomCode: string, signal: SignallingChannel }) => {
     let [message, setMessage] = useState("");
-    let [messages, setMessages] = useState([]);
+    let [messages, setMessages] = useState<Array<Message>>([]);
+
+    let [members, setMembers] = useState<Array<User>>([]);
     let [memberListShown, setListShown] = useState("grid");
+
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
+    let [audio, setAudio] = useState(<div/>);
 
-    const sendMessage = () => {
-        let msg = message;
-        props.signal.sendMessage({
-            type: "chat",
-            payload: {
-                user: props.name,
-                message: msg
-            }
-        });
-        // @ts-ignore
-        setMessages(prev => [{message: msg, user: props.name}, ...prev]);
-        setMessage("");
-    }
+    const user: User = {id: props.name};
 
-    const onMessageReceived = (e: any) => {
+    const onMessageReceived = (message: Message) => {
         // I promise I'll be good later...
         // @ts-ignore
-        setMessages(prev => [e, ...prev]);
+        setMessages(prev => [...prev, message]);
     }
 
+    const sendMessage = useCallback(() => {
+        let msg = message;
+
+        // Add some UI for pending messages?
+        if (!props.chatClient) return;
+        props.chatClient.send(message);
+        // @ts-ignore
+        setMessages(prev => [...prev, {from: user, content: msg} as Message]);
+        setMessage("");
+
+
+    }, [props.socket, message, props.chatClient]);
+
     useEffect(() => {
-            console.log("registering...");
-            props.signal.addMessageHandler((payload: MessagePayload) => {
-                switch (payload.type) {
-                    case "chat":
-                        onMessageReceived(payload.payload);
-                        break;
-                    default:
-                        break;
-                }
-            });
-            props.signal.joinRoom(props.roomCode).then((e) => console.log(e));
-            return () => props.signal.clearMessageHandlers(); //Should remove handler in return
-        }
-        , [props.name]);
+        (async () => {
+            const channel = await (props.create
+                ? SignallingChannel.createRoom(props.socket, props.roomCode, user)
+                : SignallingChannel.joinRoom(props.socket, props.roomCode, user));
+
+            setAudio(<Audio signal={channel}/>);
+        })();
+
+        setMembers(props.chatClient?.room.members || []);
+
+        props.chatClient?.on("message", (_, message: Message) => {
+            onMessageReceived(message);
+        });
+
+        return () => {
+            props.chatClient?.removeAllListeners("message");
+            props.chatClient?.room.removeAllListeners("membersUpdated");
+            props.chatClient?.leave();
+        };
+
+    }, []);
+
+    useEffect(() => {
+        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
+    }, [messages]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
             sendMessage();
-            document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
         }
     }
-
 
     const toggleMembers = () => {
         if (memberListShown == "grid") {
@@ -163,16 +111,15 @@ const Room = (props: { name: string, roomCode: string, signal: SignallingChannel
                     <i className={"fa fa-comment block"}/>
                 </button>
             </div>
-            <Audio signal={props.signal} initiator={props.name == "offerer"}/>
+            {audio}
             <div id={"chat"} style={{display: chatDisplay}}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"} style={{display: memberListShown}}>
-                    <p>{props.name}</p>
-                    <p>Freddie</p>
+                    <p><b>Members </b>{members.map(user => user.id).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
-                    {messages.map((x: any) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{x.user}</b>: {x.message}</p>
+                    {messages.map((x: Message) => <div className={"messageWrapper"}>
+                        <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
                     </div>)}
                 </div>
                 <div>

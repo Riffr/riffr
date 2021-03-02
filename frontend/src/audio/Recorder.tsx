@@ -1,5 +1,5 @@
-import {useEffect, useRef, useState} from 'react';
-import {SignallingChannel} from "../connections/SignallingChannel";
+import { useEffect, useRef, useState } from 'react';
+import { SignallingChannel } from "../connections/SignallingChannel";
 
 type BlobEvent = { data: Blob; }
 
@@ -24,23 +24,20 @@ const Recorder = (props: RecorderProps) => {
     let chunks: BlobPart[] = [];
     const startOffset = useRef(0);
     const stopOffset = useRef(0);
-    const [recordNext, setRecordNext] = useState(false);
+    const [muted, setMuted] = useState(true)
     const [recording, setRecording] = useState(false);
 
     const checkRecord = () => {
-        console.log("Checking if we should start recording")
+        // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime)
 
-        if (props.loopLength - props.audioCtx.currentTime % props.loopLength <= props.loopLength / 10*4) {
-            setRecordNext(prev => {
-                if (prev) {
-                    console.log("We should!")
-                    startRecording();
-                    console.log("We're recording!")
-                    setRecording(true);
-                    return false;
-                }
+        if (props.loopLength - props.audioCtx.currentTime % props.loopLength <= props.loopLength / (10 * 4)) {
+            console.log("Checking muted")
+            if (!muted) {
+                console.log("We should!")
+                startRecording();
+                console.log("We're recording!")
                 return false;
-            })
+            }
         }
     }
 
@@ -52,7 +49,8 @@ const Recorder = (props: RecorderProps) => {
             console.log("Start recording...");
             props.recorder.start();
             startOffset.current = props.loopLength - props.audioCtx.currentTime % props.loopLength;
-            setTimeout(stopRecording, props.loopLength * 1000+startOffset.current*1000);
+            setTimeout(stopRecording, props.loopLength * 1000 + startOffset.current * 1000);
+            setRecording(true);
         } else {
             console.log("Recording failed")
             console.log(props.recorder)
@@ -62,7 +60,9 @@ const Recorder = (props: RecorderProps) => {
     const stopRecording = () => {
         if (props.recorder !== null && props.recorder.state !== 'inactive') {
             console.log("Stop recording");
-            setRecording(false);
+            if (muted) {
+                setRecording(false);
+            }
             props.recorder.stop();
             stopOffset.current = props.audioCtx.currentTime % props.loopLength;
         }
@@ -70,7 +70,7 @@ const Recorder = (props: RecorderProps) => {
 
     const saveRecording = () => {
         const clip: RecordType = {
-            blob: new Blob(chunks, {'type': 'audio/ogg; codecs=opus'}),
+            blob: new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' }),
             startOffset: startOffset.current,
             endOffset: stopOffset.current
         };
@@ -90,18 +90,26 @@ const Recorder = (props: RecorderProps) => {
     }
 
     useEffect(() => {
-        let i1 = setInterval(checkRecord, props.loopLength * 100);
+        let i1 = setInterval(checkRecord, props.loopLength * 10);
         console.log(props.recorder)
         return () => {
             clearInterval(i1);
         }
-    }, [props.loopLength, props.recorder])
+    }, [props.loopLength, props.recorder, props.permission, muted])
 
 
+    const getMuteStatus = () => {
+        return muted ? "Unmute" : "Mute"
+    }
+    const getRecordingStatus = () => {
+        return recording ? "Recording" : "Not recording"
+    }
+    // TODO stop recording immediately when pressing "Mute"
     return (
         <div>
-            <button className={"squircle-button light-blue"} disabled={!props.permission || recordNext}
-                    onClick={() => setRecordNext(true)}>Jam in
+            <label> {getRecordingStatus()}</label>
+            <button className={"squircle-button light-blue"} disabled={!props.permission}
+                onClick={() => setMuted(!muted)}>{getMuteStatus()}
             </button>
         </div>
     );

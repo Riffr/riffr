@@ -20,6 +20,9 @@
     "@types/socket.io": "^2.1.13"
   },
   "exports": {
-    "./": "./dist/"
+    "./": {
+      "types": "./dist/",
+      "default": "./dist/"
+    }
   }
 }

@@ -1,4 +1,5 @@
 import { Server as IOServer, Namespace as IONamespace, Socket as IOSocket } from "socket.io";
+import { ExtendedError } from "socket.io/dist/namespace";
 
 class Server {
 
@@ -23,38 +24,68 @@ class Server {
 
 }
 
+
+type Middleware = (s: IOSocket, next: (err?: ExtendedError) => void) => void;
+
 class Module {
 
     private namespace: string;
-    private readonly handlers: Map<string, Handler> = new Map();
+    private readonly handlers: Map<string, Set<Handler>> = new Map();
+    private readonly middleware: Array<Middleware> = new Array();
 
     constructor(namespace: string) {
         this.namespace = namespace;
     }
 
-    public attachHandler(event: string, handler: Handler) {
-        this.handlers.set(event, handler);
-        return this;
+    public use(middleware: Middleware) {
+        this.middleware.push(middleware);
+    }
+
+
+    public on(event: string, handler: Handler) {
+        if (!this.handlers.has(event)) this.handlers.set(event, new Set());
+        this.handlers.get(event)?.add(handler);
     }
 
     public start(io: IOServer) {
         const ns = io.of(this.namespace);
+        this.middleware.forEach(m => ns.use(m));
+
         ns.on("connection", (socket: IOSocket) => {
-            console.log("Connection");
+            console.log(`[Module] Connection`);
 
             const ctx: Context = { io: ns, socket };
-            this.handlers.forEach((handler, event) => {
-                console.log(`Registering event '${ event }'`);
+            
+            console.log(`[Module] Registering events`);
+            this.handlers.forEach((handlers, event) => {
                 socket.on(event, (...args: any[]) => {
-                    // console.log(`event ${ event } occurred`);
-                    // console.log(handler);
-                    // // console.log(`client: ${ JSON.stringify(client) }`);
-                    // console.log(`args: ${ JSON.stringify(args) } `);
-
-                    handler(ctx, ...args);
+                    console.log(`[Module] Event ${ event } occurred. Socket ${ socket.id }`);
+                    handlers.forEach(handler => handler(ctx, ...args));
                 });
             });
         });
+    }
+}
+
+interface Socket<T> extends IOSocket {
+    store: T;
+};
+
+class Store<T> {
+
+    public static middleware = <T>(constructor: { new (...args: any[]): T }, ...args: any[]) => {
+        return (s: IOSocket, next: (err?: ExtendedError) => void) => {
+            const socket = (s as Socket<T>);
+            socket.store = new constructor(...args);
+            next();
+        };
+    } 
+
+    // Nasty but... does the job. TODO: Refactor later
+    public static of<T>(ctx: Context): T {
+        // const isContext = (x: Context | Socket<T>): x is Context => 'io' in x;
+        const socket = ctx.socket as Socket<T>;
+        return socket.store;
     }
 
 }
@@ -66,33 +97,65 @@ interface Context {
     socket: IOSocket;
 }
 
-interface Socket extends IOSocket {
-    [index: string]: any;
+class Context {
+    public static of(ctx: Context, socketId: string) {
+        const socket = ctx.io.sockets.get(socketId);
+        if (!socket) return;
+
+        return { io: ctx.io, socket } as Context;
+    }
 }
 
-class Store {
 
-    private socket: Socket;
+type Indexable<T> = { [index: string]: T };
+type StoreSocket = IOSocket & Indexable<any>;
+type StoreNamespace = IONamespace & Indexable<any>;
 
-    // Factory method
-    public static of(ctx: Context) {
-        return new this(ctx.socket as Socket);
-    }
 
-    private constructor(socket: Socket) {
-        this.socket = socket;
-    }
-
-    // Store is runtime dependent?
-    public get(key: string): any {
-        return this.socket[key];
-    }
-
-    public set(key: string, value: any) {
-        this.socket[key] = value;
-    }
-
+interface StoreContext extends Context {
+    io: StoreNamespace;
+    socket: StoreSocket;
 }
+
+
+// TODO: TYPES! I PROMISE TO BE GOOD ONEDAY :(
+// class Scope {
+
+//     private scope: any;
+
+//     constructor(scope: any) {
+//         this.scope = scope;
+//     }
+
+//     public get(key: string): any {
+//         return this.scope[key];
+//     }
+
+//     public set(key: string, value: any) {
+//         this.scope[key] = value;
+//     }
+    
+// };
+// class Store {
+
+
+//     private ctx: StoreContext;
+//     public local: Scope;
+//     public global: Scope;
+    
+
+//     // Factory method
+//     public static of(ctx: Context) {
+//         return new this(ctx as StoreContext);
+//     }
+
+//     private constructor(ctx: StoreContext) {
+//         this.ctx = ctx;
+//         this.local = new Scope(ctx.socket);
+//         this.global = new Scope(ctx.io);
+//     }
+// }
+
 
 // Used by servers for responses
 
@@ -122,12 +185,12 @@ export {
     Server,
     Module, 
     Store,
+    Context,
     ResultStatus,
     success, error
 };
 
 export type {
-    Context,
     Handler,
     Result, 
 };

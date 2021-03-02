@@ -1,22 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Recorder, { RecordType } from './Recorder';
+import Clip from './Clip';
+
+// import { SignalPayload } from "@riffr/backend/modules/Mesh";
+import { Mesh, MeshedPeer } from "../connections/Mesh";
+import { SignallingChannel } from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
-import { Peer, SignalPayload } from "../connections/Peer";
-import { SignallingChannel } from '../connections/SignallingChannel';
-// import AudioUpload from './AudioUpload';
 
-// TODO. IMPORT TYPES, DONT DUPE THEM
-type MessagePayload = ChatPayload | SignallingPayload;
-
-interface ChatPayload {
-    type: "chat",
-    payload: any
-}
-
-interface SignallingPayload {
-    type: "signal",
-    payload: SignalPayload,
-}
+import { Mesh as M } from '@riffr/backend';
 
 export interface DecodedRecord {
     buffer: AudioBuffer;
@@ -30,13 +21,14 @@ let AudioContext: any = window.AudioContext // Default
     || (window as any).webkitAudioContext // Safari
 let audioContext: AudioContext = new AudioContext();
 
-const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
+const Audio = (props: { signal: SignallingChannel }) => {
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
-    const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());  // string : AudioBuffer
+    const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
+    const [previousSounds, setPreviousSounds] = useState<Map<string, DecodedRecord>>(new Map());
     const [permission, setPermission] = useState(false);
-    const [peer, setPeer] = useState<Peer | undefined>(undefined);
     const [time, setTime] = useState(0);
+    const [mesh, setMesh] = useState<Mesh | undefined>(undefined);
     let barCount = useRef(1);
 
     const init = () => {
@@ -50,57 +42,47 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
         }
     }
 
-    const initPeer = useCallback(() => {
-        let p = new Peer({ initiator: props.initiator });
+    const initMesh = useCallback(() => {
+        let m = new Mesh();
+        console.log(`Initializing mesh with id: ${m.id}`);
 
-        p.on("error", (e) => {
+        m.on("error", (_, e: Error) => {
             console.log(`Error: ${JSON.stringify(e)}`);
         });
 
-        p.on("signal", (_, payload: SignalPayload) => {
-            props.signal.sendMessage({
-                type: "signal",
-                payload
-            });
-        })
+        m.on("signal", (payload: M.SignalPayload) => {
+            props.signal.signal(payload);
+        });
 
-        props.signal.addMessageHandler((payload: MessagePayload) => {
-            switch (payload.type) {
-                case "signal":
-                    console.log("[onSignal] Signalling payload received")
-                    p.dispatch(payload.payload);
-                    break;
-                default:
-                    break;
+        props.signal.on("signal", (_, payload: M.MeshPayload) => {
+            m.dispatch(payload);
+        });
+
+        m.on("connection", (peer: MeshedPeer, state: RTCIceConnectionState) => {
+            if (state == "connected") {
+                console.log(`Mesh: ${peer.meshId} connected via WebRTC :)`);
             }
         });
 
+        m.on("channelOpen", (_, channel: RTCDataChannel) => {
+            console.log(`connected with ${channel.label} and ready to send data!`);
+            m.send("data", `Hello World from ${m.id}`);
+        });
 
-        if (props.initiator) {
-            p.on("connection", (_, state: RTCIceConnectionState) => {
-                if (state == "connected") {
-                    console.log("Connected via WebRTC :)");
-                }
-            });
 
-            p.on("channelOpen", (_, channel) => {
-                console.log(`connected with ${channel.label} and ready to send data!`);
-                p.send("data", `Hello World`);
-            });
-        }
-
-        p.addDataChannel("audio");
-        p.on("channelData", (_, channel, data) => {
+        m.addDataChannel("audio");
+        m.on("channelData", (peer, channel, data) => {
             console.log(`[AUDIO] Recieved ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
-                // TODO confirm that p.id is the actual sender ID
-                addToPlaylist({ blob: new Blob([data]), startOffset: 0, endOffset: 0 } as RecordType, p.id);
+                console.log(data);
+                addToPlaylist({ blob: new Blob([data]), startOffset: 0, endOffset: 0 } as RecordType, peer.meshId!);
+                //todo: Take blob, run addToPlayList on it, done!
             }
         });
 
-        setPeer(p);
-        return () => props.signal.clearMessageHandlers();
-    }, [props.initiator, props.signal]);
+        setMesh(m);
+        return () => props.signal.removeAllListeners("signal");
+    }, [props.signal]);
 
 
     const onRecorderSuccess = (mediaStream: MediaStream) => {
@@ -110,29 +92,32 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
 
     const sendToPeers = useCallback(async (record: RecordType) => {
         console.log("[addOwnSound] sending to peer")
-        // WTF CHROME DOESN'T SUPPORT BLOBS. NOT IMPLEMENTED ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then(buffer => {
+        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
             sounds.set("self", [])
             let decodedRecord: DecodedRecord = {
                 buffer: buffer,
                 startOffset: record.startOffset,
-                endOffset: 0 //Not currently using this
+                endOffset: 0  // Not currently using this
             }
             sounds.get("self")!.push(decodedRecord)
         }));
-        if (peer != undefined) {
+
+        // WTF CHROME DOESN'T SUPPORT BLOBS. NOT IMPLEMENTED ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        if (mesh != undefined) {
             const buf = await record.blob.arrayBuffer();
-            peer.send("audio", buf);
+            mesh.send("audio", buf);
             console.log("Sending audio")
         }
-    }, [peer]);
+
+    }, [mesh]);
+
 
     const addToPlaylist = (record: RecordType, peerID: string) => {
         console.log("Received sound from ", peerID)
 
-        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then(buffer => {
+        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
             if (!(peerID in sounds)) {
                 sounds.set(peerID, [])
             }
@@ -168,12 +153,18 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
 
         // Find and play the correct tracks from other peers
         console.log("Playing sounds")
-        sounds.forEach((soundList) => {
+        sounds.forEach((soundList, peerID) => {
             if (soundList != undefined) {
-                //For testing purposes
-                let sound = soundList[0]
-                console.log(sound)
+                let sound;
+                if (soundList.length) {
+                    sound = soundList.shift()  // Returns and removes the first item in the list
+                } else {
+                    sound = previousSounds.get(peerID)
+                }
                 if (sound != undefined) {
+                    // Keep the previous sound around so that we can still play it next iteration if needed
+                    previousSounds.set(peerID, sound);
+
                     playSound(sound);
                 }
             }
@@ -199,7 +190,7 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
     //Todo: Turn recorder into inner class, make recording dependent on the update function,
     //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
     return (
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2" }}>
             <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength} />
             <div id={"controls"}>
                 <div id={"audio"}>
@@ -214,11 +205,8 @@ const Audio = (props: { signal: SignallingChannel, initiator: boolean }) => {
                     <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant
                     permission
                     </button>
-                    <button className={"squircle-button light-blue"} onClick={initPeer}>Init Peer</button>
-                    <button className={"squircle-button light-blue"} onClick={() => {
-                        peer?.send("data", "test")
-                    }}>Send Dummy Audio
-                    </button>
+                    <button className={"squircle-button light-blue"} onClick={initMesh}>Init Mesh</button>
+                    <button className={"squircle-button light-blue"} onClick={() => { mesh?.send("data", "test") }}>Send Dummy Audio</button>
                 </div>
 
             </div>

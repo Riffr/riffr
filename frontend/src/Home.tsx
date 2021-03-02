@@ -1,21 +1,22 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {Link} from "react-router-dom";
 import './css/Home.css'
 import './css/General.css'
-import {SignallingChannel} from "./connections/SignallingChannel";
 
 
-const Home = (props: { signal: SignallingChannel }) => {
+import { Socket } from "./connections/Socket";
+
+
+const Home = (props: { socket: Socket, setCreate: (create: boolean) => void }) => {
   const [name, setName] = useState("User");
   const [lobbyName, setLobbyName] = useState("");
 
-
   let randomRoomName = generateRandomRoomName();
 
-  const newRoomClick = () => {
+  const newRoomClick = useCallback(() => {
     console.log(props)
-    props.signal.createRoom(randomRoomName).then((e) => console.log(e));
-  }
+    props.setCreate(true);
+  }, [name]);
 
   return (
     <div id={"home-wrapper"}>
@@ -39,7 +40,6 @@ const Home = (props: { signal: SignallingChannel }) => {
   );
 }
 
-//Just some random algorithm
 const generateRandomRoomName = () => {
   let words = ["cat", "dog", "tape", "word", "wheel", "tree", "apple", "mouse", "golf", "van", "lock", "nest", "prawn", "crow", "atom", "year"];
   // Gets a random word and removes it from the list to avoid duplicates

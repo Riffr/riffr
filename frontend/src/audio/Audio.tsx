@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Recorder, { RecordType } from './Recorder';
-import Clip from './Clip';
+import AudioUpload from './AudioUpload';
 
 // import { SignalPayload } from "@riffr/backend/modules/Mesh";
 import { Mesh, MeshedPeer } from "../connections/Mesh";
@@ -22,6 +22,8 @@ let AudioContext: any = window.AudioContext // Default
 let audioContext: AudioContext = new AudioContext();
 
 const Audio = (props: { signal: SignallingChannel }) => {
+    let barCount = useRef(1);
+    let tempLoopLength = useRef(8); // used as temporary loop length
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
@@ -29,7 +31,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [permission, setPermission] = useState(false);
     const [time, setTime] = useState(0);
     const [mesh, setMesh] = useState<Mesh | undefined>(undefined);
-    let barCount = useRef(1);
 
     const init = () => {
         navigator.mediaDevices.getUserMedia({ audio: true, video: false })
@@ -131,11 +132,12 @@ const Audio = (props: { signal: SignallingChannel }) => {
     }
 
     const changeLoopLength = (length: number) => {
-        setLoopLength(length);
-    }
-
-    let checkRecording = () => {
-        console.log(audioContext.currentTime)
+        // TODO: change loop length at the beginning of next loop - attempt 1 not working 
+        // setTimeout(() => {
+        //     console.log("loop length changed", length);
+        //     setLoopLength(length);
+        // }, (loopLength - audioContext.currentTime % loopLength) * 1000);
+        tempLoopLength.current = length;
     }
 
     const playSound = (record: DecodedRecord, volume: number = 1) => {
@@ -150,6 +152,12 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     const onHalfSectionStart = () => {
         // Bit ugly but lets us read state easily
+
+        // TODO: change loop length at the beginning of next loop - attempt 2 not working 
+        // if (loopLength !== tempLoopLength.current) {
+        //     console.log("Change loop Length");
+        //     setLoopLength(tempLoopLength.current);
+        // }
 
         // Find and play the correct tracks from other peers
         console.log("Playing sounds")
@@ -194,7 +202,12 @@ const Audio = (props: { signal: SignallingChannel }) => {
             <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength} />
             <div id={"controls"}>
                 <div id={"audio"}>
-                    {/* <AudioUpload audioCtx={audioContext} /> */}
+                    <AudioUpload
+                        audioCtx={audioContext}
+                        permission={permission}
+                        loopLength={loopLength}
+                        changeLoop={changeLoopLength}
+                    />
                     <Recorder
                         recorder={mediaRecorder}
                         audioCtx={audioContext}

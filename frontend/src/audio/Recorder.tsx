@@ -10,7 +10,8 @@ export interface RecordType {
 }
 
 interface RecorderProps {
-    recorder: any;
+    recorder1: any;
+    recorder2: any;
     audioCtx: AudioContext;
 
     sendToPeers(record: RecordType): void;
@@ -30,12 +31,12 @@ const Recorder = (props: RecorderProps) => {
     const checkRecord = () => {
         // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime)
 
-        if (props.loopLength - props.audioCtx.currentTime % props.loopLength <= props.loopLength / (10 * 4)) {
+        if (!recording && props.loopLength - props.audioCtx.currentTime % props.loopLength <= props.loopLength / (10)) {
             console.log("Checking muted")
             if (!muted) {
                 console.log("We should!")
                 startRecording();
-                console.log("We're recording!")
+                console.log("We're recording! ")
                 return false;
             }
         }
@@ -45,25 +46,34 @@ const Recorder = (props: RecorderProps) => {
         if (props.audioCtx.state === 'suspended') {
             console.log("Audio context permission required");
         }
-        if (props.recorder !== null && props.recorder.state !== 'recording') {
+        let recorder: any;
+        if (props.recorder1 !== null && props.recorder1.state !== 'recording') {
+            recorder = props.recorder1;
+        } else if (props.recorder2 !== null && props.recorder2.state !== 'recording') {
+            recorder = props.recorder2;
+        }
+        if (recorder) {
             console.log("Start recording...");
-            props.recorder.start();
-            startOffset.current = props.loopLength - props.audioCtx.currentTime % props.loopLength;
-            setTimeout(stopRecording, props.loopLength * 1000 + startOffset.current * 1000);
+            // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
             setRecording(true);
+            setTimeout(() => { console.log("Setting recording to false"); setRecording(false)}, props.loopLength * 1000 / 2 + startOffset.current * 1000)
+
+            recorder.start();
+            startOffset.current = props.loopLength - props.audioCtx.currentTime % props.loopLength;
+            setTimeout(() => {stopRecording(recorder)}, props.loopLength * 1000 + startOffset.current * 1000);
+
         } else {
-            console.log("Recording failed")
-            console.log(props.recorder)
+            console.log("Starting recording failed");
+            console.log(props.recorder1);
+            console.log(props.recorder2);
+
         }
     }
 
-    const stopRecording = () => {
-        if (props.recorder !== null && props.recorder.state !== 'inactive') {
+    const stopRecording = (recorder: any) => {
+        if (recorder !== null && recorder.state !== 'inactive') {
             console.log("Stop recording");
-            if (muted) {
-                setRecording(false);
-            }
-            props.recorder.stop();
+            recorder.stop();
             stopOffset.current = props.audioCtx.currentTime % props.loopLength;
         }
     }
@@ -80,34 +90,48 @@ const Recorder = (props: RecorderProps) => {
     }
 
 
-    if (props.recorder !== null) {
-        props.recorder.onstop = saveRecording;
+    if (props.recorder1 !== null) {
+        props.recorder1.onstop = saveRecording;
 
-        props.recorder.ondataavailable = (evt: BlobEvent) => {
-            console.log("Saving")
+        props.recorder1.ondataavailable = (evt: BlobEvent) => {
+            console.log("Saving recorder1")
+            chunks.push(evt.data);
+        }
+    }
+
+    if (props.recorder2 !== null) {
+        props.recorder2.onstop = saveRecording;
+
+        props.recorder2.ondataavailable = (evt: BlobEvent) => {
+            console.log("Saving recorder2")
             chunks.push(evt.data);
         }
     }
 
     useEffect(() => {
-        let i1 = setInterval(checkRecord, props.loopLength * 10);
-        console.log(props.recorder)
+        let i1 = setInterval(checkRecord, props.loopLength * 100);
         return () => {
             clearInterval(i1);
         }
-    }, [props.loopLength, props.recorder, props.permission, muted])
+    }, [props.loopLength, props.recorder1, props.recorder2, props.permission, muted])
 
 
     const getMuteStatus = () => {
         return muted ? "Unmute" : "Mute"
     }
     const getRecordingStatus = () => {
-        return recording ? "Recording" : "Not recording"
+        return (props.recorder1 !== null && props.recorder1.state === "recording") ? "Recording" : "Not recording"
     }
+    const getRecordingStatus2 = () => {
+        return (props.recorder2 !== null && props.recorder2.state === "recording") ? "Recording" : "Not recording"
+    }
+
     // TODO stop recording immediately when pressing "Mute"
+    // TODO Combine both recording status labels into a single recording icon (on the canvas?)
     return (
         <div>
             <label> {getRecordingStatus()}</label>
+            <label> {getRecordingStatus2()}</label>
             <button className={"squircle-button light-blue"} disabled={!props.permission}
                 onClick={() => setMuted(!muted)}>{getMuteStatus()}
             </button>

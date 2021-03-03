@@ -25,7 +25,9 @@ const Audio = (props: { signal: SignallingChannel }) => {
     let barCount = useRef(1);
     let tempLoopLength = useRef(8); // used as temporary loop length
     const [loopLength, setLoopLength] = useState<number>(8);
-    const [mediaRecorder, setMediaRecorder] = useState<any>(null);
+    const [mediaRecorder1, setMediaRecorder1] = useState<any>(null);
+    const [mediaRecorder2, setMediaRecorder2] = useState<any>(null);
+
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
     const [previousSounds, setPreviousSounds] = useState<Map<string, DecodedRecord>>(new Map());
     const [permission, setPermission] = useState(false);
@@ -87,7 +89,8 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
 
     const onRecorderSuccess = (mediaStream: MediaStream) => {
-        setMediaRecorder(new MediaRecorder(mediaStream));
+        setMediaRecorder1(new MediaRecorder(mediaStream));
+        setMediaRecorder2(new MediaRecorder(mediaStream));
         setPermission(true);
     }
 
@@ -209,7 +212,8 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         changeLoop={changeLoopLength}
                     />
                     <Recorder
-                        recorder={mediaRecorder}
+                        recorder1={mediaRecorder1}
+                        recorder2={mediaRecorder2}
                         audioCtx={audioContext}
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}

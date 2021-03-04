@@ -122,25 +122,22 @@ class CanvasText extends CanvasObject {
     update(): boolean {
         this.counter += 1;
         return this.counter > 100;
-        // return false;
     }
 
 
 }
 
 const Canvas = (props: CanvasProps) => {
-    let aspectRatio = 12.5 / 17;
-
     let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
-    // let text: CanvasText = new CanvasText(100, 100, "Hello World", 30, "red");
-    let canvasObjects = [grid]; //, text];
+    let canvasObjects = [grid];
+    const canvasRef = React.useRef(null);
 
-    const canvasRef = React.useRef(null)
 
     //Initial draw
     useEffect(() => {
         // @ts-ignore
         let ctx = canvasRef.current.getContext("2d");
+
         ctx.clearRect(0, 0, props.width, props.height);
         for (let obj of canvasObjects) {
             obj.draw(ctx, props.width, props.height);
@@ -158,7 +155,7 @@ const Canvas = (props: CanvasProps) => {
             obj.draw(ctx, props.width, props.height);
         }
         // console.log(props.time);
-    }, [props.time])
+    }, [props.time, props.width, props.height])
 
     return (
         <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height}/>

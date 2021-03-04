@@ -94,20 +94,11 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
 
     return (
         <div id="room-wrapper" style={{gridTemplateColumns: wrapperGrid}}>
-
-            <div style={{
-                display: "grid",
-                gridTemplateRows: "40px 40px 90px",
-                gridTemplateColumns: "40px",
-                gridGap: "10px"
-            }}>
-                <button className={"squircle-button red"}>
-                    <i className={"fa fa-chevron-left block"}/>
-                </button>
-                <Link to={"/"} className={"squircle-button button red"}>
+            <div id={"nav-bar"}>
+                <Link to={"/"} className={"squircle-button button blue"}>
                     <i className={"fa fa-home block"}/>
                 </Link>
-                <button className={"squircle-button red"} onClick={toggleChat} style={{marginTop: "50px"}}>
+                <button className={"squircle-button purple"} onClick={toggleChat}>
                     <i className={"fa fa-comment block"}/>
                 </button>
             </div>

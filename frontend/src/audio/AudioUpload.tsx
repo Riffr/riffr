@@ -2,9 +2,9 @@ import { BaseSyntheticEvent, useState, useRef } from 'react';
 import { DecodedRecord } from './Audio';
 
 interface AudioUploadProps {
-    audioCtx: AudioContext,
-    permission: boolean,
-    loopLength: number,
+    audioCtx: AudioContext;
+    permission: boolean;
+    loopLength: number;
     changeLoop(length: number): void
 }
 
@@ -16,7 +16,7 @@ const AudioUpload = (props: AudioUploadProps) => {
     let gainNode = useRef(props.audioCtx.createGain());
 
     const onLoadFileSuccess = (buffer: AudioBuffer) => {
-        // TODO: Limitation on audio length (>= 4sec)
+        // TODO: Limitation on audio length (>= 4sec?)
         const decodedRecord: DecodedRecord = {
             buffer: buffer,
             startOffset: 0,
@@ -29,11 +29,9 @@ const AudioUpload = (props: AudioUploadProps) => {
         setIsFilePicked(true);
         setTrackBuffer(decodedRecord);
 
-        // TODO: Set loop length to audio duration (at the beginning of next loop);
         props.changeLoop(buffer.duration);
 
-        // TODO: Play track at the beginning of next loop
-        playTrack(decodedRecord, 1, 0);
+        playTrack(decodedRecord, 0.2, 0);
     }
 
     const removeFile = () => {

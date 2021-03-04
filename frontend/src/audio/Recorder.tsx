@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import AudioUpload from './AudioUpload';
 import { SignallingChannel } from "../connections/SignallingChannel";
 
 type BlobEvent = { data: Blob; }
@@ -17,7 +18,9 @@ interface RecorderProps {
     sendToPeers(record: RecordType): void;
 
     loopLength: number;
+    changeLoop(length: number): void
     permission: boolean;
+    sessionOffset: number
 }
 
 //Todo: Not really synced with the audio player, might have to move logic here into audio as well
@@ -25,13 +28,15 @@ const Recorder = (props: RecorderProps) => {
     let chunks: BlobPart[] = [];
     const startOffset = useRef(0);
     const stopOffset = useRef(0);
-    const [muted, setMuted] = useState(true)
+    const [muted, setMuted] = useState(true);
     const [recording, setRecording] = useState(false);
 
-    const checkRecord = () => {
-        // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime)
+    // To get audio context currentTime in this session, use (props.audioCtx.currentTime - props.sessionOffset)
 
-        if (!recording && props.loopLength - props.audioCtx.currentTime % props.loopLength <= props.loopLength / (10)) {
+    const checkRecord = (sessionOffset: number) => {
+        // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime - sessionOffset);
+
+        if (!recording && props.loopLength - (props.audioCtx.currentTime - sessionOffset) % props.loopLength <= (props.loopLength / 10)) {
             console.log("Checking muted")
             if (!muted) {
                 console.log("We should!")
@@ -56,17 +61,16 @@ const Recorder = (props: RecorderProps) => {
             console.log("Start recording...");
             // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
             setRecording(true);
-            setTimeout(() => { console.log("Setting recording to false"); setRecording(false)}, props.loopLength * 1000 / 2 + startOffset.current * 1000)
+            setTimeout(() => { console.log("Setting recording to false"); setRecording(false) }, props.loopLength * 1000 / 2 + startOffset.current * 1000)
 
             recorder.start();
-            startOffset.current = props.loopLength - props.audioCtx.currentTime % props.loopLength;
-            setTimeout(() => {stopRecording(recorder)}, props.loopLength * 1000 + startOffset.current * 1000);
+            startOffset.current = props.loopLength - (props.audioCtx.currentTime - props.sessionOffset) % props.loopLength;
+            setTimeout(() => { stopRecording(recorder) }, props.loopLength * 1000 + startOffset.current * 1000);
 
         } else {
             console.log("Starting recording failed");
             console.log(props.recorder1);
             console.log(props.recorder2);
-
         }
     }
 
@@ -74,7 +78,7 @@ const Recorder = (props: RecorderProps) => {
         if (recorder !== null && recorder.state !== 'inactive') {
             console.log("Stop recording");
             recorder.stop();
-            stopOffset.current = props.audioCtx.currentTime % props.loopLength;
+            stopOffset.current = (props.audioCtx.currentTime - props.sessionOffset) % props.loopLength;
         }
     }
 
@@ -109,11 +113,11 @@ const Recorder = (props: RecorderProps) => {
     }
 
     useEffect(() => {
-        let i1 = setInterval(checkRecord, props.loopLength * 100);
+        let i1 = setInterval(() => checkRecord(props.sessionOffset), props.loopLength * 100);
         return () => {
             clearInterval(i1);
         }
-    }, [props.loopLength, props.recorder1, props.recorder2, props.permission, muted])
+    }, [props.sessionOffset, props.loopLength, props.recorder1, props.recorder2, props.permission, muted])
 
 
     const getMuteStatus = () => {
@@ -135,6 +139,12 @@ const Recorder = (props: RecorderProps) => {
             <button className={"squircle-button light-blue"} disabled={!props.permission}
                 onClick={() => setMuted(!muted)}>{getMuteStatus()}
             </button>
+            <AudioUpload
+                audioCtx={props.audioCtx}
+                permission={props.permission}
+                loopLength={props.loopLength}
+                changeLoop={props.changeLoop}
+            />
         </div>
     );
 }

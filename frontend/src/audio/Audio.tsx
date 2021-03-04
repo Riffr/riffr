@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Recorder, { RecordType } from './Recorder';
-import AudioUpload from './AudioUpload';
 
 // import { SignalPayload } from "@riffr/backend/modules/Mesh";
 import { Mesh, MeshedPeer } from "../connections/Mesh";
@@ -21,9 +20,11 @@ let AudioContext: any = window.AudioContext // Default
     || (window as any).webkitAudioContext // Safari
 let audioContext: AudioContext = new AudioContext();
 
+if (audioContext.state === "running") {
+    audioContext.suspend();
+}
+
 const Audio = (props: { signal: SignallingChannel }) => {
-    let barCount = useRef(1);
-    let tempLoopLength = useRef(8); // used as temporary loop length
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder1, setMediaRecorder1] = useState<any>(null);
     const [mediaRecorder2, setMediaRecorder2] = useState<any>(null);
@@ -33,6 +34,9 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [permission, setPermission] = useState(false);
     const [time, setTime] = useState(0);
     const [mesh, setMesh] = useState<Mesh | undefined>(undefined);
+
+    let barCount = useRef(1);
+    let sessionOffset = useRef(0);
 
     const init = () => {
         navigator.mediaDevices.getUserMedia({ audio: true, video: false })
@@ -117,7 +121,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     }, [mesh]);
 
-
     const addToPlaylist = (record: RecordType, peerID: string) => {
         console.log("Received sound from ", peerID)
 
@@ -135,12 +138,13 @@ const Audio = (props: { signal: SignallingChannel }) => {
     }
 
     const changeLoopLength = (length: number) => {
-        // TODO: change loop length at the beginning of next loop - attempt 1 not working 
-        // setTimeout(() => {
-        //     console.log("loop length changed", length);
-        //     setLoopLength(length);
-        // }, (loopLength - audioContext.currentTime % loopLength) * 1000);
-        tempLoopLength.current = length;
+        // TODO: Remove all the recorded sound
+        if (length !== loopLength) {
+            setLoopLength(length);
+            sessionOffset.current = audioContext.currentTime;
+            setTime(0);
+            barCount.current = 1;
+        }
     }
 
     const playSound = (record: DecodedRecord, volume: number = 1) => {
@@ -150,17 +154,12 @@ const Audio = (props: { signal: SignallingChannel }) => {
         sourceNode.connect(gainNode);
         gainNode.connect(audioContext.destination);
         gainNode.gain.value = volume;
-        sourceNode.start(loopLength * barCount.current, record.startOffset, loopLength);
+        console.log(sessionOffset.current + loopLength * barCount.current);
+        sourceNode.start(sessionOffset.current + loopLength * barCount.current, record.startOffset, loopLength);
     }
 
     const onHalfSectionStart = () => {
         // Bit ugly but lets us read state easily
-
-        // TODO: change loop length at the beginning of next loop - attempt 2 not working 
-        // if (loopLength !== tempLoopLength.current) {
-        //     console.log("Change loop Length");
-        //     setLoopLength(tempLoopLength.current);
-        // }
 
         // Find and play the correct tracks from other peers
         console.log("Playing sounds")
@@ -184,7 +183,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     }
 
     const update = () => {
-        setTime(audioContext.currentTime);
+        setTime(audioContext.currentTime - sessionOffset.current);
     }
 
     useEffect(() => {
@@ -196,7 +195,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             clearInterval(i1);
             clearInterval(i2);
         }
-    }, [])
+    }, [loopLength])
 
     //Todo: Turn recorder into inner class, make recording dependent on the update function,
     //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
@@ -205,12 +204,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
             <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength} />
             <div id={"controls"}>
                 <div id={"audio"}>
-                    <AudioUpload
-                        audioCtx={audioContext}
-                        permission={permission}
-                        loopLength={loopLength}
-                        changeLoop={changeLoopLength}
-                    />
                     <Recorder
                         recorder1={mediaRecorder1}
                         recorder2={mediaRecorder2}
@@ -218,16 +211,16 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
                         permission={permission}
+                        sessionOffset={sessionOffset.current}
+                        changeLoop={changeLoopLength}
                     />
-                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant
-                    permission
-                    </button>
+                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant permission</button>
                     <button className={"squircle-button light-blue"} onClick={initMesh}>Init Mesh</button>
                     <button className={"squircle-button light-blue"} onClick={() => { mesh?.send("data", "test") }}>Send Dummy Audio</button>
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 }
 

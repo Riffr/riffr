@@ -1,13 +1,13 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import Recorder, { RecordType } from './Recorder';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import Recorder, {RecordType} from './Recorder';
 import Clip from './Clip';
 
 // import { SignalPayload } from "@riffr/backend/modules/Mesh";
-import { Mesh, MeshedPeer } from "../connections/Mesh";
-import { SignallingChannel } from "../connections/SignallingChannel";
+import {Mesh, MeshedPeer} from "../connections/Mesh";
+import {SignallingChannel} from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
 
-import { Mesh as M } from '@riffr/backend';
+import {Mesh as M} from '@riffr/backend';
 
 export interface DecodedRecord {
     buffer: AudioBuffer;
@@ -29,10 +29,12 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [permission, setPermission] = useState(false);
     const [time, setTime] = useState(0);
     const [mesh, setMesh] = useState<Mesh | undefined>(undefined);
+    const [canvasWidth, setCanvasWidth] = useState(1000);
+    const [canvasHeight, setCanvasHeight] = useState(600);
     let barCount = useRef(1);
 
     const init = () => {
-        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+        navigator.mediaDevices.getUserMedia({audio: true, video: false})
             .then(onRecorderSuccess)
             .catch((err) => {
                 console.log('The following error occured: ' + err);
@@ -75,7 +77,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             console.log(`[AUDIO] Recieved ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
                 console.log(data);
-                addToPlaylist({ blob: new Blob([data]), startOffset: 0, endOffset: 0 } as RecordType, peer.meshId!);
+                addToPlaylist({blob: new Blob([data]), startOffset: 0, endOffset: 0} as RecordType, peer.meshId!);
                 //todo: Take blob, run addToPlayList on it, done!
             }
         });
@@ -169,26 +171,36 @@ const Audio = (props: { signal: SignallingChannel }) => {
         barCount.current += 1
     }
 
+    /* Canvas resizing code */
+    const handleResize = () => {
+        let w = document.getElementById("canvas")?.offsetWidth || 1;
+        let h = document.getElementById("canvas")?.offsetHeight || 1;
+        console.log(`Width: ${w}, height: ${h}`);
+        setCanvasHeight(canvasWidth * h / w);
+    }
+
+    window.addEventListener("resize", handleResize);
+
     const update = () => {
         setTime(audioContext.currentTime);
     }
 
     useEffect(() => {
-
         let i1 = setInterval(onHalfSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
-
+        handleResize();
         return () => {
             clearInterval(i1);
             clearInterval(i2);
         }
-    }, [])
+    }, []);
+
 
     //Todo: Turn recorder into inner class, make recording dependent on the update function,
     //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
     return (
-        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2" }}>
-            <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength} />
+        <div style={{position: "relative", gridRow: "1 /span 2", gridColumn: "2"}}>
+            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} loopLength={loopLength}/>
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
@@ -198,11 +210,13 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         loopLength={loopLength}
                         permission={permission}
                     />
-                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Grant
-                    permission
+                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Start
                     </button>
                     <button className={"squircle-button light-blue"} onClick={initMesh}>Init Mesh</button>
-                    <button className={"squircle-button light-blue"} onClick={() => { mesh?.send("data", "test") }}>Send Dummy Audio</button>
+                    <button className={"squircle-button light-blue"} onClick={() => {
+                        mesh?.send("data", "test")
+                    }}>Send Dummy Audio
+                    </button>
                 </div>
 
             </div>

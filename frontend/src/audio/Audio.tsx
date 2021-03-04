@@ -21,9 +21,15 @@ let AudioContext: any = window.AudioContext // Default
     || (window as any).webkitAudioContext // Safari
 let audioContext: AudioContext = new AudioContext();
 
+if (audioContext.state === "running") {
+    audioContext.suspend();
+}
+
 const Audio = (props: { signal: SignallingChannel }) => {
     const [loopLength, setLoopLength] = useState<number>(8);
-    const [mediaRecorder, setMediaRecorder] = useState<any>(null);
+    const [mediaRecorder1, setMediaRecorder1] = useState<any>(null);
+    const [mediaRecorder2, setMediaRecorder2] = useState<any>(null);
+
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
     const [previousSounds, setPreviousSounds] = useState<Map<string, DecodedRecord>>(new Map());
     const [permission, setPermission] = useState(false);
@@ -32,6 +38,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [canvasWidth, setCanvasWidth] = useState(1000);
     const [canvasHeight, setCanvasHeight] = useState(600);
     let barCount = useRef(1);
+    let sessionOffset = useRef(0);
 
     const init = () => {
         navigator.mediaDevices.getUserMedia({audio: true, video: false})
@@ -88,7 +95,8 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
 
     const onRecorderSuccess = (mediaStream: MediaStream) => {
-        setMediaRecorder(new MediaRecorder(mediaStream));
+        setMediaRecorder1(new MediaRecorder(mediaStream));
+        setMediaRecorder2(new MediaRecorder(mediaStream));
         setPermission(true);
     }
 
@@ -115,7 +123,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     }, [mesh]);
 
-
     const addToPlaylist = (record: RecordType, peerID: string) => {
         console.log("Received sound from ", peerID)
 
@@ -133,18 +140,24 @@ const Audio = (props: { signal: SignallingChannel }) => {
     }
 
     const changeLoopLength = (length: number) => {
-        setLoopLength(length);
+        // TODO: Remove all the recorded sound
+        if (length !== loopLength) {
+            setLoopLength(length);
+            sessionOffset.current = audioContext.currentTime;
+            setTime(0);
+            barCount.current = 1;
+        }
     }
 
-    let checkRecording = () => {
-        console.log(audioContext.currentTime)
-    }
-
-    const playSound = (record: DecodedRecord) => {
+    const playSound = (record: DecodedRecord, volume: number = 1) => {
         let sourceNode = audioContext.createBufferSource();
+        let gainNode = audioContext.createGain();
         sourceNode.buffer = record.buffer;
-        sourceNode.connect(audioContext.destination);
-        sourceNode.start(loopLength * barCount.current, record.startOffset, loopLength);
+        sourceNode.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        gainNode.gain.value = volume;
+        console.log(sessionOffset.current + loopLength * barCount.current);
+        sourceNode.start(sessionOffset.current + loopLength * barCount.current, record.startOffset, loopLength);
     }
 
     const onHalfSectionStart = () => {
@@ -182,7 +195,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     window.addEventListener("resize", handleResize);
 
     const update = () => {
-        setTime(audioContext.currentTime);
+        setTime(audioContext.currentTime - sessionOffset.current);
     }
 
     useEffect(() => {
@@ -193,8 +206,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             clearInterval(i1);
             clearInterval(i2);
         }
-    }, []);
-
+    }, [loopLength])
 
     //Todo: Turn recorder into inner class, make recording dependent on the update function,
     //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
@@ -204,11 +216,14 @@ const Audio = (props: { signal: SignallingChannel }) => {
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
-                        recorder={mediaRecorder}
+                        recorder1={mediaRecorder1}
+                        recorder2={mediaRecorder2}
                         audioCtx={audioContext}
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
                         permission={permission}
+                        sessionOffset={sessionOffset.current}
+                        changeLoop={changeLoopLength}
                     />
                     <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Start
                     </button>
@@ -220,7 +235,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 }
 

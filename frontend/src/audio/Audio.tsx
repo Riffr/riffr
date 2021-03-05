@@ -101,7 +101,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const sendToPeers = useCallback(async (record: RecordType) => {
         console.log("[addOwnSound] sending to peer")
 
-        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
+        /*record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
             sounds.set("self", [])
             let decodedRecord: DecodedRecord = {
                 buffer: buffer,
@@ -110,6 +110,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             }
             sounds.get("self")!.push(decodedRecord)
         }));
+        */
 
         // WTF CHROME DOESN'T SUPPORT BLOBS. NOT IMPLEMENTED ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

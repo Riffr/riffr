@@ -81,7 +81,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
         m.addDataChannel("audio");
         m.on("channelData", (peer, channel, data) => {
-            console.log(`[AUDIO] Recieved ${data} from channel ${channel.label}`);
+            console.log(`[AUDIO] Received ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
                 console.log(data);
                 addToPlaylist({blob: new Blob([data]), startOffset: 0, endOffset: 0} as RecordType, peer.meshId!);

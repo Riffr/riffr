@@ -32,6 +32,9 @@ button:active, a.button:active {
     outline: none;
 }
 
+button:focus {
+    outline: none;
+}
 /*a:focus-visible button, button:focus-visible:not(:active){
     border-color: aqua !important;
 }*/

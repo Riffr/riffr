@@ -106,7 +106,7 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
             <div id={"chat"} style={{display: chatDisplay}}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"} style={{display: memberListShown}}>
-                    <p><b>Members </b>{members.map(user => user.id).join(", ")}</p>
+                    <p><b>Members: </b>{members.map(user => user.id).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>
@@ -116,7 +116,7 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
                 <div>
                     <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
                            placeholder={"Type message"}
-                           onChange={(e) => setMessage(e.target.value)}/>
+                           onChange={(e) => setMessage(e.target.value)} autoComplete={"off"}/>
                     <button id={"send-message-button"} className={"green"} onClick={sendMessage}>
                         <i className={"fa fa-send block"}/>
                     </button>

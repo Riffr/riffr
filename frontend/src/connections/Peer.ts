@@ -75,6 +75,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
         })
         this.initConnection();
         this.addDataChannel("data");
+        this.addDataChannel("audio");
     }
 
 
@@ -220,7 +221,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
     }
 
     public send(label: string, data: any) {
-        console.log(this.channels)
+        console.log("Sending to channels: ", this.channels);
         this.channels.get(label)?.send(data);
     }
 
@@ -240,7 +241,6 @@ class Peer extends (EventEmitter as PeerEmitter) {
                 break;
         }
     }
-
 }
 
 export {

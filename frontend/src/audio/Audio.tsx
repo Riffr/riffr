@@ -78,8 +78,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
             m.send("data", `Hello World from ${m.id}`);
         });
 
-
-        m.addDataChannel("audio");
         m.on("channelData", (peer, channel, data) => {
             console.log(`[AUDIO] Received ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
@@ -117,8 +115,10 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
         if (mesh != undefined) {
             const buf = await record.blob.arrayBuffer();
-            mesh.send("audio", buf);
             console.log("Sending audio")
+            mesh.send("audio", buf);
+        } else {
+            console.log("Error: Mesh uninitialised")
         }
 
     }, [mesh]);

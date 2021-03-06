@@ -1,12 +1,13 @@
-import React, {RefObject, useCallback, useEffect, useRef, useState} from 'react';
-import {Link} from 'react-router-dom';
+import React, { RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
 import Audio from "./audio/Audio";
-import {Socket} from './connections/Socket';
-import {SignallingChannel} from "./connections/SignallingChannel";
-import {Message, User} from "@riffr/backend";
-import {ChatClient} from './connections/ChatClient';
+import AudioComponent from "./audio/AudioComponent";
+import { Socket } from './connections/Socket';
+import { SignallingChannel } from "./connections/SignallingChannel";
+import { Message, User } from "@riffr/backend";
+import { ChatClient } from './connections/ChatClient';
 
 const Room = (props: { roomCode: string, name: string, socket: Socket, create: boolean, chatClient?: ChatClient }) => {
 
@@ -19,9 +20,9 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
 
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
-    let [audio, setAudio] = useState(<div/>);
+    let [audio, setAudio] = useState(<div />);
 
-    const user: User = {id: props.name};
+    const user: User = { id: props.name };
 
     const onMessageReceived = (message: Message) => {
         // I promise I'll be good later...
@@ -36,7 +37,7 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
         if (!props.chatClient) return;
         props.chatClient.send(message);
         // @ts-ignore
-        setMessages(prev => [...prev, {from: user, content: msg} as Message]);
+        setMessages(prev => [...prev, { from: user, content: msg } as Message]);
         setMessage("");
 
 
@@ -48,7 +49,7 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
                 ? SignallingChannel.createRoom(props.socket, props.roomCode, user)
                 : SignallingChannel.joinRoom(props.socket, props.roomCode, user));
 
-            setAudio(<Audio signal={channel}/>);
+            setAudio(<AudioComponent signal={channel} />);
         })();
 
         setMembers(props.chatClient?.room.members || []);
@@ -104,29 +105,20 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
     }
 
     return (
-        <div id="room-wrapper" style={{gridTemplateColumns: wrapperGrid}}>
-
-            <div style={{
-                display: "grid",
-                gridTemplateRows: "40px 40px 90px 40px",
-                gridTemplateColumns: "40px",
-                gridGap: "10px"
-            }}>
-                <button className={"squircle-button red"}>
-                    <i className={"fa fa-chevron-left block"}/>
-                </button>
-                <Link to={"/"} className={"squircle-button button red"}>
-                    <i className={"fa fa-home block"}/>
+        <div id="room-wrapper" style={{ gridTemplateColumns: wrapperGrid }}>
+            <div id={"nav-bar"}>
+                <Link to={"/"} className={"squircle-button button blue"}>
+                    <i className={"fa fa-home block"} />
                 </Link>
-                <button className={"squircle-button red"} onClick={toggleChat} style={{marginTop: "50px"}} title={"Toggle chat"}>
-                    <i className={"fa fa-comment block"}/>
+                <button className={"squircle-button purple"} onClick={toggleChat}>
+                    <i className={"fa fa-comment block"} />
                 </button>
-                <button className={"squircle-button red"} onClick={toggleSettings} title={"Toggle loop settings"}>
+                <button className={"squircle-button purple"} onClick={toggleSettings} title={"Toggle loop settings"}>
                     <i className={"fa fa-cog block"}/>
                 </button>
             </div>
             {audio}
-            <div id={"chat"} style={{display: chatDisplay}}>
+            <div id={"chat"} style={{ display: chatDisplay }}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"} style={{display: memberListShown}}>
                     {members.map(user => <p>{user.id}</p>)}
@@ -138,10 +130,10 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
                 </div>
                 <div>
                     <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
-                           placeholder={"Type message"}
-                           onChange={(e) => setMessage(e.target.value)}/>
+                        placeholder={"Type message"}
+                        onChange={(e) => setMessage(e.target.value)} autoComplete={"off"} />
                     <button id={"send-message-button"} className={"green"} onClick={sendMessage}>
-                        <i className={"fa fa-send block"}/>
+                        <i className={"fa fa-send block"} />
                     </button>
                 </div>
             </div>

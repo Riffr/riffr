@@ -88,7 +88,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             <CopyField id={"copy-field"} value={props.roomCode}/>
             <div>
                 <div id={"member-list"}>
-                    <p><b>Members </b>{members.map(user => user.id).join(", ")}</p>
+                    <p><b>Members: </b>{members.map(user => user.id).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>
@@ -97,7 +97,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
                 </div>
                 <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
                        placeholder={"Type message"}
-                       onChange={(e) => setMessage(e.target.value)}/>
+                       onChange={(e) => setMessage(e.target.value)} autoComplete={"off"} />
                 <button id={"send-message-button"} className={"blue"} onClick={sendMessage}>
                     <i className={"fa fa-send"}/>
                 </button>

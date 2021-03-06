@@ -1,4 +1,5 @@
-import React, {useEffect} from 'react';
+import React, { useEffect } from 'react';
+import { DecodedRecord } from "./audio/Audio";
 
 interface CanvasProps {
     id: string;
@@ -6,6 +7,7 @@ interface CanvasProps {
     height: number;
     time: number;
     loopLength: number;
+    sounds: Map<string, DecodedRecord[]>;
 }
 
 abstract class CanvasObject {
@@ -81,11 +83,11 @@ class ScanLine extends CanvasObject {
         ctx.stroke();
     }
 
-    setX(x: number) : void {
+    setX(x: number): void {
         this.x = x;
     }
 
-    setVelocity(velocity: number) : void {
+    setVelocity(velocity: number): void {
         this.velocity = velocity;
     }
 
@@ -122,25 +124,22 @@ class CanvasText extends CanvasObject {
     update(): boolean {
         this.counter += 1;
         return this.counter > 100;
-        // return false;
     }
 
 
 }
 
 const Canvas = (props: CanvasProps) => {
-    let aspectRatio = 12.5 / 17;
-
     let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
-    // let text: CanvasText = new CanvasText(100, 100, "Hello World", 30, "red");
-    let canvasObjects = [grid]; //, text];
+    let canvasObjects = [grid];
+    const canvasRef = React.useRef(null);
 
-    const canvasRef = React.useRef(null)
 
     //Initial draw
     useEffect(() => {
         // @ts-ignore
         let ctx = canvasRef.current.getContext("2d");
+
         ctx.clearRect(0, 0, props.width, props.height);
         for (let obj of canvasObjects) {
             obj.draw(ctx, props.width, props.height);
@@ -153,15 +152,27 @@ const Canvas = (props: CanvasProps) => {
         // @ts-ignore
         let ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, props.width, props.height);
-        let line: ScanLine = new ScanLine((props.time*props.width/props.loopLength)%props.width, 0, 0, props.width, "#00ff00", 4);
-        for (let obj of [...canvasObjects, line]) {
+        let line: ScanLine = new ScanLine((props.time * props.width / props.loopLength) % props.width, 0, 0, props.width, "#00ff00", 4);
+
+        let i = 0;
+        let size = 24;
+        let texts: CanvasText[] = []
+        // console.log(props.sounds)
+        for (const [key, value] of props.sounds.entries()) {
+            texts = [...texts, new CanvasText(10, 50 + i * size * 1.5, key, size, value.length > 0 ? "#11ff11" : "#333333")];
+            i = i + 1;
+        }
+
+        for (let obj of [...canvasObjects, line, ...texts]) {
             obj.draw(ctx, props.width, props.height);
         }
         // console.log(props.time);
-    }, [props.time])
+    }, [props.time, props.width, props.height, props.sounds])
+
+
 
     return (
-        <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height}/>
+        <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height} />
     );
 
 }

@@ -118,45 +118,6 @@ interface StoreContext extends Context {
 }
 
 
-// TODO: TYPES! I PROMISE TO BE GOOD ONEDAY :(
-// class Scope {
-
-//     private scope: any;
-
-//     constructor(scope: any) {
-//         this.scope = scope;
-//     }
-
-//     public get(key: string): any {
-//         return this.scope[key];
-//     }
-
-//     public set(key: string, value: any) {
-//         this.scope[key] = value;
-//     }
-    
-// };
-// class Store {
-
-
-//     private ctx: StoreContext;
-//     public local: Scope;
-//     public global: Scope;
-    
-
-//     // Factory method
-//     public static of(ctx: Context) {
-//         return new this(ctx as StoreContext);
-//     }
-
-//     private constructor(ctx: StoreContext) {
-//         this.ctx = ctx;
-//         this.local = new Scope(ctx.socket);
-//         this.global = new Scope(ctx.io);
-//     }
-// }
-
-
 // Used by servers for responses
 
 interface Result {

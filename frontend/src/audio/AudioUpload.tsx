@@ -14,8 +14,12 @@ const AudioUpload = (props: AudioUploadProps) => {
     let sourceNode = useRef<AudioBufferSourceNode>(props.audioCtx.createBufferSource());
     let gainNode = useRef<GainNode>(props.audioCtx.createGain());
 
+    const fileCheck = (filename: string) => {
+        let extension = filename.substring(filename.lastIndexOf('.'), filename.length) || filename;
+        return extension === ".mp3" || extension === ".wav";
+    }
+
     const onLoadFileSuccess = (buffer: AudioBuffer) => {
-        // TODO: Limitation on audio length (>= 4sec?)
         const decodedRecord: DecodedRecord = {
             buffer: buffer,
             startOffset: 0,
@@ -55,12 +59,18 @@ const AudioUpload = (props: AudioUploadProps) => {
 
     const changeHandler = (event: BaseSyntheticEvent) => {
         if (event.target.files) {
-            let file = event.target.files[0];
-            let reader = new FileReader();
-            reader.onload = (event: any) => {
-                props.audioCtx.decodeAudioData(event.target.result).then(onLoadFileSuccess);
-            }
+            let file: File = event.target.files[0];
             if (file !== undefined) {
+                let filename = file.name;
+                let reader = new FileReader();
+                reader.onload = (event: any) => {
+                    if (fileCheck(filename)) {
+                        props.audioCtx.decodeAudioData(event.target.result)
+                            .then(onLoadFileSuccess);
+                    } else {
+                        removeFile();
+                    }
+                }
                 reader.readAsArrayBuffer(file);
             }
         }
@@ -68,7 +78,7 @@ const AudioUpload = (props: AudioUploadProps) => {
 
     return (
         <div>
-            <input type="file" id="audio-file" accept=".mp3" disabled={!props.permission} onChange={changeHandler} />
+            <input type="file" id="audio-file" accept=".mp3,.wav" disabled={!props.permission} onChange={changeHandler} />
             <button disabled={!props.permission} onClick={removeFile}>Remove Audio</button>
         </div>
     )

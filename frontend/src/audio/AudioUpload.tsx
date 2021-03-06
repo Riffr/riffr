@@ -2,7 +2,7 @@ import { BaseSyntheticEvent, useState, useRef } from 'react';
 import { DecodedRecord } from './Audio';
 
 interface AudioUploadProps {
-    audioCtx: AudioContext | null;
+    audioCtx: AudioContext | undefined;
     permission: boolean;
     loopLength: number;
     changeLoop(length: number): void
@@ -14,7 +14,7 @@ const AudioUpload = (props: AudioUploadProps) => {
     let sourceNode = useRef<AudioBufferSourceNode>();
     let gainNode = useRef<GainNode>();
 
-    if (props.audioCtx !== null) {
+    if (props.audioCtx !== undefined) {
         sourceNode.current = props.audioCtx.createBufferSource();
         gainNode.current = props.audioCtx.createGain();
     }
@@ -48,7 +48,7 @@ const AudioUpload = (props: AudioUploadProps) => {
     }
 
     const playTrack = (decodedRecord: DecodedRecord, volume: number, startTime: number) => {
-        if (props.audioCtx !== null) {
+        if (props.audioCtx !== undefined) {
             sourceNode.current = props.audioCtx.createBufferSource();
             gainNode.current = props.audioCtx.createGain();
             sourceNode.current.buffer = decodedRecord.buffer;
@@ -65,7 +65,7 @@ const AudioUpload = (props: AudioUploadProps) => {
             let file = event.target.files[0];
             let reader = new FileReader();
             reader.onload = (event: any) => {
-                if (props.audioCtx !== null)
+                if (props.audioCtx !== undefined)
                     props.audioCtx.decodeAudioData(event.target.result).then(onLoadFileSuccess);
             }
             if (file !== undefined) {

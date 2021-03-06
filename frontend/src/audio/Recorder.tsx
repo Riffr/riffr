@@ -13,7 +13,7 @@ export interface RecordType {
 interface RecorderProps {
     recorder1: any;
     recorder2: any;
-    audioCtx: AudioContext | null;
+    audioCtx: AudioContext | undefined;
 
     sendToPeers(record: RecordType): void;
 
@@ -35,7 +35,7 @@ const Recorder = (props: RecorderProps) => {
 
     const checkRecord = (sessionOffset: number) => {
         // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime - sessionOffset);
-        if (props.audioCtx !== null) {
+        if (props.audioCtx !== undefined) {
             if (!recording && props.loopLength - (props.audioCtx.currentTime - sessionOffset) % props.loopLength <= (props.loopLength / 10)) {
                 console.log("Checking muted")
                 if (!muted) {
@@ -50,7 +50,7 @@ const Recorder = (props: RecorderProps) => {
     }
 
     const startRecording = () => {
-        if (props.audioCtx !== null) {
+        if (props.audioCtx !== undefined) {
             if (props.audioCtx.state === 'suspended') {
                 console.log("Audio context permission required");
             }
@@ -79,7 +79,7 @@ const Recorder = (props: RecorderProps) => {
     }
 
     const stopRecording = (recorder: any) => {
-        if (props.audioCtx !== null && recorder !== null && recorder.state !== 'inactive') {
+        if (props.audioCtx !== undefined && recorder !== null && recorder.state !== 'inactive') {
             console.log("Stop recording");
             recorder.stop();
             stopOffset.current = (props.audioCtx.currentTime - props.sessionOffset) % props.loopLength;

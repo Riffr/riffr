@@ -167,7 +167,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         sourceNode.start(sessionOffset.current + loopLength * barCount.current, record.startOffset, loopLength);
     }
 
-    const onHalfSectionStart = () => {
+    const onSectionStart = () => {
         // Bit ugly but lets us read state easily
 
         // Find and play the correct tracks from other peers
@@ -206,7 +206,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     window.addEventListener("resize", handleResize);
 
     useEffect(() => {
-        let i1 = setInterval(onHalfSectionStart, loopLength * 1000);
+        let i1 = setInterval(onSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
         // let i3 = setInterval(() => console.log(props.audioCtx), 1000);
         handleResize();

@@ -62,7 +62,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         });
 
         m.on("connection", (peer: MeshedPeer, state: RTCIceConnectionState) => {
-            if (state == "connected") {
+            if (state === "connected") {
                 console.log(`Mesh: ${peer.meshId} connected via WebRTC :)`);
             }
         });
@@ -74,7 +74,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
 
         m.on("channelData", async (peer, channel, data) => {
             console.log(`[AUDIO] Received ${data} from channel ${channel.label}`);
-            if (channel.label == "audio") {
+            if (channel.label === "audio") {
                 console.log(data);
                 let decodedRecord: DecodedRecord = await decodeReceivedData(data);
                 addToPlaylist(decodedRecord, peer.meshId!);
@@ -88,7 +88,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     const sendToPeers = useCallback((record: RecordType, isBackingTrack: boolean = false) => {
         console.log("Sending data to mesh with offset ", record.startOffset)
 
-        if (mesh != undefined) {
+        if (mesh !== undefined) {
             const floatArray: Float64Array = new Float64Array([record.startOffset]);
             const audioArray: ArrayBuffer = record.buffer;
 
@@ -173,14 +173,14 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         // Find and play the correct tracks from other peers
         console.log("Playing sounds")
         sounds.forEach((soundList, peerID) => {
-            if (soundList != undefined) {
+            if (soundList !== undefined) {
                 let sound;
                 if (soundList.length) {
                     sound = soundList.shift()  // Returns and removes the first item in the list
                 } else {
                     sound = previousSounds.get(peerID)
                 }
-                if (sound != undefined) {
+                if (sound !== undefined) {
                     // Keep the previous sound around so that we can still play it next iteration if needed
                     previousSounds.set(peerID, sound);
 

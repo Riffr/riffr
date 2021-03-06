@@ -110,7 +110,7 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
                 <Link to={"/"} className={"squircle-button button blue"}>
                     <i className={"fa fa-home block"} />
                 </Link>
-                <button className={"squircle-button purple"} onClick={toggleChat}>
+                <button className={"squircle-button purple"} onClick={toggleChat} style={{marginTop: "50px"}}>
                     <i className={"fa fa-comment block"} />
                 </button>
                 <button className={"squircle-button purple"} onClick={toggleSettings} title={"Toggle loop settings"}>

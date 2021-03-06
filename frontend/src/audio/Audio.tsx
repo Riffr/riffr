@@ -224,7 +224,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
 
     return (
         <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2", display: 'flex', flexDirection: 'column' }}>
-            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds} loopLength={loopLength} />
+            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds} loopLength={loopLength}/>
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
@@ -267,7 +267,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
                     <button className={"green circle-button"}><i className={"fa fa-check block"} title={"Submit changes"}></i></button>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
 

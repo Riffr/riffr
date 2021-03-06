@@ -13,7 +13,7 @@
 
 #nav-bar {
     display: grid;
-    grid-template-rows: 40px 90px 40px;
+    grid-template-rows: 40px 40px;
     grid-template-columns: 40px;
     grid-gap: 10px;
 }

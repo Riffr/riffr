@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import AudioUpload from './AudioUpload';
 import { SignallingChannel } from "../connections/SignallingChannel";
-import {DecodedRecord} from "./Audio";
+import { DecodedRecord } from "./Audio";
 
 type BlobEvent = { data: Blob; }
 
@@ -84,7 +84,7 @@ const Recorder = (props: RecorderProps) => {
     }
 
     const saveRecording = async () => {
-        let blob = new Blob(chunks, {'type': 'audio/ogg; codecs=opus'});
+        let blob = new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' });
         let audioBuffer = await blob.arrayBuffer();
         const clip: RecordType = {
             buffer: audioBuffer,

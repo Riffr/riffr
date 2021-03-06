@@ -94,7 +94,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
 
             // Use uint8 because audio data comes in whole bytes
 
-            const combinedArray = new Uint8Array(floatArray.byteLength + audioArray.byteLength);
+            const combinedArray = new Uint8Array(floatArray.byteLength + audioArray.byteLength + 1);
             combinedArray.set(new Uint8Array(floatArray.buffer));
             combinedArray.set([isBackingTrack ? 1 : 0], floatArray.byteLength);
             combinedArray.set(new Uint8Array(audioArray), floatArray.byteLength + 1);
@@ -223,8 +223,8 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     }, [])
 
     return (
-        <div style={{position: "relative", gridRow: "1 /span 2", gridColumn: "2"}}>
-            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds} loopLength={loopLength}/>
+        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2" }}>
+            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds} loopLength={loopLength} />
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder

@@ -1,6 +1,6 @@
 import { BaseSyntheticEvent, useState, useRef } from 'react';
 import { DecodedRecord } from './Audio';
-import {RecordType} from "./Recorder";
+import { RecordType } from "./Recorder";
 
 interface AudioUploadProps {
     audioCtx: AudioContext;
@@ -22,25 +22,16 @@ const AudioUpload = (props: AudioUploadProps) => {
         return extension === ".mp3" || extension === ".wav";
     }
 
-    const onLoadFileSuccess = (audioBuffer: AudioBuffer) => {
+    const onLoadFileSuccess = (arrayBuffer: ArrayBuffer, audioBuffer: AudioBuffer) => {
         // Convert AudioBuffer into ArrayBuffer that can be sent to other peers
         console.log("Loaded audio file")
 
-        // TODO Get following code working
-        /*
-        let arrayBuffer = props.audioCtx.createBuffer(buffer.numberOfChannels, buffer.length, buffer.sampleRate)
-
-        //let arrayBuffer = new Float32Array();
-        //audioBuffer.copyFromChannel(arrayBuffer, 0);
-        let arrayBuffer = audioBuffer.getChannelData(0);
-
         const clip: RecordType = {
-            buffer: arrayBuffer.buffer,
+            buffer: arrayBuffer,
             startOffset: 0,
             //endOffset: 0
         }
         props.sendToPeers(clip, true);
-        */
 
         // Add uploaded audio to local playlist
         const decodedRecord: DecodedRecord = {
@@ -89,8 +80,12 @@ const AudioUpload = (props: AudioUploadProps) => {
                 let reader = new FileReader();
                 reader.onload = (event: any) => {
                     if (fileCheck(filename)) {
+                        let arrayBuffer: ArrayBuffer = event.target.result;
+                        let copyOfArrayBuffer: ArrayBuffer = arrayBuffer.slice(0);
                         props.audioCtx.decodeAudioData(event.target.result)
-                            .then(onLoadFileSuccess);
+                            .then((audioBuffer: AudioBuffer) => {
+                                onLoadFileSuccess(copyOfArrayBuffer, audioBuffer);
+                            });
                     } else {
                         removeFile();
                     }

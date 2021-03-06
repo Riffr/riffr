@@ -1,5 +1,5 @@
-import React, {useEffect} from 'react';
-import {DecodedRecord} from "./audio/Audio";
+import React, { useEffect } from 'react';
+import { DecodedRecord } from "./audio/Audio";
 
 interface CanvasProps {
     id: string;
@@ -83,11 +83,11 @@ class ScanLine extends CanvasObject {
         ctx.stroke();
     }
 
-    setX(x: number) : void {
+    setX(x: number): void {
         this.x = x;
     }
 
-    setVelocity(velocity: number) : void {
+    setVelocity(velocity: number): void {
         this.velocity = velocity;
     }
 
@@ -152,14 +152,14 @@ const Canvas = (props: CanvasProps) => {
         // @ts-ignore
         let ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, props.width, props.height);
-        let line: ScanLine = new ScanLine((props.time*props.width/props.loopLength)%props.width, 0, 0, props.width, "#00ff00", 4);
+        let line: ScanLine = new ScanLine((props.time * props.width / props.loopLength) % props.width, 0, 0, props.width, "#00ff00", 4);
 
         let i = 0;
         let size = 24;
         let texts: CanvasText[] = []
-        console.log(props.sounds)
-        for(const [key, value] of props.sounds.entries()){
-            texts = [...texts, new CanvasText(10, 50+i*size*1.5, key, size, value.length>0?"#11ff11":"#333333")];
+        // console.log(props.sounds)
+        for (const [key, value] of props.sounds.entries()) {
+            texts = [...texts, new CanvasText(10, 50 + i * size * 1.5, key, size, value.length > 0 ? "#11ff11" : "#333333")];
             i = i + 1;
         }
 
@@ -172,7 +172,7 @@ const Canvas = (props: CanvasProps) => {
 
 
     return (
-        <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height}/>
+        <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height} />
     );
 
 }

@@ -94,7 +94,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
 
             // Use uint8 because audio data comes in whole bytes
 
-            const combinedArray = new Uint8Array(floatArray.byteLength + audioArray.byteLength);
+            const combinedArray = new Uint8Array(floatArray.byteLength + audioArray.byteLength + 1);
             combinedArray.set(new Uint8Array(floatArray.buffer));
             combinedArray.set([isBackingTrack ? 1 : 0], floatArray.byteLength);
             combinedArray.set(new Uint8Array(audioArray), floatArray.byteLength + 1);

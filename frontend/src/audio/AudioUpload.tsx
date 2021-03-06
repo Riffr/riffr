@@ -1,11 +1,14 @@
 import { BaseSyntheticEvent, useState, useRef } from 'react';
 import { DecodedRecord } from './Audio';
+import {RecordType} from "./Recorder";
 
 interface AudioUploadProps {
     audioCtx: AudioContext;
     permission: boolean;
     loopLength: number;
-    changeLoop(length: number): void
+    changeLoop(length: number): void;
+    addToPlaylist(record: DecodedRecord, peerID: string): void;
+    sendToPeers(record: RecordType): void
 }
 
 const AudioUpload = (props: AudioUploadProps) => {
@@ -19,34 +22,54 @@ const AudioUpload = (props: AudioUploadProps) => {
         return extension === ".mp3" || extension === ".wav";
     }
 
-    const onLoadFileSuccess = (buffer: AudioBuffer) => {
-        const decodedRecord: DecodedRecord = {
-            buffer: buffer,
+    const onLoadFileSuccess = (audioBuffer: AudioBuffer) => {
+        // Convert AudioBuffer into ArrayBuffer that can be sent to other peers
+        console.log("Loaded audio file")
+
+        // TODO Get following code working
+        /*
+        let arrayBuffer = props.audioCtx.createBuffer(buffer.numberOfChannels, buffer.length, buffer.sampleRate)
+
+        //let arrayBuffer = new Float32Array();
+        //audioBuffer.copyFromChannel(arrayBuffer, 0);
+        let arrayBuffer = audioBuffer.getChannelData(0);
+
+        const clip: RecordType = {
+            buffer: arrayBuffer.buffer,
             startOffset: 0,
-            endOffset: 0
+            //endOffset: 0
         }
-        if (isFilePicked) {
-            removeFile();
+        //props.sendToPeers(clip);
+        */
+
+        // Add uploaded audio to local playlist
+        const decodedRecord: DecodedRecord = {
+            buffer: audioBuffer,
+            startOffset: 0
         }
+        props.addToPlaylist(decodedRecord, "backingTrack")
 
         setIsFilePicked(true);
         setTrackBuffer(decodedRecord);
 
-        props.changeLoop(buffer.duration);
-
-        playTrack(decodedRecord, 0.2, 0);
+        // TODO uncomment later
+        //props.changeLoop(audioBuffer.duration);
     }
 
     const removeFile = () => {
         if (isFilePicked) {
+            /*
             sourceNode.current.stop();
             sourceNode.current.disconnect();
             gainNode.current.disconnect();
+            */
+            // TODO Send blank file
             setIsFilePicked(false);
         }
     }
 
     const playTrack = (decodedRecord: DecodedRecord, volume: number, startTime: number) => {
+        // Not currently used
         sourceNode.current = props.audioCtx.createBufferSource();
         gainNode.current = props.audioCtx.createGain();
         sourceNode.current.buffer = decodedRecord.buffer;

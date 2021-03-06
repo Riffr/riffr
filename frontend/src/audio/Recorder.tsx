@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import AudioUpload from './AudioUpload';
 import { SignallingChannel } from "../connections/SignallingChannel";
+import {DecodedRecord} from "./Audio";
 
 type BlobEvent = { data: Blob; }
 
 export interface RecordType {
-    blob: Blob;
+    buffer: ArrayBuffer;
     startOffset: number;
-    endOffset: number;
+    //endOffset: number;
 }
 
 interface RecorderProps {
@@ -15,6 +16,7 @@ interface RecorderProps {
     recorder2: any;
     audioCtx: AudioContext;
 
+    addToPlaylist(record: DecodedRecord, peerID: string): void;
     sendToPeers(record: RecordType): void;
 
     loopLength: number;
@@ -81,12 +83,13 @@ const Recorder = (props: RecorderProps) => {
         }
     }
 
-    const saveRecording = () => {
+    const saveRecording = async () => {
+        let blob = new Blob(chunks, {'type': 'audio/ogg; codecs=opus'});
+        let audioBuffer = await blob.arrayBuffer();
         const clip: RecordType = {
-            blob: new Blob(chunks, { 'type': 'audio/ogg; codecs=opus' }),
-            startOffset: startOffset.current,
-            endOffset: stopOffset.current
-        };
+            buffer: audioBuffer,
+            startOffset: startOffset.current
+        }
         console.log(clip)
         props.sendToPeers(clip);
         chunks = [];
@@ -143,6 +146,8 @@ const Recorder = (props: RecorderProps) => {
                 permission={props.permission}
                 loopLength={props.loopLength}
                 changeLoop={props.changeLoop}
+                addToPlaylist={props.addToPlaylist}
+                sendToPeers={props.sendToPeers}
             />
         </div>
     );

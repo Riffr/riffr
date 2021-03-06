@@ -11,7 +11,7 @@ import { Mesh as M } from '@riffr/backend';
 export interface DecodedRecord {
     buffer: AudioBuffer;
     startOffset: number;
-    endOffset: number;
+    //endOffset: number;
 }
 
 declare var MediaRecorder: any;
@@ -71,11 +71,12 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
             m.send("data", `Hello World from ${m.id}`);
         });
 
-        m.on("channelData", (peer, channel, data) => {
+        m.on("channelData", async (peer, channel, data) => {
             console.log(`[AUDIO] Received ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
                 console.log(data);
-                decodeReceivedData(data, peer.meshId!);
+                let decodedRecord: DecodedRecord = await decodeReceivedData(data);
+                addToPlaylist(decodedRecord, peer.meshId!);
             }
         });
 
@@ -83,17 +84,18 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         return () => props.signal.removeAllListeners("signal");
     }, [props.signal]);
 
-    const sendToPeers = useCallback(async (record: RecordType) => {
+    const sendToPeers = useCallback((record: RecordType, isBackingTrack: boolean = false) => {
         console.log("Sending data to mesh with offset ", record.startOffset)
 
         if (mesh != undefined) {
             const floatArray: Float64Array = new Float64Array([record.startOffset]);
-            const audioBuffer: ArrayBuffer = await record.blob.arrayBuffer();
+            const audioArray: ArrayBuffer = record.buffer;
 
             // Use uint8 because audio data comes in whole bytes
-            const combinedArray = new Uint8Array(floatArray.byteLength + audioBuffer.byteLength);
+
+            const combinedArray = new Uint8Array(floatArray.byteLength + audioArray.byteLength);
             combinedArray.set(new Uint8Array(floatArray.buffer));
-            combinedArray.set(new Uint8Array(audioBuffer), floatArray.byteLength);
+            combinedArray.set(new Uint8Array(audioArray), floatArray.byteLength);
             console.log("Sending audio")
 
             mesh.send("audio", combinedArray.buffer);
@@ -103,19 +105,24 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
 
     }, [mesh]);
 
-    const decodeReceivedData =  async (data: Uint8Array, peerID: string) => {
+    const decodeReceivedData = async (data: Uint8Array) => {
         let startOffset: number = new DataView(data).getFloat64(0, true);
 
         let audioArrayBuffer = data.slice(8);  // startOffset (float) takes up first 8 bytes
-        console.log("Received sound from ", peerID, " with start offset ", startOffset)
         let buffer: AudioBuffer = await props.audioCtx.decodeAudioData(audioArrayBuffer);
-        if (!(peerID in sounds)) {
-            sounds.set(peerID, [])
-        }
         let decodedRecord: DecodedRecord = {
             buffer: buffer,
             startOffset: startOffset,
-            endOffset: 0 //Not currently using this
+            //endOffset: 0 //Not currently using this
+        }
+        console.log("Received sound with start offset ", startOffset)
+        return decodedRecord;
+    }
+
+    const addToPlaylist = (decodedRecord: DecodedRecord, peerID: string) => {
+        console.log("Adding sound from peer ", peerID, " to playlist")
+        if (!(peerID in sounds)) {
+            sounds.set(peerID, [])
         }
         sounds.get(peerID)!.push(decodedRecord)
     }
@@ -213,6 +220,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
                         recorder1={mediaRecorder1}
                         recorder2={mediaRecorder2}
                         audioCtx={props.audioCtx}
+                        addToPlaylist={addToPlaylist}
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
                         permission={permission}

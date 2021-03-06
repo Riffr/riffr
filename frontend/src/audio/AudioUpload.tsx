@@ -2,7 +2,7 @@ import { BaseSyntheticEvent, useState, useRef } from 'react';
 import { DecodedRecord } from './Audio';
 
 interface AudioUploadProps {
-    audioCtx: AudioContext;
+    audioCtx: AudioContext | null;
     permission: boolean;
     loopLength: number;
     changeLoop(length: number): void
@@ -11,9 +11,13 @@ interface AudioUploadProps {
 const AudioUpload = (props: AudioUploadProps) => {
     const [trackBuffer, setTrackBuffer] = useState<DecodedRecord>();
     const [isFilePicked, setIsFilePicked] = useState(false);
+    let sourceNode = useRef<AudioBufferSourceNode>();
+    let gainNode = useRef<GainNode>();
 
-    let sourceNode = useRef(props.audioCtx.createBufferSource());
-    let gainNode = useRef(props.audioCtx.createGain());
+    if (props.audioCtx !== null) {
+        sourceNode.current = props.audioCtx.createBufferSource();
+        gainNode.current = props.audioCtx.createGain();
+    }
 
     const onLoadFileSuccess = (buffer: AudioBuffer) => {
         // TODO: Limitation on audio length (>= 4sec?)
@@ -35,7 +39,7 @@ const AudioUpload = (props: AudioUploadProps) => {
     }
 
     const removeFile = () => {
-        if (isFilePicked) {
+        if (isFilePicked && sourceNode.current !== undefined && gainNode.current !== undefined) {
             sourceNode.current.stop();
             sourceNode.current.disconnect();
             gainNode.current.disconnect();
@@ -44,14 +48,16 @@ const AudioUpload = (props: AudioUploadProps) => {
     }
 
     const playTrack = (decodedRecord: DecodedRecord, volume: number, startTime: number) => {
-        sourceNode.current = props.audioCtx.createBufferSource();
-        gainNode.current = props.audioCtx.createGain();
-        sourceNode.current.buffer = decodedRecord.buffer;
-        sourceNode.current.connect(gainNode.current);
-        gainNode.current.connect(props.audioCtx.destination);
-        gainNode.current.gain.value = volume;
-        sourceNode.current.loop = true;
-        sourceNode.current.start(startTime);
+        if (props.audioCtx !== null) {
+            sourceNode.current = props.audioCtx.createBufferSource();
+            gainNode.current = props.audioCtx.createGain();
+            sourceNode.current.buffer = decodedRecord.buffer;
+            sourceNode.current.connect(gainNode.current);
+            gainNode.current.connect(props.audioCtx.destination);
+            gainNode.current.gain.value = volume;
+            sourceNode.current.loop = true;
+            sourceNode.current.start(startTime);
+        }
     }
 
     const changeHandler = (event: BaseSyntheticEvent) => {
@@ -59,7 +65,8 @@ const AudioUpload = (props: AudioUploadProps) => {
             let file = event.target.files[0];
             let reader = new FileReader();
             reader.onload = (event: any) => {
-                props.audioCtx.decodeAudioData(event.target.result).then(onLoadFileSuccess);
+                if (props.audioCtx !== null)
+                    props.audioCtx.decodeAudioData(event.target.result).then(onLoadFileSuccess);
             }
             if (file !== undefined) {
                 reader.readAsArrayBuffer(file);

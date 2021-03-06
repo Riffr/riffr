@@ -13,7 +13,7 @@ export interface RecordType {
 interface RecorderProps {
     recorder1: any;
     recorder2: any;
-    audioCtx: AudioContext;
+    audioCtx: AudioContext | null;
 
     sendToPeers(record: RecordType): void;
 
@@ -35,47 +35,51 @@ const Recorder = (props: RecorderProps) => {
 
     const checkRecord = (sessionOffset: number) => {
         // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime - sessionOffset);
+        if (props.audioCtx !== null) {
+            if (!recording && props.loopLength - (props.audioCtx.currentTime - sessionOffset) % props.loopLength <= (props.loopLength / 10)) {
+                console.log("Checking muted")
+                if (!muted) {
+                    console.log("We should!")
+                    startRecording();
+                    console.log("We're recording! ")
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
 
-        if (!recording && props.loopLength - (props.audioCtx.currentTime - sessionOffset) % props.loopLength <= (props.loopLength / 10)) {
-            console.log("Checking muted")
-            if (!muted) {
-                console.log("We should!")
-                startRecording();
-                console.log("We're recording! ")
-                return false;
+    const startRecording = () => {
+        if (props.audioCtx !== null) {
+            if (props.audioCtx.state === 'suspended') {
+                console.log("Audio context permission required");
+            }
+            let recorder: any;
+            if (props.recorder1 !== null && props.recorder1.state !== 'recording') {
+                recorder = props.recorder1;
+            } else if (props.recorder2 !== null && props.recorder2.state !== 'recording') {
+                recorder = props.recorder2;
+            }
+            if (recorder) {
+                console.log("Start recording...");
+                // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
+                setRecording(true);
+                setTimeout(() => { console.log("Setting recording to false"); setRecording(false) }, props.loopLength * 1000 / 2 + startOffset.current * 1000)
+
+                recorder.start();
+                startOffset.current = props.loopLength - (props.audioCtx.currentTime - props.sessionOffset) % props.loopLength;
+                setTimeout(() => { stopRecording(recorder) }, props.loopLength * 1000 + startOffset.current * 1000);
+
+            } else {
+                console.log("Starting recording failed");
+                console.log(props.recorder1);
+                console.log(props.recorder2);
             }
         }
     }
 
-    const startRecording = () => {
-        if (props.audioCtx.state === 'suspended') {
-            console.log("Audio context permission required");
-        }
-        let recorder: any;
-        if (props.recorder1 !== null && props.recorder1.state !== 'recording') {
-            recorder = props.recorder1;
-        } else if (props.recorder2 !== null && props.recorder2.state !== 'recording') {
-            recorder = props.recorder2;
-        }
-        if (recorder) {
-            console.log("Start recording...");
-            // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
-            setRecording(true);
-            setTimeout(() => { console.log("Setting recording to false"); setRecording(false) }, props.loopLength * 1000 / 2 + startOffset.current * 1000)
-
-            recorder.start();
-            startOffset.current = props.loopLength - (props.audioCtx.currentTime - props.sessionOffset) % props.loopLength;
-            setTimeout(() => { stopRecording(recorder) }, props.loopLength * 1000 + startOffset.current * 1000);
-
-        } else {
-            console.log("Starting recording failed");
-            console.log(props.recorder1);
-            console.log(props.recorder2);
-        }
-    }
-
     const stopRecording = (recorder: any) => {
-        if (recorder !== null && recorder.state !== 'inactive') {
+        if (props.audioCtx !== null && recorder !== null && recorder.state !== 'inactive') {
             console.log("Stop recording");
             recorder.stop();
             stopOffset.current = (props.audioCtx.currentTime - props.sessionOffset) % props.loopLength;

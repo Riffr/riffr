@@ -1,13 +1,13 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
-import Recorder, {RecordType} from './Recorder';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import Recorder, { RecordType } from './Recorder';
 import Clip from './Clip';
 
 // import { SignalPayload } from "@riffr/backend/modules/Mesh";
-import {Mesh, MeshedPeer} from "../connections/Mesh";
-import {SignallingChannel} from "../connections/SignallingChannel";
+import { Mesh, MeshedPeer } from "../connections/Mesh";
+import { SignallingChannel } from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
 
-import {Mesh as M} from '@riffr/backend';
+import { Mesh as M } from '@riffr/backend';
 
 export interface DecodedRecord {
     buffer: AudioBuffer;
@@ -19,13 +19,11 @@ declare var MediaRecorder: any;
 
 let AudioContext: any = window.AudioContext // Default
     || (window as any).webkitAudioContext // Safari
-let audioContext: AudioContext = new AudioContext();
-
-if (audioContext.state === "running") {
-    audioContext.suspend();
-}
+// let audioContext: AudioContext = new AudioContext();
 
 const Audio = (props: { signal: SignallingChannel }) => {
+    const [audioCtx, setAudioCtx] = useState<AudioContext | null>(null);
+
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder1, setMediaRecorder1] = useState<any>(null);
     const [mediaRecorder2, setMediaRecorder2] = useState<any>(null);
@@ -41,14 +39,12 @@ const Audio = (props: { signal: SignallingChannel }) => {
     let sessionOffset = useRef(0);
 
     const init = () => {
-        navigator.mediaDevices.getUserMedia({audio: true, video: false})
+        setAudioCtx(new AudioContext());
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
             .then(onRecorderSuccess)
             .catch((err) => {
                 console.log('The following error occured: ' + err);
             });
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
     }
 
     const initMesh = useCallback(() => {
@@ -82,7 +78,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             console.log(`[AUDIO] Received ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
                 console.log(data);
-                addToPlaylist({blob: new Blob([data]), startOffset: 0, endOffset: 0} as RecordType, peer.meshId!);
+                addToPlaylist({ blob: new Blob([data]), startOffset: 0, endOffset: 0 } as RecordType, peer.meshId!);
                 //todo: Take blob, run addToPlayList on it, done!
             }
         });
@@ -93,6 +89,11 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
 
     const onRecorderSuccess = (mediaStream: MediaStream) => {
+        // setAudioCtx(new AudioContext());
+        console.log("On recorder success");
+        if (audioCtx !== null && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
         setMediaRecorder1(new MediaRecorder(mediaStream));
         setMediaRecorder2(new MediaRecorder(mediaStream));
         setPermission(true);
@@ -124,44 +125,69 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     }, [mesh]);
 
-    const addToPlaylist = (record: RecordType, peerID: string) => {
-        console.log("Received sound from ", peerID)
+    const addToPlaylist = useCallback((record: RecordType, peerID: string) => {
+        // TODO: Audio Context is null when it isn't
+        if (audioCtx !== null) {
+            console.log("Received sound from ", peerID)
 
-        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
-            if (!(peerID in sounds)) {
-                sounds.set(peerID, [])
-            }
-            let decodedRecord: DecodedRecord = {
-                buffer: buffer,
-                startOffset: record.startOffset,
-                endOffset: 0 //Not currently using this
-            }
-            sounds.get(peerID)!.push(decodedRecord)
-        }));
+            record.blob.arrayBuffer().then(buffer => audioCtx.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
+                if (!(peerID in sounds)) {
+                    sounds.set(peerID, [])
+                }
+                let decodedRecord: DecodedRecord = {
+                    buffer: buffer,
+                    startOffset: record.startOffset,
+                    endOffset: 0 //Not currently using this
+                }
+                console.log("", sounds, peerID, decodedRecord);
+                sounds.get(peerID)!.push(decodedRecord)
+            }));
+        } else {
+            console.log("Audio Context is null!");
+        }
+    }, [audioCtx])
+
+    const clearAudio = () => {
+        console.log("Audio Cleared!");
+        setPreviousSounds(new Map());
+        setSounds(new Map());
     }
 
-    const changeLoopLength = (length: number) => {
-        // TODO: Remove all the recorded sound
-        if (length !== loopLength) {
-            setLoopLength(length);
-            sessionOffset.current = audioContext.currentTime;
-            setTime(0);
-            barCount.current = 1;
+    const leave = () => {
+        clearAudio();
+        if (audioCtx !== null) {
+            audioCtx.close();
+            setAudioCtx(null);
         }
     }
 
-    const playSound = (record: DecodedRecord, volume: number = 1) => {
-        let sourceNode = audioContext.createBufferSource();
-        let gainNode = audioContext.createGain();
-        sourceNode.buffer = record.buffer;
-        sourceNode.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        gainNode.gain.value = volume;
-        console.log(sessionOffset.current + loopLength * barCount.current);
-        sourceNode.start(sessionOffset.current + loopLength * barCount.current, record.startOffset, loopLength);
+    const changeLoopLength = (length: number) => {
+        if (audioCtx !== null) {
+            if (length !== loopLength) {
+                clearAudio();
+                setLoopLength(length);
+                sessionOffset.current = audioCtx.currentTime;
+                setTime(0);
+                barCount.current = 1;
+            }
+        }
     }
 
-    const onHalfSectionStart = () => {
+    const playSound = (audioContext: AudioContext, record: DecodedRecord, volume: number = 1) => {
+        if (audioContext !== null) {
+            let sourceNode = audioContext.createBufferSource();
+            let gainNode = audioContext.createGain();
+            sourceNode.buffer = record.buffer;
+            sourceNode.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            gainNode.gain.value = volume;
+            // console.log(sessionOffset.current + loopLength * barCount.current);
+            // console.log(record);
+            sourceNode.start(sessionOffset.current + loopLength * barCount.current, record.startOffset, loopLength);
+        }
+    }
+
+    const onHalfSectionStart = (audioContext: AudioContext) => {
         // Bit ugly but lets us read state easily
 
         // Find and play the correct tracks from other peers
@@ -178,7 +204,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
                     // Keep the previous sound around so that we can still play it next iteration if needed
                     previousSounds.set(peerID, sound);
 
-                    playSound(sound);
+                    playSound(audioContext, sound);
                 }
             }
         });
@@ -189,37 +215,41 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const handleResize = () => {
         let w = document.getElementById("canvas")?.offsetWidth || 1;
         let h = document.getElementById("canvas")?.offsetHeight || 1;
-        console.log(`Width: ${w}, height: ${h}`);
+        // console.log(`Width: ${w}, height: ${h}`);
         setCanvasHeight(canvasWidth * h / w);
     }
 
     window.addEventListener("resize", handleResize);
 
     const update = () => {
-        setTime(audioContext.currentTime - sessionOffset.current);
+        if (audioCtx !== null) {
+            setTime(audioCtx.currentTime - sessionOffset.current);
+        }
     }
 
     useEffect(() => {
         let i1 = setInterval(onHalfSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
+        let i3 = setInterval(() => console.log(audioCtx), 1000);
         handleResize();
         return () => {
             clearInterval(i1);
             clearInterval(i2);
+            clearInterval(i3);
         }
-    }, [loopLength])
+    }, [loopLength, audioCtx])
 
     //Todo: Turn recorder into inner class, make recording dependent on the update function,
     //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
     return (
-        <div style={{position: "relative", gridRow: "1 /span 2", gridColumn: "2"}}>
-            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} loopLength={loopLength}/>
+        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2" }}>
+            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} loopLength={loopLength} />
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
                         recorder1={mediaRecorder1}
                         recorder2={mediaRecorder2}
-                        audioCtx={audioContext}
+                        audioCtx={audioCtx}
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
                         permission={permission}
@@ -227,6 +257,8 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         changeLoop={changeLoopLength}
                     />
                     <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Start
+                    </button>
+                    <button className={"squircle-button light-blue"} onClick={leave}>Leave
                     </button>
                     <button className={"squircle-button light-blue"} onClick={initMesh}>Init Mesh</button>
                     <button className={"squircle-button light-blue"} onClick={() => {

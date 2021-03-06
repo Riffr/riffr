@@ -122,7 +122,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
         let startOffset: number = new DataView(data).getFloat64(0, true);
 
         let audioArrayBuffer = data.slice(8);  // startOffset (float) takes up first 8 bytes
-        console.log("Received sound from ", peerID, " with start offset ", startOffset)
+        console.log("Received sound from ", peerID, " with start offset ", startOffset);
         let buffer: AudioBuffer = await audioContext.decodeAudioData(audioArrayBuffer);
         if (!(peerID in sounds)) {
             sounds.set(peerID, [])
@@ -204,11 +204,14 @@ const Audio = (props: { signal: SignallingChannel }) => {
         }
     }, [loopLength])
 
-    //Todo: Turn recorder into inner class, make recording dependent on the update function,
-    //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
+    useEffect(() => {
+        let cleanup = initMesh();
+        //TODO: Should we clear up the mesh once we leave the room?
+    }, [])
+
     return (
         <div style={{position: "relative", gridRow: "1 /span 2", gridColumn: "2"}}>
-            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} loopLength={loopLength}/>
+            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds} loopLength={loopLength}/>
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
@@ -222,11 +225,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         changeLoop={changeLoopLength}
                     />
                     <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Start
-                    </button>
-                    <button className={"squircle-button light-blue"} onClick={initMesh}>Init Mesh</button>
-                    <button className={"squircle-button light-blue"} onClick={() => {
-                        mesh?.send("data", "test")
-                    }}>Send Dummy Audio
                     </button>
                 </div>
 

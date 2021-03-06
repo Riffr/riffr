@@ -1,4 +1,5 @@
 import React, {useEffect} from 'react';
+import {DecodedRecord} from "./audio/Audio";
 
 interface CanvasProps {
     id: string;
@@ -6,6 +7,7 @@ interface CanvasProps {
     height: number;
     time: number;
     loopLength: number;
+    sounds: Map<string, DecodedRecord[]>;
 }
 
 abstract class CanvasObject {
@@ -151,11 +153,23 @@ const Canvas = (props: CanvasProps) => {
         let ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, props.width, props.height);
         let line: ScanLine = new ScanLine((props.time*props.width/props.loopLength)%props.width, 0, 0, props.width, "#00ff00", 4);
-        for (let obj of [...canvasObjects, line]) {
+
+        let i = 0;
+        let size = 24;
+        let texts: CanvasText[] = []
+        console.log(props.sounds)
+        for(const [key, value] of props.sounds.entries()){
+            texts = [...texts, new CanvasText(10, 50+i*size*1.5, key, size, value.length>0?"#11ff11":"#333333")];
+            i = i + 1;
+        }
+
+        for (let obj of [...canvasObjects, line, ...texts]) {
             obj.draw(ctx, props.width, props.height);
         }
         // console.log(props.time);
-    }, [props.time, props.width, props.height])
+    }, [props.time, props.width, props.height, props.sounds])
+
+
 
     return (
         <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height}/>

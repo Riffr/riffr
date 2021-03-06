@@ -108,7 +108,7 @@ const Recorder = (props: RecorderProps) => {
     return (
         <div>
             <label> {getRecordingStatus()}</label>
-            <button className={"squircle-button light-blue"} disabled={!props.permission}
+            <button className={"squircle-button light-blue "+(muted ? "muted ":" ")+(recording? "recording ":"")} id={"mute"} disabled={!props.permission}
                 onClick={() => setMuted(!muted)}>{getMuteStatus()}
             </button>
         </div>

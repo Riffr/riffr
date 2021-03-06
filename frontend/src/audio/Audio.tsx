@@ -21,7 +21,7 @@ let AudioContext: any = window.AudioContext // Default
     || (window as any).webkitAudioContext // Safari
 let audioContext: AudioContext = new AudioContext();
 
-const Audio = (props: { signal: SignallingChannel }) => {
+const Audio = (props: { signal: SignallingChannel}) => {
     const [loopLength, setLoopLength] = useState<number>(8);
     const [mediaRecorder, setMediaRecorder] = useState<any>(null);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
@@ -187,7 +187,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     //Todo: Turn recorder into inner class, make recording dependent on the update function,
     //Todo: ...add buffer depending on audiocontext, and trim audio dependent on this
     return (
-        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2" }}>
+        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2", display: 'flex', flexDirection: 'column' }}>
             <Canvas id={"canvas"} width={1600} height={800} time={time} loopLength={loopLength} />
             <div id={"controls"}>
                 <div id={"audio"}>
@@ -204,7 +204,27 @@ const Audio = (props: { signal: SignallingChannel }) => {
                     <button className={"squircle-button light-blue"} onClick={initMesh}>Init Mesh</button>
                     <button className={"squircle-button light-blue"} onClick={() => { mesh?.send("data", "test") }}>Send Dummy Audio</button>
                 </div>
-
+                <div id={"coordination"}>
+                    <div>
+                        <label htmlFor={"signature-input"}>Time Sig: </label>
+                        <input id={"signature-input"} type={"number"} min={1}></input>
+                        <label htmlFor={"signature-input-2"}> / </label>
+                        <input id={"signature-input-2"} type={"number"} min={1}></input>
+                    </div>
+                    <div>
+                        <label htmlFor={"tempo-input"} title={"Set tempo of loop (can be left blank)"}>Tempo: </label>
+                        <input id={"tempo-input"} type={"number"} min={0} title={"Set tempo of loop (can be left blank)"}></input>
+                    </div>
+                    <div>
+                        <label htmlFor={"duration-input"} title={"Set duration of loop"}>Duration: </label>
+                        <input id={"duration-input"} type={"number"} min={0} title={"Set duration of loop"}></input>
+                    </div>
+                    <div>
+                        <label htmlFor={"upload"} id={"fake-upload"} className={"squircle-button light-blue button"} title={"Upload backing track"}>Upload</label>
+                        <input id={"upload"} type={"file"} style={{display:"none"}}></input>
+                    </div>
+                    <button className={"green circle-button"}><i className={"fa fa-check block"} title={"Submit changes"}></i></button>
+                </div>
             </div>
         </div>
     );

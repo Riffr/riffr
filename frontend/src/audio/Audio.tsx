@@ -8,6 +8,7 @@ import {SignallingChannel} from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
 
 import {Mesh as M} from '@riffr/backend';
+import {start} from "repl";
 
 export interface DecodedRecord {
     buffer: AudioBuffer;
@@ -26,7 +27,7 @@ if (audioContext.state === "running") {
 }
 
 const Audio = (props: { signal: SignallingChannel }) => {
-    const [loopLength, setLoopLength] = useState<number>(8);
+    const [loopLength, setLoopLength] = useState<number>(4);
     const [mediaRecorder1, setMediaRecorder1] = useState<any>(null);
     const [mediaRecorder2, setMediaRecorder2] = useState<any>(null);
 
@@ -44,7 +45,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
         navigator.mediaDevices.getUserMedia({audio: true, video: false})
             .then(onRecorderSuccess)
             .catch((err) => {
-                console.log('The following error occured: ' + err);
+                console.log('The following error occurred: ' + err);
             });
         if (audioContext.state === 'suspended') {
             audioContext.resume();
@@ -82,8 +83,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             console.log(`[AUDIO] Received ${data} from channel ${channel.label}`);
             if (channel.label == "audio") {
                 console.log(data);
-                addToPlaylist({blob: new Blob([data]), startOffset: 0, endOffset: 0} as RecordType, peer.meshId!);
-                //todo: Take blob, run addToPlayList on it, done!
+                decodeReceivedData(data, peer.meshId!);
             }
         });
 
@@ -99,45 +99,40 @@ const Audio = (props: { signal: SignallingChannel }) => {
     }
 
     const sendToPeers = useCallback(async (record: RecordType) => {
-        console.log("[addOwnSound] sending to peer")
-
-        /*record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
-            sounds.set("self", [])
-            let decodedRecord: DecodedRecord = {
-                buffer: buffer,
-                startOffset: record.startOffset,
-                endOffset: 0  // Not currently using this
-            }
-            sounds.get("self")!.push(decodedRecord)
-        }));
-        */
-
-        // WTF CHROME DOESN'T SUPPORT BLOBS. NOT IMPLEMENTED ERROR!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        console.log("Sending data to mesh with offset ", record.startOffset)
 
         if (mesh != undefined) {
-            const buf = await record.blob.arrayBuffer();
+            const floatArray: Float64Array = new Float64Array([record.startOffset]);
+            const audioBuffer: ArrayBuffer = await record.blob.arrayBuffer();
+
+            // Use uint8 because audio data comes in whole bytes
+            const combinedArray = new Uint8Array(floatArray.byteLength + audioBuffer.byteLength);
+            combinedArray.set(new Uint8Array(floatArray.buffer));
+            combinedArray.set(new Uint8Array(audioBuffer), floatArray.byteLength);
             console.log("Sending audio")
-            mesh.send("audio", buf);
+
+            mesh.send("audio", combinedArray.buffer);
         } else {
             console.log("Error: Mesh uninitialised")
         }
 
     }, [mesh]);
 
-    const addToPlaylist = (record: RecordType, peerID: string) => {
-        console.log("Received sound from ", peerID)
+    const decodeReceivedData =  async (data: Uint8Array, peerID: string) => {
+        let startOffset: number = new DataView(data).getFloat64(0, true);
 
-        record.blob.arrayBuffer().then(buffer => audioContext.decodeAudioData(buffer).then((buffer: AudioBuffer) => {
-            if (!(peerID in sounds)) {
-                sounds.set(peerID, [])
-            }
-            let decodedRecord: DecodedRecord = {
-                buffer: buffer,
-                startOffset: record.startOffset,
-                endOffset: 0 //Not currently using this
-            }
-            sounds.get(peerID)!.push(decodedRecord)
-        }));
+        let audioArrayBuffer = data.slice(8);  // startOffset (float) takes up first 8 bytes
+        console.log("Received sound from ", peerID, " with start offset ", startOffset)
+        let buffer: AudioBuffer = await audioContext.decodeAudioData(audioArrayBuffer);
+        if (!(peerID in sounds)) {
+            sounds.set(peerID, [])
+        }
+        let decodedRecord: DecodedRecord = {
+            buffer: buffer,
+            startOffset: startOffset,
+            endOffset: 0 //Not currently using this
+        }
+        sounds.get(peerID)!.push(decodedRecord)
     }
 
     const changeLoopLength = (length: number) => {

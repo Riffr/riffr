@@ -11,7 +11,7 @@ interface AudioUploadProps {
     sendToPeers(record: RecordType, isBackingTrack: boolean): void
 }
 
-const AudioUpload = (props: AudioUploadProps) => {
+const AudioUploader = (props: AudioUploadProps) => {
     const [trackBuffer, setTrackBuffer] = useState<DecodedRecord>();
     const [isFilePicked, setIsFilePicked] = useState(false);
     let sourceNode = useRef<AudioBufferSourceNode>(props.audioCtx.createBufferSource());
@@ -82,4 +82,4 @@ const AudioUpload = (props: AudioUploadProps) => {
     )
 }
 
-export default AudioUpload;
+export default AudioUploader;

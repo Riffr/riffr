@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import AudioUpload from './AudioUpload';
+import AudioUploader from './AudioUploader';
 import { SignallingChannel } from "../connections/SignallingChannel";
 import { DecodedRecord } from "./Audio";
 
@@ -141,7 +141,7 @@ const Recorder = (props: RecorderProps) => {
             <button className={"squircle-button light-blue"} disabled={!props.permission}
                 onClick={() => setMuted(!muted)}>{getMuteStatus()}
             </button>
-            <AudioUpload
+            <AudioUploader
                 audioCtx={props.audioCtx}
                 permission={props.permission}
                 loopLength={props.loopLength}

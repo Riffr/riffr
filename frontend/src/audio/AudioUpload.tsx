@@ -8,7 +8,7 @@ interface AudioUploadProps {
     loopLength: number;
     changeLoop(length: number): void;
     addToPlaylist(record: DecodedRecord, peerID: string): void;
-    sendToPeers(record: RecordType): void
+    sendToPeers(record: RecordType, isBackingTrack: boolean): void
 }
 
 const AudioUpload = (props: AudioUploadProps) => {
@@ -39,13 +39,14 @@ const AudioUpload = (props: AudioUploadProps) => {
             startOffset: 0,
             //endOffset: 0
         }
-        //props.sendToPeers(clip);
+        props.sendToPeers(clip, true);
         */
 
         // Add uploaded audio to local playlist
         const decodedRecord: DecodedRecord = {
             buffer: audioBuffer,
-            startOffset: 0
+            startOffset: 0,
+            isBackingTrack: true,
         }
         props.addToPlaylist(decodedRecord, "backingTrack")
 

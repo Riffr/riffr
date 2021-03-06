@@ -11,6 +11,7 @@ import { Mesh as M } from '@riffr/backend';
 export interface DecodedRecord {
     buffer: AudioBuffer;
     startOffset: number;
+    isBackingTrack: boolean;
     //endOffset: number;
 }
 
@@ -95,7 +96,8 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
 
             const combinedArray = new Uint8Array(floatArray.byteLength + audioArray.byteLength);
             combinedArray.set(new Uint8Array(floatArray.buffer));
-            combinedArray.set(new Uint8Array(audioArray), floatArray.byteLength);
+            combinedArray.set([isBackingTrack ? 1 : 0], floatArray.byteLength);
+            combinedArray.set(new Uint8Array(audioArray), floatArray.byteLength + 1);
             console.log("Sending audio")
 
             mesh.send("audio", combinedArray.buffer);
@@ -106,13 +108,16 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     }, [mesh]);
 
     const decodeReceivedData = async (data: Uint8Array) => {
-        let startOffset: number = new DataView(data).getFloat64(0, true);
+        let dataView = new DataView(data);
 
-        let audioArrayBuffer = data.slice(8);  // startOffset (float) takes up first 8 bytes
+        let startOffset: number = dataView.getFloat64(0, true);
+        let isBackingTrack: boolean = !!dataView.getInt8(8);
+        let audioArrayBuffer = data.slice(9);  // startOffset (float64) takes up first 8 bytes, isBackingTrack (int8/bool) is 1 byte
         let buffer: AudioBuffer = await props.audioCtx.decodeAudioData(audioArrayBuffer);
         let decodedRecord: DecodedRecord = {
             buffer: buffer,
             startOffset: startOffset,
+            isBackingTrack: isBackingTrack,
             //endOffset: 0 //Not currently using this
         }
         console.log("Received sound with start offset ", startOffset)
@@ -120,7 +125,10 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     }
 
     const addToPlaylist = (decodedRecord: DecodedRecord, peerID: string) => {
-        console.log("Adding sound from peer ", peerID, " to playlist")
+        console.log("Adding sound from peer ", peerID, " to playlist (isBackingTrack = ", decodedRecord.isBackingTrack, ")");
+        if (decodedRecord.isBackingTrack) {
+            peerID = "backingTrack";
+        }
         if (!(peerID in sounds)) {
             sounds.set(peerID, [])
         }

@@ -17,7 +17,7 @@ interface RecorderProps {
     audioCtx: AudioContext;
 
     addToPlaylist(record: DecodedRecord, peerID: string): void;
-    sendToPeers(record: RecordType): void;
+    sendToPeers(record: RecordType, isBackingTrack: boolean): void;
 
     loopLength: number;
     changeLoop(length: number): void
@@ -91,7 +91,7 @@ const Recorder = (props: RecorderProps) => {
             startOffset: startOffset.current
         }
         console.log(clip)
-        props.sendToPeers(clip);
+        props.sendToPeers(clip, false);
         chunks = [];
     }
 

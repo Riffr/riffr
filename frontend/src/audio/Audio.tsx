@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Recorder, { RecordType } from './Recorder';
 
 // import { SignalPayload } from "@riffr/backend/modules/Mesh";
@@ -28,8 +28,21 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     const [mesh, setMesh] = useState<Mesh | undefined>(undefined);
     const [canvasWidth, setCanvasWidth] = useState(1000);
     const [canvasHeight, setCanvasHeight] = useState(600);
+
     let barCount = useRef(1);
     let sessionOffset = useRef(0);
+
+    const init = () => {
+        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .then((mediaStream: MediaStream) => {
+                setMediaRecorder1(new MediaRecorder(mediaStream));
+                setMediaRecorder2(new MediaRecorder(mediaStream));
+                setPermission(true);
+            })
+            .catch((err) => {
+                console.log('The following error occured: ' + err);
+            });
+    }
 
     const initMesh = useCallback(() => {
         let m = new Mesh();
@@ -70,17 +83,6 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         setMesh(m);
         return () => props.signal.removeAllListeners("signal");
     }, [props.signal]);
-
-
-    const onRecorderSuccess = (mediaStream: MediaStream) => {
-        console.log("On recorder success");
-        // if (props.audioCtx.state === 'suspended') {
-        //     props.audioCtx.resume();
-        // }
-        setMediaRecorder1(new MediaRecorder(mediaStream));
-        setMediaRecorder2(new MediaRecorder(mediaStream));
-        setPermission(true);
-    }
 
     const sendToPeers = useCallback(async (record: RecordType) => {
         console.log("[addOwnSound] sending to peer")
@@ -181,6 +183,10 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         barCount.current += 1
     }
 
+    const update = () => {
+        setTime(props.audioCtx.currentTime - sessionOffset.current);
+    }
+
     /* Canvas resizing code */
     const handleResize = () => {
         let w = document.getElementById("canvas")?.offsetWidth || 1;
@@ -191,27 +197,15 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
 
     window.addEventListener("resize", handleResize);
 
-    const update = () => {
-        setTime(props.audioCtx.currentTime - sessionOffset.current);
-    }
-
-    const init = () => {
-        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-            .then(onRecorderSuccess)
-            .catch((err) => {
-                console.log('The following error occured: ' + err);
-            });
-    }
-
     useEffect(() => {
         let i1 = setInterval(onHalfSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
-        let i3 = setInterval(() => console.log(props.audioCtx), 1000);
+        // let i3 = setInterval(() => console.log(props.audioCtx), 1000);
         handleResize();
         return () => {
             clearInterval(i1);
             clearInterval(i2);
-            clearInterval(i3);
+            // clearInterval(i3);
         }
     }, [loopLength])
 
@@ -232,10 +226,8 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
                         sessionOffset={sessionOffset.current}
                         changeLoop={changeLoopLength}
                     />
-                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Start
-                    </button>
-                    <button className={"squircle-button light-blue"} onClick={leave}>Leave
-                    </button>
+                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Start</button>
+                    <button className={"squircle-button light-blue"} onClick={leave}>Leave</button>
                     <button className={"squircle-button light-blue"} onClick={initMesh}>Init Mesh</button>
                     <button className={"squircle-button light-blue"} onClick={() => {
                         mesh?.send("data", "test")

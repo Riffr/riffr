@@ -22,18 +22,19 @@ const AudioUpload = (props: AudioUploadProps) => {
         return extension === ".mp3" || extension === ".wav";
     }
 
-    const onLoadFileSuccess = (arrayBuffer: ArrayBuffer, audioBuffer: AudioBuffer) => {
+    const onLoadFileSuccess = async (arrayBuffer: ArrayBuffer) => {
         // Convert AudioBuffer into ArrayBuffer that can be sent to other peers
-        console.log("Loaded audio file")
+        console.log("Loaded audio file of size ", arrayBuffer.byteLength)
 
         const clip: RecordType = {
             buffer: arrayBuffer,
             startOffset: 0,
-            //endOffset: 0
         }
         props.sendToPeers(clip, true);
 
         // Add uploaded audio to local playlist
+        let audioBuffer: AudioBuffer = await props.audioCtx.decodeAudioData(arrayBuffer)
+
         const decodedRecord: DecodedRecord = {
             buffer: audioBuffer,
             startOffset: 0,
@@ -50,26 +51,9 @@ const AudioUpload = (props: AudioUploadProps) => {
 
     const removeFile = () => {
         if (isFilePicked) {
-            /*
-            sourceNode.current.stop();
-            sourceNode.current.disconnect();
-            gainNode.current.disconnect();
-            */
             // TODO Send blank file
             setIsFilePicked(false);
         }
-    }
-
-    const playTrack = (decodedRecord: DecodedRecord, volume: number, startTime: number) => {
-        // Not currently used
-        sourceNode.current = props.audioCtx.createBufferSource();
-        gainNode.current = props.audioCtx.createGain();
-        sourceNode.current.buffer = decodedRecord.buffer;
-        sourceNode.current.connect(gainNode.current);
-        gainNode.current.connect(props.audioCtx.destination);
-        gainNode.current.gain.value = volume;
-        sourceNode.current.loop = true;
-        sourceNode.current.start(startTime);
     }
 
     const changeHandler = (event: BaseSyntheticEvent) => {
@@ -80,12 +64,7 @@ const AudioUpload = (props: AudioUploadProps) => {
                 let reader = new FileReader();
                 reader.onload = (event: any) => {
                     if (fileCheck(filename)) {
-                        let arrayBuffer: ArrayBuffer = event.target.result;
-                        let copyOfArrayBuffer: ArrayBuffer = arrayBuffer.slice(0);
-                        props.audioCtx.decodeAudioData(event.target.result)
-                            .then((audioBuffer: AudioBuffer) => {
-                                onLoadFileSuccess(copyOfArrayBuffer, audioBuffer);
-                            });
+                        onLoadFileSuccess(event.target.result);
                     } else {
                         removeFile();
                     }

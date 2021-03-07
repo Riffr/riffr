@@ -1,7 +1,7 @@
 
-import { Context, error, Handler, Store } from '../Server';
-import { User } from './Chat';
-import { inRoom, room, Room, RoomState } from './Room';
+import { Context, error, Handler, Store, success } from '../Server';
+import { UserProps } from './Chat';
+import { inRoom, room, Room, RoomContext, RoomState, User } from './Room';
 
 import { SignalPayloadType as PeerSignalPayloadType } from './signalling/Peer'; 
 import { 
@@ -21,10 +21,9 @@ import {
 } from './signalling/Mesh';
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////
 
 interface Mesh {
-    id: string,
-
     // A map map from peerIds to socketIds. 
     peers: Map<string, string>,
 
@@ -42,7 +41,7 @@ enum SignalEvent {
     Signal = "signal/signal",
 };
 
-class SignalState extends RoomState<User>() {
+class SignalState extends RoomState<UserProps>() {
     public mesh?: Mesh;
 };
 
@@ -54,7 +53,7 @@ const hasMesh = (f: (mesh: Mesh) => Handler) => {
     }
 }
 
-const acceptPeer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) => 
+const acceptPeer = inRoom((room: Room<UserProps>, user: User<UserProps>) => hasMesh((mesh: Mesh) => 
     (ctx: Context, peer: Peer, requestor: string) => {
         const { peerId } = peer;
 
@@ -65,7 +64,7 @@ const acceptPeer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
         // Accepting mesh must be notified that the peer is accepted
         ctx.socket.emit(SignalEvent.Signal, { 
             type: MeshMessageType.PeerAccepted,
-            meshId: rmesh.id, 
+            userId: user.id, 
             peerId: peerId,
         } as PeerAcceptedPayload);
         mesh.peers.set(peerId, requestor);
@@ -80,7 +79,7 @@ const acceptPeer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
         rmesh.peers.set(peerId, ctx.socket.id);
     }));
 
-const handleCandidate = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) => 
+const handleCandidate = inRoom((room: Room<UserProps>) => hasMesh((mesh: Mesh) => 
     (ctx: Context, payload: CandidatePayload) => {
         const { id } = payload;
         const to = mesh.peers.get(id);
@@ -92,7 +91,7 @@ const handleCandidate = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
         }
     }));
 
-const handleOffer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) => 
+const handleOffer = inRoom((room: Room<UserProps>, user: User<UserProps>) => hasMesh((mesh: Mesh) => 
     (ctx: Context, payload: OfferPayload) => {
 
         const { id } = payload;
@@ -108,7 +107,7 @@ const handleOffer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
             peer.signals.push(payload);
             return;
         } 
-        mesh.peerBuffer.push({ meshId: mesh.id, peerId: id, signals: [payload] });
+        mesh.peerBuffer.push({ userId: user.id, peerId: id, signals: [payload] });
         const requestor = mesh.peerRequestBuffer.pop();
         if (requestor) {
             const peer = mesh.peerBuffer.pop()!
@@ -116,7 +115,7 @@ const handleOffer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
         }
     }));
 
-const handleAnswer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
+const handleAnswer = inRoom((room: Room<UserProps>) => hasMesh((mesh: Mesh) =>
     (ctx: Context, payload: AnswerPayload) => {
 
         const { id } = payload;
@@ -129,21 +128,14 @@ const handleAnswer = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
 
 
 
-const handleInit = inRoom((room: Room<string>) => 
+const handleInit = inRoom((room: Room<UserProps>, user: User<UserProps>) => 
     (ctx: Context, payload: InitPayload) => {
-        console.log("Handling init");
-        const { meshId } = payload;
 
-        // If meshId is registered, ignore
-        if (Array.from(room.members.values()).filter(x => x == meshId).length != 0) 
-            return;
-            // callback(error(`Mesh with id ${ meshId } already initialized in room ${ room.id }`));
 
-        console.log(`[Init] Initializing mesh with id ${ meshId }`);
+        console.log(`[Init] Initializing mesh for user ${ user }`);
 
         // initialize mesh state
-        Store.of<SignalState>(ctx).mesh = { 
-            id: meshId, 
+        Store.of<SignalState>(ctx).mesh = {  
             peers: new Map(), 
             peerRequestBuffer: [], 
             peerBuffer: []
@@ -181,7 +173,7 @@ const handleInit = inRoom((room: Room<string>) =>
 
     });
 
-const handleClose = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) => 
+const handleClose = inRoom((room: Room<UserProps>) => hasMesh((mesh: Mesh) => 
     (ctx: Context) => {
         const { peers } = mesh;
 
@@ -194,7 +186,7 @@ const handleClose = inRoom((room: Room<string>) => hasMesh((mesh: Mesh) =>
 
     }));
     
-const signalling = room<User>("/signalling", SignalState);
+const signalling = room<UserProps>("/signalling", SignalState);
 
 signalling.on(SignalEvent.Signal, (ctx: Context, payload: SignalPayload) => {
     console.log(`Signal Payload: ${ JSON.stringify(payload.type) }`);

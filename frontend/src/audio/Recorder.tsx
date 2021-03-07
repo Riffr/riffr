@@ -51,21 +51,7 @@ const Recorder = (props: RecorderProps) => {
         }
     }
 
-    const getPermission = async () => {
-        let mediaStream: MediaStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: false
-        });
-        setMediaRecorder1(new MediaRecorder(mediaStream));
-        setMediaRecorder2(new MediaRecorder(mediaStream));
-        setPermission(true);
-    }
-
     const startRecording = () => {
-        if (!permission) {
-            getPermission();
-        }
-
         if (props.audioCtx.state === 'suspended') {
             console.log("Audio context permission required");
         }
@@ -138,6 +124,22 @@ const Recorder = (props: RecorderProps) => {
         }
     }, [props.sessionOffset, props.loopLength, recorder1, recorder2, permission, muted])
 
+    const getPermission = async () => {
+        let mediaStream: MediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: false
+        });
+        setMediaRecorder1(new MediaRecorder(mediaStream));
+        setMediaRecorder2(new MediaRecorder(mediaStream));
+        setPermission(true);
+    }
+
+    const toggleMuted = () => {
+        if (!permission) {
+            getPermission();
+        }
+        setMuted(!muted)
+    }
 
     const getMuteStatus = () => {
         return muted ? "Unmute" : "Mute"
@@ -156,7 +158,7 @@ const Recorder = (props: RecorderProps) => {
             <label> {getRecordingStatus()}</label>
             <label> {getRecordingStatus2()}</label>
             <button className={"squircle-button light-blue"}
-                onClick={() => setMuted(!muted)}>{getMuteStatus()}
+                onClick={toggleMuted}>{getMuteStatus()}
             </button>
             <AudioUploader
                 audioCtx={props.audioCtx}

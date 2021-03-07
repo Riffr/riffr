@@ -4,6 +4,7 @@ import { RecordType } from "./Recorder";
 
 interface AudioUploadProps {
     audioCtx: AudioContext;
+    paused: boolean;
     permission: boolean;
     loopLength: number;
     changeLoop(length: number): void;
@@ -14,8 +15,6 @@ interface AudioUploadProps {
 const AudioUploader = (props: AudioUploadProps) => {
     const [trackBuffer, setTrackBuffer] = useState<DecodedRecord>();
     const [isFilePicked, setIsFilePicked] = useState(false);
-    let sourceNode = useRef<AudioBufferSourceNode>(props.audioCtx.createBufferSource());
-    let gainNode = useRef<GainNode>(props.audioCtx.createGain());
 
     const fileCheck = (filename: string) => {
         let extension = filename.substring(filename.lastIndexOf('.'), filename.length) || filename;
@@ -46,7 +45,7 @@ const AudioUploader = (props: AudioUploadProps) => {
         setTrackBuffer(decodedRecord);
 
         // TODO uncomment later
-        //props.changeLoop(audioBuffer.duration);
+        props.changeLoop(audioBuffer.duration);
     }
 
     const removeFile = () => {
@@ -76,8 +75,8 @@ const AudioUploader = (props: AudioUploadProps) => {
 
     return (
         <div>
-            <input type="file" id="audio-file" accept=".mp3,.wav" disabled={!props.permission} onChange={changeHandler} />
-            <button disabled={!props.permission} onClick={removeFile}>Remove Audio</button>
+            <input type="file" id="audio-file" accept=".mp3,.wav" disabled={!props.paused} onChange={changeHandler} />
+            <button disabled={!props.paused} onClick={removeFile}>Remove Audio</button>
         </div>
     )
 }

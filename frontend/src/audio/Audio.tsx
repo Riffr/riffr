@@ -16,8 +16,8 @@ export interface DecodedRecord {
 }
 
 const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, resetAudioCtx: () => void }) => {
+    const [paused, setPaused] = useState(false);
     const [loopLength, setLoopLength] = useState<number>(8);
-
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
     const [previousSounds, setPreviousSounds] = useState<Map<string, DecodedRecord>>(new Map());
     const [time, setTime] = useState(0);
@@ -26,11 +26,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     const [canvasHeight, setCanvasHeight] = useState(600);
 
     let barCount = useRef(1);
-    let sessionOffset = useRef(0);
-
-    const init = () => {
-
-    }
+    let newLoopLength = useRef(8);
 
     const initMesh = useCallback(() => {
         let m = new Mesh();
@@ -134,12 +130,29 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         props.resetAudioCtx();
     }
 
-    const changeLoopLength = (length: number) => {
-        if (length !== loopLength) {
+    const togglePaused = () => {
+        if (paused) {
+            props.resetAudioCtx();
+            checkLoopLength();
+        } else {
             clearAudio();
-            setLoopLength(length);
-            sessionOffset.current = props.audioCtx.currentTime;
-            setTime(0);
+            props.audioCtx.close();
+        }
+        setPaused(!paused);
+    }
+
+    const getPausedStatus = () => {
+        return paused ? "Start" : "Stop";
+    }
+
+    const changeLoopLength = (length: number) => {
+        newLoopLength.current = length;
+    }
+
+    const checkLoopLength = () => {
+        if (newLoopLength.current !== loopLength) {
+            console.log("Detect loop length change");
+            setLoopLength(newLoopLength.current);
             barCount.current = 1;
         }
     }
@@ -151,7 +164,8 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         sourceNode.connect(gainNode);
         gainNode.connect(props.audioCtx.destination);
         gainNode.gain.value = volume;
-        sourceNode.start(sessionOffset.current + loopLength * barCount.current, record.startOffset, loopLength);
+        console.log("Scheduled to play: ", loopLength * barCount.current);
+        sourceNode.start(loopLength * barCount.current, record.startOffset, loopLength);
     }
 
     const onSectionStart = () => {
@@ -179,7 +193,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     }
 
     const update = () => {
-        setTime(props.audioCtx.currentTime - sessionOffset.current);
+        setTime(props.audioCtx.currentTime);
     }
 
     /* Canvas resizing code */
@@ -195,14 +209,14 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     useEffect(() => {
         let i1 = setInterval(onSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
-        // let i3 = setInterval(() => console.log(props.audioCtx), 1000);
+        let i3 = setInterval(() => console.log(props.audioCtx), 4000);
         handleResize();
         return () => {
             clearInterval(i1);
             clearInterval(i2);
             // clearInterval(i3);
         }
-    }, [loopLength])
+    }, [loopLength, props.audioCtx])
 
     useEffect(() => {
         let cleanup = initMesh();
@@ -216,14 +230,13 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
                 <div id={"audio"}>
                     <Recorder
                         audioCtx={props.audioCtx}
+                        paused={paused}
                         addToPlaylist={addToPlaylist}
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
-                        sessionOffset={sessionOffset.current}
                         changeLoop={changeLoopLength}
                     />
-                    <button className={"squircle-button light-blue"} disabled={false} onClick={init}>Start</button>
-                    <button className={"squircle-button light-blue"} onClick={leave}>Leave</button>
+                    <button className={"squircle-button light-blue"} onClick={togglePaused}>{getPausedStatus()}</button>
                     <button className={"squircle-button light-blue"} onClick={() => {
                         mesh?.send("data", "test")
                     }}>Send Dummy Audio

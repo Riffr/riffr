@@ -13,10 +13,14 @@ const Home = (props: { socket: Socket, setCreate: (create: boolean) => void }) =
 
     let randomRoomName = generateRandomRoomName();
 
-    const newRoomClick = useCallback(() => {
-        console.log(props)
+    const joinRoom = () => {
+        props.setCreate(false);
+    };
+
+    const newRoomClick = () => {
+        console.log(`Creating room`);
         props.setCreate(true);
-    }, [name]);
+    };
 
     return (
         <div id={"home-wrapper"}>
@@ -25,7 +29,7 @@ const Home = (props: { socket: Socket, setCreate: (create: boolean) => void }) =
             <div className={"lobby-container"} id={"join-lobby"}>
                 <TextInput id={"lobby-input"} placeholder={"Enter lobby name"} parentCallback={setLobbyName}/>
                 <Link to={`/lobby/${lobbyName}/${name}`} className={"circle-button button blue white-text"}
-                      id={"join-button"}>
+                      id={"join-button"} onClick={joinRoom}>
                     <i className={"fa fa-send block"}/>
                 </Link>
             </div>

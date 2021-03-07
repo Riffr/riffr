@@ -6,7 +6,11 @@ import Audio from "./audio/Audio";
 import AudioComponent from "./audio/AudioComponent";
 import { Socket } from './connections/Socket';
 import { SignallingChannel } from "./connections/SignallingChannel";
-import { Message, User } from "@riffr/backend";
+import { 
+    Message, 
+    ChatUser as User,
+    UserProps
+} from "@riffr/backend";
 import { ChatClient } from './connections/ChatClient';
 
 const Room = (props: { roomCode: string, name: string, socket: Socket, create: boolean, chatClient?: ChatClient }) => {
@@ -14,44 +18,50 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState<Array<Message>>([]);
 
-    let [members, setMembers] = useState<Array<User>>([]);
+    let [members, setMembers] = useState<Array<UserProps>>([]);
+    
+    const userProps: UserProps = { username: props.name };
+
     let [memberListShown, setListShown] = useState("grid");
 
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
     let [audio, setAudio] = useState(<div />);
 
-    const user: User = { id: props.name };
 
-    const onMessageReceived = (message: Message) => {
-        // I promise I'll be good later...
-        // @ts-ignore
-        setMessages(prev => [...prev, message]);
-    }
+    const onMessageReceived = useCallback((message: Message) => {
+        const { from, content } = message;
+
+        const username = props.chatClient?.room.members.get(from)?.username
+        if (!username) return;
+
+        setMessages(prev => [...prev, { from: username, content}]);
+    }, [props.chatClient]);
 
     const sendMessage = useCallback(() => {
         let msg = message;
 
         // Add some UI for pending messages?
         if (!props.chatClient) return;
+        const username = props.chatClient.user.username;
         props.chatClient.send(message);
-        // @ts-ignore
-        setMessages(prev => [...prev, { from: user, content: msg } as Message]);
+
+        setMessages(prev => [...prev, {from: username, content: msg} as Message]);
         setMessage("");
-
-
-    }, [props.socket, message, props.chatClient]);
+    }, [message, props.chatClient]);
 
     useEffect(() => {
         (async () => {
             const channel = await (props.create
-                ? SignallingChannel.createRoom(props.socket, props.roomCode, user)
-                : SignallingChannel.joinRoom(props.socket, props.roomCode, user));
+                ? SignallingChannel.createRoom(props.socket, props.roomCode, userProps)
+                : SignallingChannel.joinRoom(props.socket, props.roomCode, userProps));
 
             setAudio(<AudioComponent signal={channel} />);
         })();
+    }, []);
 
-        setMembers(props.chatClient?.room.members || []);
+    useEffect(() => {
+        setMembers(Array.from(props.chatClient?.room.members.values() || []));
 
         props.chatClient?.on("message", (_, message: Message) => {
             onMessageReceived(message);
@@ -60,10 +70,8 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
         return () => {
             props.chatClient?.removeAllListeners("message");
             props.chatClient?.room.removeAllListeners("membersUpdated");
-            props.chatClient?.leave();
         };
-
-    }, []);
+    }, [props.chatClient]);
 
     useEffect(() => {
         document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
@@ -106,13 +114,14 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
             {audio}
             <div id={"chat"} style={{ display: chatDisplay }}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
-                <div id={"member-list"} style={{ display: memberListShown }}>
-                    <p><b>Members: </b>{members.map(user => user.id).join(", ")}</p>
+                <div id={"member-list"}>
+                    <p><b>Members: </b>{members.map(user => user.username).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
-                    </div>)}
+                            <p className={"chat-message"}><b>{x.from}</b>: {x.content}</p>
+                        </div>
+                    )}
                 </div>
                 <div>
                     <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}

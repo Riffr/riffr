@@ -5,66 +5,74 @@ import './css/General.css'
 
 import { Socket } from './connections/Socket';
 
-import { ChatEvent, User, Message } from '@riffr/backend';
+import { 
+    ChatEvent, 
+    ChatUser as User,
+    UserProps,
+    Message 
+} from '@riffr/backend';
 import { ChatClient } from './connections/ChatClient';
 import { Room } from './connections/Room';
 
 const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: boolean, chatClient?: ChatClient, setChatClient: (chat?: ChatClient) => void }) => {
     
     let [message, setMessage] = useState("");
-    let [messages, setMessages] = useState([]);
-    let [members, setMembers] = useState<Array<User>>([]);
+    let [messages, setMessages] = useState<Array<{ from: string, content: string }>>([]);
+    let [members, setMembers] = useState<Array<UserProps>>([]);
     
-    const user: User = { id: props.name };
+    const userProps: UserProps = { username: props.name };
 
-    const onMessageReceived = (message: Message) => {
-        console.log(messages);
-        // I promise I'll be good later...
-        // @ts-ignore
-        setMessages(prev => [...prev, message]);
-    }
+    const onMessageReceived = useCallback((message: Message) => {
+        const { from, content } = message;
+        const username = props.chatClient?.room.members.get(from)?.username
+        if (!username) return;
+
+        setMessages(prev => [...prev, { from: username, content}]);
+    }, [props.chatClient]);
 
     const sendMessage = useCallback(() => {
         let msg = message;
 
         // Add some UI for pending messages?
         if (!props.chatClient) return;
+        const username = props.chatClient.user.username;
         props.chatClient.send(message);
 
-        // @ts-ignore
-        setMessages(prev => [...prev, {from: user, content: msg} as Message]);
+        setMessages(prev => [...prev, {from: username, content: msg} as Message]);
         setMessage("");
 
 
-    }, [props.socket, message, props.chatClient]);
+    }, [message, props.chatClient]);
 
     useEffect(() => {
         (async () => {
             console.log("registering...");
             const client = await (props.create 
-                ? ChatClient.createRoom(props.socket, props.roomCode, user)
-                : ChatClient.joinRoom(props.socket, props.roomCode, user));
+                ? ChatClient.createRoom(props.socket, props.roomCode, userProps)
+                : ChatClient.joinRoom(props.socket, props.roomCode, userProps));
 
  
-            client.room.on("membersUpdated", (room: Room<User>) => {
-                setMembers(room.members);
-            })
-
-            client.on("message", (_, message: Message) => {
-                onMessageReceived(message);
-            });
+            setMembers(Array.from(client.room.members.values() || []));
 
             props.setChatClient(client);
-            setMembers(client.room.members || []);
-
         }) ();
+    }, []);
+
+    useEffect(() => {
+        props.chatClient?.room.on("membersUpdated", (room: Room<User>) => {
+            setMembers(Array.from(room.members.values()));
+        })
+
+        props.chatClient?.on("message", (_, message: Message) => {
+            onMessageReceived(message);
+        });
 
         return () => { 
             props.chatClient?.removeAllListeners("message"); 
             props.chatClient?.room.removeAllListeners("membersUpdated"); 
-            props.chatClient?.leave();
+            // props.chatClient?.leave();
         };
-    }, []);
+    }, [props.chatClient])
 
     useEffect(() => {
         document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
@@ -75,6 +83,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             sendMessage();
         }
     }
+
 
     return (
         <div id="lobby-wrapper">
@@ -88,12 +97,13 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
             <CopyField id={"copy-field"} value={props.roomCode}/>
             <div>
                 <div id={"member-list"}>
-                    <p><b>Members: </b>{members.map(user => user.id).join(", ")}</p>
+                    <p><b>Members: </b>{members.map(user => user.username).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
-                    </div>)}
+                            <p className={"chat-message"}><b>{x.from}</b>: {x.content}</p>
+                        </div>
+                    )}
                 </div>
                 <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
                        placeholder={"Type message"}

@@ -10,14 +10,20 @@ import { ChatClient } from './connections/ChatClient';
 
 const App = () => {
     const socket = new Socket("127.0.0.1:10000");
-    const [create, setCreate] = useState(false);
-    const [chatClient, setChatClient] = useState<ChatClient|undefined>(undefined);
+    // const [create, setCreate] = useState(false);
+    // const [chatClient, setChatClient] = useState<ChatClient|undefined>(undefined);
 
     return (
         <Router>
             <div className="App">
-                <Route path="/" exact render={() => <Home socket={socket} setCreate={setCreate}/>}/>
-                <Route path="/lobby/:code/:name" render={({match}) => (
+                <Route exact path="/" />
+                    <Home />
+                </Route>
+                <Route path="/(:roomId)/(:username)?create=(:create)">
+                    <LobbyRoom />
+                </Route>
+{/*                 
+                <Route path="/:code/:name" render={({match}) => (
                     <Lobby
                         roomCode={match.params.code}
                         name={match.params.name}
@@ -38,7 +44,7 @@ const App = () => {
                         // Chat Client state
                         chatClient={chatClient}
                     />
-                )}/>
+                )}/> */}
             </div>
         </Router>
     );

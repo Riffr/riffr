@@ -14,13 +14,13 @@ export interface RecordType {
 
 interface RecorderProps {
     audioCtx: AudioContext;
+    paused: boolean;
 
     addToPlaylist(record: DecodedRecord, peerID: string): void;
     sendToPeers(record: RecordType, isBackingTrack: boolean): void;
 
     loopLength: number;
     changeLoop(length: number): void
-    sessionOffset: number
 }
 
 //Todo: Not really synced with the audio player, might have to move logic here into audio as well
@@ -36,11 +36,8 @@ const Recorder = (props: RecorderProps) => {
     const [muted, setMuted] = useState(true);
     const [recording, setRecording] = useState(false);
 
-    // To get audio context currentTime in this session, use (props.audioCtx.currentTime - props.sessionOffset)
-
-    const checkRecord = (sessionOffset: number) => {
-        // console.log("Checking if we should start recording at time ", props.audioCtx.currentTime - sessionOffset);
-        if (!recording && props.loopLength - (props.audioCtx.currentTime - sessionOffset) % props.loopLength <= (props.loopLength / 10)) {
+    const checkRecord = () => {
+        if (!recording && props.loopLength - (props.audioCtx.currentTime) % props.loopLength <= (props.loopLength / 10)) {
             console.log("Checking muted")
             if (!muted) {
                 console.log("We should!")
@@ -68,7 +65,7 @@ const Recorder = (props: RecorderProps) => {
             setTimeout(() => { console.log("Setting recording to false"); setRecording(false) }, props.loopLength * 1000 / 2 + startOffset.current * 1000)
 
             recorder.start();
-            startOffset.current = props.loopLength - (props.audioCtx.currentTime - props.sessionOffset) % props.loopLength;
+            startOffset.current = props.loopLength - (props.audioCtx.currentTime) % props.loopLength;
             setTimeout(() => { stopRecording(recorder) }, props.loopLength * 1000 + startOffset.current * 1000);
 
         } else {
@@ -82,7 +79,7 @@ const Recorder = (props: RecorderProps) => {
         if (recorder !== null && recorder.state !== 'inactive') {
             console.log("Stop recording");
             recorder.stop();
-            stopOffset.current = (props.audioCtx.currentTime - props.sessionOffset) % props.loopLength;
+            stopOffset.current = (props.audioCtx.currentTime) % props.loopLength;
         }
     }
 
@@ -118,11 +115,11 @@ const Recorder = (props: RecorderProps) => {
     }
 
     useEffect(() => {
-        let i1 = setInterval(() => checkRecord(props.sessionOffset), props.loopLength * 100);
+        let i1 = setInterval(() => checkRecord(), props.loopLength * 100);
         return () => {
             clearInterval(i1);
         }
-    }, [props.sessionOffset, props.loopLength, recorder1, recorder2, permission, muted])
+    }, [props.loopLength, recorder1, recorder2, permission, muted])
 
     const getPermission = async () => {
         let mediaStream: MediaStream = await navigator.mediaDevices.getUserMedia({
@@ -162,6 +159,7 @@ const Recorder = (props: RecorderProps) => {
             </button>
             <AudioUploader
                 audioCtx={props.audioCtx}
+                paused={props.paused}
                 permission={permission}
                 loopLength={props.loopLength}
                 changeLoop={props.changeLoop}

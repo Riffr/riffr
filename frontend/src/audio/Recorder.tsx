@@ -3,6 +3,7 @@ import AudioUploader from './AudioUploader';
 import { SignallingChannel } from "../connections/SignallingChannel";
 import { DecodedRecord } from "./Audio";
 
+declare var MediaRecorder: any;
 type BlobEvent = { data: Blob; }
 
 export interface RecordType {
@@ -12,8 +13,6 @@ export interface RecordType {
 }
 
 interface RecorderProps {
-    recorder1: any;
-    recorder2: any;
     audioCtx: AudioContext;
 
     addToPlaylist(record: DecodedRecord, peerID: string): void;
@@ -21,15 +20,19 @@ interface RecorderProps {
 
     loopLength: number;
     changeLoop(length: number): void
-    permission: boolean;
     sessionOffset: number
 }
 
 //Todo: Not really synced with the audio player, might have to move logic here into audio as well
 const Recorder = (props: RecorderProps) => {
     let chunks: BlobPart[] = [];
+    const [recorder1, setMediaRecorder1] = useState<any>(null);
+    const [recorder2, setMediaRecorder2] = useState<any>(null);
+
     const startOffset = useRef(0);
     const stopOffset = useRef(0);
+    const [permission, setPermission] = useState(false);
+
     const [muted, setMuted] = useState(true);
     const [recording, setRecording] = useState(false);
 
@@ -53,10 +56,10 @@ const Recorder = (props: RecorderProps) => {
             console.log("Audio context permission required");
         }
         let recorder: any;
-        if (props.recorder1 !== null && props.recorder1.state !== 'recording') {
-            recorder = props.recorder1;
-        } else if (props.recorder2 !== null && props.recorder2.state !== 'recording') {
-            recorder = props.recorder2;
+        if (recorder1 !== null && recorder1.state !== 'recording') {
+            recorder = recorder1;
+        } else if (recorder2 !== null && recorder2.state !== 'recording') {
+            recorder = recorder2;
         }
         if (recorder) {
             console.log("Start recording...");
@@ -70,8 +73,8 @@ const Recorder = (props: RecorderProps) => {
 
         } else {
             console.log("Starting recording failed");
-            console.log(props.recorder1);
-            console.log(props.recorder2);
+            console.log(recorder1);
+            console.log(recorder2);
         }
     }
 
@@ -96,19 +99,19 @@ const Recorder = (props: RecorderProps) => {
     }
 
 
-    if (props.recorder1 !== null) {
-        props.recorder1.onstop = saveRecording;
+    if (recorder1 !== null) {
+        recorder1.onstop = saveRecording;
 
-        props.recorder1.ondataavailable = (evt: BlobEvent) => {
+        recorder1.ondataavailable = (evt: BlobEvent) => {
             console.log("Saving recorder1")
             chunks.push(evt.data);
         }
     }
 
-    if (props.recorder2 !== null) {
-        props.recorder2.onstop = saveRecording;
+    if (recorder2 !== null) {
+        recorder2.onstop = saveRecording;
 
-        props.recorder2.ondataavailable = (evt: BlobEvent) => {
+        recorder2.ondataavailable = (evt: BlobEvent) => {
             console.log("Saving recorder2")
             chunks.push(evt.data);
         }
@@ -119,17 +122,33 @@ const Recorder = (props: RecorderProps) => {
         return () => {
             clearInterval(i1);
         }
-    }, [props.sessionOffset, props.loopLength, props.recorder1, props.recorder2, props.permission, muted])
+    }, [props.sessionOffset, props.loopLength, recorder1, recorder2, permission, muted])
 
+    const getPermission = async () => {
+        let mediaStream: MediaStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: false
+        });
+        setMediaRecorder1(new MediaRecorder(mediaStream));
+        setMediaRecorder2(new MediaRecorder(mediaStream));
+        setPermission(true);
+    }
+
+    const toggleMuted = () => {
+        if (!permission) {
+            getPermission();
+        }
+        setMuted(!muted)
+    }
 
     const getMuteStatus = () => {
         return muted ? "Unmute" : "Mute"
     }
     const getRecordingStatus = () => {
-        return (props.recorder1 !== null && props.recorder1.state === "recording") ? "Recording" : "Not recording"
+        return (recorder1 !== null && recorder1.state === "recording") ? "Recording" : "Not recording"
     }
     const getRecordingStatus2 = () => {
-        return (props.recorder2 !== null && props.recorder2.state === "recording") ? "Recording" : "Not recording"
+        return (recorder2 !== null && recorder2.state === "recording") ? "Recording" : "Not recording"
     }
 
     // TODO stop recording immediately when pressing "Mute"
@@ -138,12 +157,12 @@ const Recorder = (props: RecorderProps) => {
         <div>
             <label> {getRecordingStatus()}</label>
             <label> {getRecordingStatus2()}</label>
-            <button className={"squircle-button light-blue"} disabled={!props.permission}
-                onClick={() => setMuted(!muted)}>{getMuteStatus()}
+            <button className={"squircle-button light-blue"}
+                onClick={toggleMuted}>{getMuteStatus()}
             </button>
             <AudioUploader
                 audioCtx={props.audioCtx}
-                permission={props.permission}
+                permission={permission}
                 loopLength={props.loopLength}
                 changeLoop={props.changeLoop}
                 addToPlaylist={props.addToPlaylist}

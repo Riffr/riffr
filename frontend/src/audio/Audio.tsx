@@ -15,16 +15,11 @@ export interface DecodedRecord {
     //endOffset: number;
 }
 
-declare var MediaRecorder: any;
-
 const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, resetAudioCtx: () => void }) => {
     const [loopLength, setLoopLength] = useState<number>(8);
-    const [mediaRecorder1, setMediaRecorder1] = useState<any>(null);
-    const [mediaRecorder2, setMediaRecorder2] = useState<any>(null);
 
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
     const [previousSounds, setPreviousSounds] = useState<Map<string, DecodedRecord>>(new Map());
-    const [permission, setPermission] = useState(false);
     const [time, setTime] = useState(0);
     const [mesh, setMesh] = useState<Mesh | undefined>(undefined);
     const [canvasWidth, setCanvasWidth] = useState(1000);
@@ -34,15 +29,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     let sessionOffset = useRef(0);
 
     const init = () => {
-        navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-            .then((mediaStream: MediaStream) => {
-                setMediaRecorder1(new MediaRecorder(mediaStream));
-                setMediaRecorder2(new MediaRecorder(mediaStream));
-                setPermission(true);
-            })
-            .catch((err) => {
-                console.log('The following error occurred: ' + err);
-            });
+
     }
 
     const initMesh = useCallback(() => {
@@ -228,17 +215,14 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
-                        recorder1={mediaRecorder1}
-                        recorder2={mediaRecorder2}
                         audioCtx={props.audioCtx}
                         addToPlaylist={addToPlaylist}
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
-                        permission={permission}
                         sessionOffset={sessionOffset.current}
                         changeLoop={changeLoopLength}
                     />
-                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Start</button>
+                    <button className={"squircle-button light-blue"} disabled={false} onClick={init}>Start</button>
                     <button className={"squircle-button light-blue"} onClick={leave}>Leave</button>
                     <button className={"squircle-button light-blue"} onClick={() => {
                         mesh?.send("data", "test")

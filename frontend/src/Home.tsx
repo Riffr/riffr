@@ -1,5 +1,5 @@
-import React, {useCallback, useState} from 'react';
-import {Link} from "react-router-dom";
+import React, {useCallback, useEffect, useState} from 'react';
+import {Link, useHistory} from "react-router-dom";
 import './css/Home.css'
 import './css/General.css'
 
@@ -10,13 +10,30 @@ import {Socket} from "./connections/Socket";
 const Home = (props: { socket: Socket, setCreate: (create: boolean) => void }) => {
     const [name, setName] = useState("User");
     const [lobbyName, setLobbyName] = useState("");
-
+    const history = useHistory();
     let randomRoomName = generateRandomRoomName();
 
     const newRoomClick = useCallback(() => {
         console.log(props)
         props.setCreate(true);
     }, [name]);
+
+    useEffect(() => {
+        document.getElementById("name-input")?.focus();
+        document.getElementById("name-input")?.addEventListener("keydown", (e) => {
+            if (e.keyCode === 13) {
+                document.getElementById("lobby-input")?.focus();
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        document.getElementById("lobby-input")?.addEventListener("keydown", (e) => {
+            if (e.keyCode === 13) {
+                history.push(`/lobby/${lobbyName}/${name}`);
+            }
+        });
+    }, [name, lobbyName]);
 
     return (
         <div id={"home-wrapper"}>
@@ -49,11 +66,13 @@ const generateRandomRoomName = () => {
         words.splice(Math.floor(Math.random() * words.length), 1)[0];
 }
 
-const TextInput = (props: { id: string, placeholder: string, autoComplete?: string, parentCallback: (arg0: string) => void }) => {
+
+const TextInput = (props: { id: string, placeholder: string, autoComplete?: string, parentCallback: (arg0: string) => void}) => {
     let autoComplete = "off";
     if (props.autoComplete != undefined) {
         autoComplete = props.autoComplete;
     }
+
     return (
         <input type={"textField"} id={props.id} className={"text-input"} placeholder={props.placeholder}
                autoComplete={autoComplete} onChange={(e) => {

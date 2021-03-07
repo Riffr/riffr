@@ -5,7 +5,7 @@ import './css/General.css'
 
 import { Socket } from './connections/Socket';
 
-import { ChatEvent, User, Message } from '@riffr/backend';
+import { User, Message } from '@riffr/backend';
 import { ChatClient } from './connections/ChatClient';
 import { Room } from './connections/Room';
 
@@ -56,6 +56,8 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
 
             props.setChatClient(client);
             setMembers(client.room.members || []);
+
+            document.getElementById("chat-input")?.focus();
 
         }) ();
 

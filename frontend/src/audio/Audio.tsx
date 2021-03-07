@@ -16,7 +16,7 @@ export interface DecodedRecord {
 }
 
 const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, resetAudioCtx: () => void }) => {
-    const [paused, setPaused] = useState(false);
+    const [paused, setPaused] = useState(true);
     const [loopLength, setLoopLength] = useState<number>(8);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
     const [previousSounds, setPreviousSounds] = useState<Map<string, DecodedRecord>>(new Map());
@@ -118,27 +118,24 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         sounds.get(peerID)!.push(decodedRecord)
     }
 
-    const clearAudio = () => {
-        console.log("Audio Cleared!");
-        setPreviousSounds(new Map());
-        setSounds(new Map());
+    const play = () => {
+        checkLoopLength();
+        props.audioCtx.resume();
+        setPaused(false);
     }
 
-    const leave = () => {
-        clearAudio();
+    const pause = () => {
+        console.log("Pausing");
+        setPreviousSounds(new Map());
+        setSounds(new Map());
+
         props.audioCtx.close();
         props.resetAudioCtx();
+        setPaused(true);
     }
 
     const togglePaused = () => {
-        if (paused) {
-            props.resetAudioCtx();
-            checkLoopLength();
-        } else {
-            clearAudio();
-            props.audioCtx.close();
-        }
-        setPaused(!paused);
+        paused ? play() : pause();
     }
 
     const getPausedStatus = () => {
@@ -209,7 +206,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     useEffect(() => {
         let i1 = setInterval(onSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
-        let i3 = setInterval(() => console.log(props.audioCtx), 4000);
+        //let i3 = setInterval(() => console.log(props.audioCtx), 4000);
         handleResize();
         return () => {
             clearInterval(i1);

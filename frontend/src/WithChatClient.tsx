@@ -1,5 +1,5 @@
 import { UserProps } from "@riffr/backend/dist";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { RouteComponentProps } from "react-router";
 
 import { ChatClient } from "./connections/ChatClient";
@@ -45,13 +45,18 @@ const withChatClient = <P extends any>(
         const { roomId, username, create } = props.location.state;
         const userProps : UserProps = { username };
 
-        console.log('Creating chatClientPromise');
+        const [chatClientResource, setChatClientResource] = useState<Resource<ChatClient> | undefined>(undefined);
 
-        const chatClientPromise = create
+        useEffect(() => {
+            console.log('Creating chatClientPromise');
+
+            const chatClientPromise = create
             ? ChatClient.createRoom(roomId, userProps)
             : ChatClient.joinRoom(roomId, userProps);
 
-        const chatClientResource = resource(chatClientPromise);
+            setChatClientResource(resource(chatClientPromise));
+        }, []);
+
 
         const Wrapped = withResource<ChatClient, P>(props => {
             console.log(`Reading chatClientResource...`);
@@ -65,6 +70,7 @@ const withChatClient = <P extends any>(
             return <Component {...props} chatClient={chatClient} />
         });
 
+        if (chatClientResource == undefined) return <p>Loading resource...</p>;
         return <ErrorBoundary fallback={<p>ChatClientError</p>}>
             <Wrapped {...props} fallback={<p>Loading...</p>} resource={chatClientResource} />        
         </ErrorBoundary>

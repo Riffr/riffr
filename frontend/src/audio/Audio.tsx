@@ -42,7 +42,8 @@ const Audio = (props: { signal: SignallingChannel}) => {
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
 
     const resetAudioCtx = () => {
-        audioCtx.close();
+        //audioCtx.close();  // We probably should be closing these, but it crashes :(
+        console.log("Resetting AudioContext");
         setAudioCtx(createAudioCtx());
     }
 
@@ -147,7 +148,7 @@ const Audio = (props: { signal: SignallingChannel}) => {
 
     const play = () => {
         checkLoopLength();
-        audioCtx.resume();
+        setAudioCtx(prev => {prev.resume(); return prev});  // Does the same thing as audioCtx.resume() but always gets called on the actual audioCtx
         setPaused(false);
     }
 

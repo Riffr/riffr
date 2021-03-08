@@ -16,6 +16,7 @@ class Room<T> extends EventEmitter {
 
     // Factory methods
     static async createRoom<T>(socket: Socket, id: string, userProps: T) {
+        console.log(`Creating Room... Room`);
         const { user, members } = await socket.request(RoomEvent.Create, id, userProps);
         const room = new Room<T>(socket, id, members);
 

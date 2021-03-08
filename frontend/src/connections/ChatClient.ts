@@ -23,15 +23,20 @@ class ChatClient extends (EventEmitter as ChatEmitter) {
     public readonly user: User;
     public readonly room: Room<UserProps>;
 
-    static async createRoom(socket: Socket, roomId: string, userProps: UserProps) {
-        const signalSocket = new Socket(`${socket.uri}/chat`);
+    static async createRoom(roomId: string, userProps: UserProps) {
+        console.log(`Creating Room... ChatClient`);
+        
+        const signalSocket = new Socket(`${process.env.REACT_APP_BACKEND_IP}:${process.env.REACT_APP_BACKEND_PORT}/chat`);
 
         const { room, user } = await Room.createRoom<UserProps>(signalSocket, roomId, userProps);
         return new ChatClient(signalSocket, user, room);
     }
 
-    static async joinRoom(socket: Socket, roomId: string, userProps: UserProps) {
-        const signalSocket = new Socket(`${socket.uri}/chat`);
+    static async joinRoom( roomId: string, userProps: UserProps) {
+        console.log(`Joining Room... JoinRoom`);
+        
+        
+        const signalSocket = new Socket(`${process.env.REACT_APP_BACKEND_IP}:${process.env.REACT_APP_BACKEND_PORT}/chat`);
 
         const { room, user } = await Room.joinRoom<UserProps>(signalSocket, roomId, userProps);
         return new ChatClient(signalSocket, user, room);

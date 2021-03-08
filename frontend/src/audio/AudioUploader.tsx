@@ -14,6 +14,7 @@ interface AudioUploadProps {
 const AudioUploader = (props: AudioUploadProps) => {
     const [trackBuffer, setTrackBuffer] = useState<DecodedRecord>();
     const [isFilePicked, setIsFilePicked] = useState(false);
+    let [fileName, setFileName] = useState("");
     let sourceNode = useRef<AudioBufferSourceNode>(props.audioCtx.createBufferSource());
     let gainNode = useRef<GainNode>(props.audioCtx.createGain());
 
@@ -40,13 +41,11 @@ const AudioUploader = (props: AudioUploadProps) => {
             startOffset: 0,
             isBackingTrack: true,
         }
+        props.changeLoop(audioBuffer.duration);
         props.addToPlaylist(decodedRecord, "backingTrack")
 
         setIsFilePicked(true);
         setTrackBuffer(decodedRecord);
-
-        // TODO uncomment later
-        //props.changeLoop(audioBuffer.duration);
     }
 
     const removeFile = () => {
@@ -60,10 +59,10 @@ const AudioUploader = (props: AudioUploadProps) => {
         if (event.target.files) {
             let file: File = event.target.files[0];
             if (file !== undefined) {
-                let filename = file.name;
+                setFileName(file.name);
                 let reader = new FileReader();
                 reader.onload = (event: any) => {
-                    if (fileCheck(filename)) {
+                    if (fileCheck(fileName)) {
                         onLoadFileSuccess(event.target.result);
                     } else {
                         removeFile();
@@ -71,13 +70,18 @@ const AudioUploader = (props: AudioUploadProps) => {
                 }
                 reader.readAsArrayBuffer(file);
             }
+            else
+            {
+                setFileName("");
+            }
         }
     };
 
     return (
-        <div>
-            <input type="file" id="audio-file" accept=".mp3,.wav" disabled={!props.permission} onChange={changeHandler} />
-            <button disabled={!props.permission} onClick={removeFile}>Remove Audio</button>
+        <div style={{display: "flex", maxWidth: "15vw"}}>
+            <label htmlFor={"audio-file"} id={"fake-upload"} className={"squircle-button light-blue button"+(props.permission ? "" : " disabled")} title={"Upload backing track"}>Upload: {fileName}</label>
+            <input id="audio-file" type="file" style={{display:"none"}} accept=".mp3,.wav" disabled={!props.permission} onChange={changeHandler}></input>
+            <button disabled={!props.permission} onClick={removeFile} className={"squircle-button"} style={{padding: 0, width: "27px", marginLeft:"-27px", zIndex: 1}}><i className={"fa fa-times block"} /></button>
         </div>
     )
 }

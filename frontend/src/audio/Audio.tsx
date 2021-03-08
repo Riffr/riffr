@@ -238,33 +238,14 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
                         sessionOffset={sessionOffset.current}
                         changeLoop={changeLoopLength}
                     />
-                    <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Start</button>
-                    <button className={"squircle-button light-blue"} onClick={leave}>Leave</button>
-                    <button className={"squircle-button light-blue"} onClick={() => {
-                        mesh?.send("data", "test")
-                    }}>Send Dummy Audio
-                    </button>
-                </div>
-                <div id={"coordination"}>
                     <div>
-                        <label htmlFor={"signature-input"}>Time Sig: </label>
-                        <input id={"signature-input"} type={"number"} min={1}></input>
-                        <label htmlFor={"signature-input-2"}> / </label>
-                        <input id={"signature-input-2"} type={"number"} min={1}></input>
+                        <button className={"squircle-button light-blue"} disabled={permission} onClick={init}>Start</button>
+                        <button className={"squircle-button light-blue"} onClick={leave}>Leave</button>
+                        <button className={"squircle-button light-blue"} onClick={() => {
+                            mesh?.send("data", "test")
+                        }}>Send Dummy Audio
+                        </button>
                     </div>
-                    <div>
-                        <label htmlFor={"tempo-input"} title={"Set tempo of loop (can be left blank)"}>Tempo: </label>
-                        <input id={"tempo-input"} type={"number"} min={0} title={"Set tempo of loop (can be left blank)"}></input>
-                    </div>
-                    <div>
-                        <label htmlFor={"duration-input"} title={"Set duration of loop"}>Duration: </label>
-                        <input id={"duration-input"} type={"number"} min={0} title={"Set duration of loop"}></input>
-                    </div>
-                    <div>
-                        <label htmlFor={"upload"} id={"fake-upload"} className={"squircle-button light-blue button"} title={"Upload backing track"}>Upload</label>
-                        <input id={"upload"} type={"file"} style={{display:"none"}}></input>
-                    </div>
-                    <button className={"green circle-button"}><i className={"fa fa-check block"} title={"Submit changes"}></i></button>
                 </div>
             </div>
         </div>

@@ -101,15 +101,26 @@
 }
 
 #audio {
-    display: flex;
+    /*display: flex;*/
     width: 100%;
     justify-content: space-around;
     /*align-items: center;*/
 }
 
+.button.disabled {
+    color: rgb(109, 109, 109);
+}
+
 #fake-upload {
     padding-top: 0;
     padding-bottom: 0;
+    padding-left: 8px;
+    padding-right: 35px;
+    text-overflow: ellipsis;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    align-self: initial !important;
 }
 
 #mute:not(.recording):not(.muted) {
@@ -127,9 +138,10 @@
     border-radius: 5px;
     padding: 4px 0;
     justify-content: space-around;
+    height: 40px;
 }
 
-#coordination div:nth-child(2n) {
+#coordination div:nth-child(2n), #coordination div:last-child {
     border-right: none;
 }
 
@@ -143,23 +155,24 @@
     }
 }
 
-#coordination button {
-    width: 30px;
-    height: 30px;
-    margin: -3px 3px;
-    padding: 0 4px;
-}
-
 #coordination div {
     display: flex;
     gap: 5px;
     padding: 0px 5px;
     border-right: 1px solid #aaa;
     vertical-align: middle;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+#coordination div button {
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 #coordination div label {
     font-size: 18px;
+    align-self: center;
 }
 
 #coordination div input:not([type='file']) {

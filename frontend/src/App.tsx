@@ -5,7 +5,7 @@ import Lobby from "./Lobby";
 import Room from "./Room";
 
 import {Socket} from "./connections/Socket";
-import { withChatClient } from './WithChatClient';
+import { Riffr } from './Riffr';
 
 const Loading = () => (
     <p>"Loading..."</p>
@@ -14,16 +14,14 @@ const Loading = () => (
 
 
 const App = () => {
-    const socket = new Socket("127.0.0.1:10000");
+    // const socket = new Socket("127.0.0.1:10000");
 
     return (
         <Router>
             <div className="App">
                 <Route exact path="/" component={Home}/>
                 <Route path="/riffr" render={(props) => 
-                    <Suspense fallback={<Loading />}>
-                        <Riffr {...props} socket={socket} />
-                    </Suspense>
+                    <Riffr {...props} />
                 }/>
             </div>
         </Router>

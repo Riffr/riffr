@@ -76,6 +76,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
         this.initConnection();
         this.addDataChannel("data");
         this.addDataChannel("audio");
+        this.addDataChannel("control");
     }
 
 

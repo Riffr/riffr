@@ -61,6 +61,15 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
                 console.log(data);
                 let decodedRecord: DecodedRecord = await decodeReceivedData(data);
                 addToPlaylist(decodedRecord, peer.meshId!);
+            } else if (channel.label == "control") {
+                switch (data) {
+                    case "play":
+                        play();
+                        break;
+                    case "pause":
+                        pause();
+                        break;
+                }
             }
         });
 
@@ -128,6 +137,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         console.log("Pausing");
         setPreviousSounds(new Map());
         setSounds(new Map());
+        barCount.current = 1;
 
         props.audioCtx.close();
         props.resetAudioCtx();
@@ -135,7 +145,13 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     }
 
     const togglePaused = () => {
-        paused ? play() : pause();
+        if (paused) {
+            play();
+            mesh?.send("control", "play");
+        } else {
+            pause();
+            mesh?.send("control", "pause");
+        }
     }
 
     const getPausedStatus = () => {
@@ -150,7 +166,6 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         if (newLoopLength.current !== loopLength) {
             console.log("Detect loop length change");
             setLoopLength(newLoopLength.current);
-            barCount.current = 1;
         }
     }
 
@@ -206,12 +221,12 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     useEffect(() => {
         let i1 = setInterval(onSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
-        //let i3 = setInterval(() => console.log(props.audioCtx), 4000);
+        let i3 = setInterval(() => console.log(props.audioCtx), 4000);
         handleResize();
         return () => {
             clearInterval(i1);
             clearInterval(i2);
-            // clearInterval(i3);
+            clearInterval(i3);
         }
     }, [loopLength, props.audioCtx])
 

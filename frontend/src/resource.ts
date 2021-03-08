@@ -17,22 +17,26 @@ const resource = <T>(promise: Promise<T>) => {
     let error: any;
     let value: T;
     
-    promise
-        .then((x) => {
-            if (status == PromiseStatus.Pending) {
-                status = PromiseStatus.Resolved;
-                value = x;
-            }
-        })
-        .catch((err) => {
+    (async () => {
+        try {
+            console.log('resolving promise');
+            if (status != PromiseStatus.Pending) return;
+
+            const result = await promise;
+            if (status != PromiseStatus.Pending) return;
+            status = PromiseStatus.Resolved;
+            value = result;
+        } catch(err) {
             if (status == PromiseStatus.Pending) {
                 status = PromiseStatus.Rejected;
                 error = err;
             }
-        });
+        }
+    }) ();
             
     return {
         read: () => {
+            console.log(status);
             switch (status) {
                 case PromiseStatus.Resolved:
                     return value;

@@ -23,6 +23,8 @@
 }
 
 #create-button {
+    width: 180px;
+    margin-left: calc(50% - 100px);
     margin-bottom: 20px;
     font-weight: bolder;
 }

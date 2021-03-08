@@ -47,8 +47,9 @@ button:focus {
     border: 3px solid #444;
     padding: 5px 15px;
 
-    box-shadow: 0 2px 12px 0 #5d5d5d94;
-    background-color: #07a58e;
+    box-shadow: 0 1px 4px 0 #5d5d5d94;
+    /*background-color: #07a58e;*/
+    background-color: #ab3b06;
     color: #e8e8e8;
 }
 
@@ -115,6 +116,22 @@ button:focus {
 
 .purple {
     background-color: #9c27b0;
+    color: #e8e8e8;
+}
+
+.light-burgandy {
+    background-color: #c54305;
+    color: #e8e8e8;
+}
+
+.dark-burgandy {
+    background-color: #ab3b06;
+    color: #e8e8e8;
+}
+
+.chestnut {
+    /*background-color: #d4792a;*/
+    background-color: #ff7230;
     color: #e8e8e8;
 }
 

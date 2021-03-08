@@ -55,8 +55,8 @@ class SignallingChannel extends (EventEmitter as SignallingChannelEmitter) {
         this.socket.emit(SignalEvent.Signal, payload);
     }
 
-    public async leave() {
-        await this.room.leave();
+    public leave() {
+        this.room.leave();
     }
 
 }

@@ -1,77 +1,97 @@
 import React, { RefObject, useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, RouteComponentProps } from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
 import Audio from "./audio/Audio";
 import AudioComponent from "./audio/AudioComponent";
-import { Socket } from './connections/Socket';
-import { SignallingChannel } from "./connections/SignallingChannel";
+
 import { 
     Message, 
     ChatUser as User,
     UserProps
 } from "@riffr/backend";
-import { ChatClient } from './connections/ChatClient';
 
-const Room = (props: { roomCode: string, name: string, socket: Socket, create: boolean, chatClient?: ChatClient }) => {
+import { ChatClient } from './connections/ChatClient';
+import { Socket } from './connections/Socket';
+import { SignallingChannel } from "./connections/SignallingChannel";
+import { Room as CRoom } from './connections/Room';
+
+
+interface RoomLocationState {
+    starter: boolean;
+}
+interface RoomProps extends RouteComponentProps<{}, {}, RoomLocationState> {
+    socket: Socket;
+    chatClient: ChatClient;
+};
+
+
+
+const Room = (props: RoomProps) => {
+
+    const { socket, chatClient } = props;
+    const user = chatClient.user;
+    const room = chatClient.room;
+
+    const { starter } = props.location.state;
 
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState<Array<Message>>([]);
+    let [members, setMembers] = useState<Array<UserProps>>([...room.members.values()]);
 
-    let [members, setMembers] = useState<Array<UserProps>>([]);
-    
-    const userProps: UserProps = { username: props.name };
 
     let [memberListShown, setListShown] = useState("grid");
 
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
+
     let [audio, setAudio] = useState(<div />);
 
 
-    const onMessageReceived = useCallback((message: Message) => {
+    const onMessageReceived = (message: Message) => {
         const { from, content } = message;
 
-        const username = props.chatClient?.room.members.get(from)?.username
+        const username = room.members.get(from)?.username;
         if (!username) return;
 
         setMessages(prev => [...prev, { from: username, content}]);
-    }, [props.chatClient]);
+    };
 
     const sendMessage = useCallback(() => {
         let msg = message;
 
-        // Add some UI for pending messages?
-        if (!props.chatClient) return;
-        const username = props.chatClient.user.username;
         props.chatClient.send(message);
 
-        setMessages(prev => [...prev, {from: username, content: msg} as Message]);
+        setMessages(prev => [...prev, {from: user.username, content: msg} as Message]);
         setMessage("");
-    }, [message, props.chatClient]);
+    }, [message]);
+
+
 
     useEffect(() => {
         (async () => {
-            const channel = await (props.create
-                ? SignallingChannel.createRoom(props.socket, props.roomCode, userProps)
-                : SignallingChannel.joinRoom(props.socket, props.roomCode, userProps));
+            const channel = await (starter
+                ? SignallingChannel.createRoom(socket, room.id, user)
+                : SignallingChannel.joinRoom(socket, room.id, user));
 
             setAudio(<AudioComponent signal={channel} />);
         })();
     }, []);
 
     useEffect(() => {
-        setMembers(Array.from(props.chatClient?.room.members.values() || []));
+        chatClient.room.on("membersUpdated", (room: CRoom<User>) => {
+            setMembers([...room.members.values()]);
+        })
 
-        props.chatClient?.on("message", (_, message: Message) => {
+        chatClient.on("message", (_, message: Message) => {
             onMessageReceived(message);
         });
 
-        return () => {
-            props.chatClient?.removeAllListeners("message");
-            props.chatClient?.room.removeAllListeners("membersUpdated");
+        return () => { 
+            chatClient.removeAllListeners("message"); 
+            chatClient.room.removeAllListeners("membersUpdated"); 
         };
-    }, [props.chatClient]);
+    }, [chatClient]);
 
     useEffect(() => {
         document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();

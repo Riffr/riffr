@@ -1,5 +1,5 @@
 import React, {RefObject, useCallback, useEffect, useRef, useState} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 import './css/Lobby.css';
 import './css/General.css'
 
@@ -14,69 +14,61 @@ import {
 import { ChatClient } from './connections/ChatClient';
 import { Room } from './connections/Room';
 
-const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: boolean, chatClient?: ChatClient, setChatClient: (chat?: ChatClient) => void }) => {
+
+interface LobbyProps extends RouteComponentProps {
+    chatClient: ChatClient
+};
+
+
+const Lobby = (props: LobbyProps) => {
+    
+    const { path } = props.match;
+
+    const { chatClient } = props;
+    const user = chatClient.user;
+    const room = chatClient.room;
     
     let [message, setMessage] = useState("");
-    let [messages, setMessages] = useState<Array<{ from: string, content: string }>>([]);
-    let [members, setMembers] = useState<Array<UserProps>>([]);
-    
-    const userProps: UserProps = { username: props.name };
+    let [messages, setMessages] = useState<Array<Message>>([]);
+    let [members, setMembers] = useState<Array<UserProps>>([...room.members.values()]);
 
-    const onMessageReceived = useCallback((message: Message) => {
+    const onMessageReceived = (message: Message) => {
         const { from, content } = message;
-        const username = props.chatClient?.room.members.get(from)?.username
+
+        const username = room.members.get(from)?.username;
         if (!username) return;
 
         setMessages(prev => [...prev, { from: username, content}]);
-    }, [props.chatClient]);
+    };
 
     const sendMessage = useCallback(() => {
         let msg = message;
 
-        // Add some UI for pending messages?
-        if (!props.chatClient) return;
-        const username = props.chatClient.user.username;
         props.chatClient.send(message);
 
-        setMessages(prev => [...prev, {from: username, content: msg} as Message]);
+        setMessages(prev => [...prev, {from: user.username, content: msg} as Message]);
         setMessage("");
+    }, [message]);
 
-
-    }, [message, props.chatClient]);
 
     useEffect(() => {
-        (async () => {
-            console.log("registering...");
-            const client = await (props.create 
-                ? ChatClient.createRoom(props.socket, props.roomCode, userProps)
-                : ChatClient.joinRoom(props.socket, props.roomCode, userProps));
-
- 
-            setMembers(Array.from(client.room.members.values() || []));
-
-            props.setChatClient(client);
-        }) ();
-    }, []);
-
-    useEffect(() => {
-        props.chatClient?.room.on("membersUpdated", (room: Room<User>) => {
-            setMembers(Array.from(room.members.values()));
+        chatClient.room.on("membersUpdated", (room: Room<User>) => {
+            setMembers([...room.members.values()]);
         })
 
-        props.chatClient?.on("message", (_, message: Message) => {
+        chatClient.on("message", (_, message: Message) => {
             onMessageReceived(message);
         });
 
         return () => { 
-            props.chatClient?.removeAllListeners("message"); 
-            props.chatClient?.room.removeAllListeners("membersUpdated"); 
-            // props.chatClient?.leave();
+            chatClient.removeAllListeners("message"); 
+            chatClient.room.removeAllListeners("membersUpdated"); 
         };
-    }, [props.chatClient])
+    }, [chatClient])
 
     useEffect(() => {
         document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
-    }, [messages]);
+    }, []);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {
@@ -92,9 +84,9 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
                     <i className={"fa fa-home block"}/>
                 </Link>
             </div>
-            <h1>Welcome, {props.name}</h1>
+            <h1>Welcome, {user.username}</h1>
             <h3>Invite your friends using the code below</h3>
-            <CopyField id={"copy-field"} value={props.roomCode}/>
+            <CopyField id={"copy-field"} value={room.id}/>
             <div>
                 <div id={"member-list"}>
                     <p><b>Members: </b>{members.map(user => user.username).join(", ")}</p>
@@ -112,7 +104,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
                     <i className={"fa fa-send"}/>
                 </button>
             </div>
-            <Link to={`/room/${props.roomCode}/${props.name}`}>
+            <Link to={`${path}/room`}>
                 <button id={"start-button"} className={"squircle-button green"}>
                     Start
                     <i className={"fa fa-play"} />

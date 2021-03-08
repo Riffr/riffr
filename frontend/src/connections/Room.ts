@@ -57,7 +57,7 @@ class Room<T> extends EventEmitter {
     }
 
     public async leave() {
-        await this.socket.emit(RoomEvent.Leave);
+        this.socket.emit(RoomEvent.Leave);
     }
 }
 

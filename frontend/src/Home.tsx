@@ -1,5 +1,5 @@
-import React, {useCallback, useState} from 'react';
-import {Link} from "react-router-dom";
+import React, {ReactComponentElement, useCallback, useState} from 'react';
+import {Link, RouteComponentProps} from "react-router-dom";
 import './css/Home.css'
 import './css/General.css'
 
@@ -7,35 +7,39 @@ import './css/General.css'
 import {Socket} from "./connections/Socket";
 
 
-const Home = (props: { socket: Socket, setCreate: (create: boolean) => void }) => {
-    const [name, setName] = useState("User");
-    const [lobbyName, setLobbyName] = useState("");
+const Home = (props: RouteComponentProps<{}>) => {
+
+    const { url } = props.match;
+
+
+    console.log(`${url}`);
+
+
+    const [username, setUsername] = useState("User");
+    const [roomId, setRoomId] = useState("");
 
     let randomRoomName = generateRandomRoomName();
-
-    const joinRoom = () => {
-        props.setCreate(false);
-    };
-
-    const newRoomClick = () => {
-        console.log(`Creating room`);
-        props.setCreate(true);
-    };
 
     return (
         <div id={"home-wrapper"}>
             <h1 className={"title"}>Riffr <i className={"fa fa-music"}/></h1>
-            <TextInput id={"name-input"} placeholder={"Enter name"} parentCallback={setName} autoComplete={"on"}/>
+            <TextInput id={"name-input"} placeholder={"Enter name"} parentCallback={setUsername} autoComplete={"on"}/>
             <div className={"lobby-container"} id={"join-lobby"}>
-                <TextInput id={"lobby-input"} placeholder={"Enter lobby name"} parentCallback={setLobbyName}/>
-                <Link to={`/lobby/${lobbyName}/${name}`} className={"circle-button button blue white-text"}
-                      id={"join-button"} onClick={joinRoom}>
+                <TextInput id={"lobby-input"} placeholder={"Enter lobby name"} parentCallback={setRoomId}/>
+                <Link to={{
+                        pathname: `/riffr/lobby`,
+                        state: { roomId, username, create: false }
+                    }} className={"circle-button button blue white-text"}
+                      id={"join-button"}>
                     <i className={"fa fa-send block"}/>
                 </Link>
             </div>
             <div>
-                <Link to={`/lobby/${randomRoomName}/${name}`}>
-                    <button id={"create-button"} className={"squircle-button green white-text"} onClick={newRoomClick}>
+                <Link to={{
+                        pathname: `/riffr/lobby`,
+                        state: { roomId, username, create: true }
+                    }}>
+                    <button id={"create-button"} className={"squircle-button green white-text"}>
                         Or create a lobby
                         <i className={"fa fa-rocket"}/>
                     </button>

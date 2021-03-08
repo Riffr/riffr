@@ -53,8 +53,8 @@ class ChatClient extends (EventEmitter as ChatEmitter) {
         this.socket.emit(ChatEvent.Message, content);
     }
 
-    public async leave() {
-        await this.room.leave();
+    public leave() {
+        this.room.leave();
     }
 
 }

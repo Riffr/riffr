@@ -14,14 +14,14 @@ const Loading = () => (
 
 
 const App = () => {
-    // const socket = new Socket("127.0.0.1:10000");
+    const socket = new Socket(`${process.env.REACT_APP_BACKEND_IP}:${process.env.REACT_APP_BACKEND_PORT}`);
 
     return (
         <Router>
             <div className="App">
                 <Route exact path="/" component={Home}/>
                 <Route path="/riffr" render={(props) => 
-                    <Riffr {...props} />
+                    <Riffr {...props} socket={socket} />
                 }/>
             </div>
         </Router>

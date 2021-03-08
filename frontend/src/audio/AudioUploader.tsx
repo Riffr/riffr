@@ -81,7 +81,7 @@ const AudioUploader = (props: AudioUploadProps) => {
         <div style={{display: "flex", maxWidth: "15vw"}}>
             <label htmlFor={"audio-file"} id={"fake-upload"} className={"squircle-button light-blue button"} title={"Upload backing track"}>Upload: {fileName}</label>
             <input id="audio-file" type="file" style={{display:"none"}} accept=".mp3,.wav" onChange={changeHandler}></input>
-            <button disabled={!props.permission} onClick={removeFile} className={"squircle-button"} style={{padding: 0, width: "27px", marginLeft:"-27px", zIndex: 1}}><i className={"fa fa-times block"} /></button>
+            <button disabled={!props.permission} onClick={removeFile} className={"squircle-button"} style={{padding: 0, width: "27px", marginLeft:"-27px", zIndex: 1, backgroundColor: "white"}}><i className={"fa fa-times block"} /></button>
         </div>
     )
 }

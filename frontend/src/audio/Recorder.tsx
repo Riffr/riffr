@@ -157,32 +157,18 @@ const Recorder = (props: RecorderProps) => {
     }
 
     const getMuteTooltip = () => {
-        if (muted)
-        {
-            return "Unmute";
-        }
-        else if (recording)
-        {
-            return "Mute";
-        }
-        else
-        {
-            return "Unmuting next cycle";
-        }
+        if (muted) return "Unmute";
+        else if (recording) return "Mute";
+        else return "Unmuting next cycle";
     }
 
     const changeSettings = () => {
-        if (tempo.current === null || duration.current === null || sig1.current === null || sig2.current === null)
-        {
-            return;
-        }
-        if (tempo.current?.value !== "")
-        {
+        if (tempo.current === null || duration.current === null || sig1.current === null || sig2.current === null) return;
+        if (tempo.current?.value !== "") {
             let durationSeconds = duration.current.valueAsNumber * sig1.current.valueAsNumber / tempo.current.valueAsNumber * 60;
             props.changeLoop(durationSeconds);
         }
-        else
-        {
+        else {
             props.changeLoop(duration.current.valueAsNumber);
         }
     }

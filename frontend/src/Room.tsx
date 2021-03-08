@@ -11,29 +11,19 @@ import {
     UserProps
 } from "@riffr/backend";
 
-import { ChatClient } from './connections/ChatClient';
-import { Socket } from './connections/Socket';
-import { SignallingChannel } from "./connections/SignallingChannel";
 import { Room as CRoom } from './connections/Room';
+import { withSignallingChannel } from './WithSignallingChannel';
 
+const Room = withSignallingChannel(props => {
+    
 
-interface RoomLocationState {
-    starter: boolean;
-}
-interface RoomProps extends RouteComponentProps<{}, {}, RoomLocationState> {
-    socket: Socket;
-    chatClient: ChatClient;
-};
-
-
-
-const Room = (props: RoomProps) => {
-
-    const { socket, chatClient } = props;
-    const user = chatClient.user;
+    const { chatClient, signallingChannel } = props;
+    
     const room = chatClient.room;
+    const user = chatClient.user;
 
-    const { starter } = props.location.state;
+    console.log(`Room ${room.id}`);
+
 
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState<Array<Message>>([]);
@@ -44,8 +34,6 @@ const Room = (props: RoomProps) => {
 
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
-
-    let [audio, setAudio] = useState(<div />);
 
 
     const onMessageReceived = (message: Message) => {
@@ -66,17 +54,6 @@ const Room = (props: RoomProps) => {
         setMessage("");
     }, [message]);
 
-
-
-    useEffect(() => {
-        (async () => {
-            const channel = await (starter
-                ? SignallingChannel.createRoom(socket, room.id, user)
-                : SignallingChannel.joinRoom(socket, room.id, user));
-
-            setAudio(<AudioComponent signal={channel} />);
-        })();
-    }, []);
 
     useEffect(() => {
         chatClient.room.on("membersUpdated", (room: CRoom<User>) => {
@@ -131,7 +108,7 @@ const Room = (props: RoomProps) => {
                     <i className={"fa fa-comment block"} />
                 </button>
             </div>
-            {audio}
+            <AudioComponent signal={signallingChannel} />
             <div id={"chat"} style={{ display: chatDisplay }}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"}>
@@ -154,6 +131,7 @@ const Room = (props: RoomProps) => {
             </div>
         </div>
     )
-}
+});
+
 
 export default Room;

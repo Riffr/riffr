@@ -10,11 +10,6 @@ import { WithChatClientLocationState } from './WithChatClient';
 
 const Home = (props: RouteComponentProps<{}>) => {
 
-    const { url } = props.match;
-
-
-    console.log(`${url}`);
-
 
     const [username, setUsername] = useState("User");
     const [roomId, setRoomId] = useState("");

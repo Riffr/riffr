@@ -5,6 +5,7 @@ import './css/General.css'
 
 
 import {Socket} from "./connections/Socket";
+import { WithChatClientLocationState } from './WithChatClient';
 
 
 const Home = (props: RouteComponentProps<{}>) => {
@@ -28,7 +29,7 @@ const Home = (props: RouteComponentProps<{}>) => {
                 <TextInput id={"lobby-input"} placeholder={"Enter lobby name"} parentCallback={setRoomId}/>
                 <Link to={{
                         pathname: `/riffr/lobby`,
-                        state: { roomId, username, create: false }
+                        state: { roomId, username, create: false } as WithChatClientLocationState
                     }} className={"circle-button button blue white-text"}
                       id={"join-button"}>
                     <i className={"fa fa-send block"}/>
@@ -37,7 +38,7 @@ const Home = (props: RouteComponentProps<{}>) => {
             <div>
                 <Link to={{
                         pathname: `/riffr/lobby`,
-                        state: { roomId, username, create: true }
+                        state: { roomId: randomRoomName, username, create: true } as WithChatClientLocationState
                     }}>
                     <button id={"create-button"} className={"squircle-button green white-text"}>
                         Or create a lobby

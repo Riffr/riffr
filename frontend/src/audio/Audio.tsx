@@ -15,18 +15,36 @@ export interface DecodedRecord {
     //endOffset: number;
 }
 
-const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, resetAudioCtx: () => void }) => {
+let AudioContext: any = window.AudioContext // Default
+    || (window as any).webkitAudioContext // Safari
+
+const createAudioCtx = () => {
+    let ctx: AudioContext = new AudioContext();
+    ctx.suspend();
+    return ctx;
+}
+
+const Audio = (props: { signal: SignallingChannel}) => {
     const [paused, setPaused] = useState(true);
     const [loopLength, setLoopLength] = useState<number>(8);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
     const [previousSounds, setPreviousSounds] = useState<Map<string, DecodedRecord>>(new Map());
+
     const [time, setTime] = useState(0);
     const [mesh, setMesh] = useState<Mesh | undefined>(undefined);
+
     const [canvasWidth, setCanvasWidth] = useState(1000);
     const [canvasHeight, setCanvasHeight] = useState(600);
 
     let barCount = useRef(1);
     let newLoopLength = useRef(8);
+
+    const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
+
+    const resetAudioCtx = () => {
+        audioCtx.close();
+        setAudioCtx(createAudioCtx());
+    }
 
     const initMesh = useCallback(() => {
         let m = new Mesh();
@@ -105,7 +123,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         let startOffset: number = dataView.getFloat64(0, true);
         let isBackingTrack: boolean = !!dataView.getInt8(8);
         let audioArrayBuffer = data.slice(9);  // startOffset (float64) takes up first 8 bytes, isBackingTrack (int8/bool) is 1 byte
-        let buffer: AudioBuffer = await props.audioCtx.decodeAudioData(audioArrayBuffer);
+        let buffer: AudioBuffer = await audioCtx.decodeAudioData(audioArrayBuffer);
         let decodedRecord: DecodedRecord = {
             buffer: buffer,
             startOffset: startOffset,
@@ -129,7 +147,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
 
     const play = () => {
         checkLoopLength();
-        props.audioCtx.resume();
+        audioCtx.resume();
         setPaused(false);
     }
 
@@ -139,7 +157,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         setSounds(new Map());
         barCount.current = 1;
 
-        props.resetAudioCtx();
+        resetAudioCtx();
         setPaused(true);
     }
 
@@ -169,11 +187,11 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     }
 
     const playSound = (record: DecodedRecord, volume: number = 1) => {
-        let sourceNode = props.audioCtx.createBufferSource();
-        let gainNode = props.audioCtx.createGain();
+        let sourceNode = audioCtx.createBufferSource();
+        let gainNode = audioCtx.createGain();
         sourceNode.buffer = record.buffer;
         sourceNode.connect(gainNode);
-        gainNode.connect(props.audioCtx.destination);
+        gainNode.connect(audioCtx.destination);
         gainNode.gain.value = volume;
         console.log("Scheduled to play: ", loopLength * barCount.current);
         sourceNode.start(loopLength * barCount.current, record.startOffset, loopLength);
@@ -204,7 +222,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     }
 
     const update = () => {
-        setTime(props.audioCtx.currentTime);
+        setTime(audioCtx.currentTime);
     }
 
     /* Canvas resizing code */
@@ -220,14 +238,14 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     useEffect(() => {
         let i1 = setInterval(onSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
-        let i3 = setInterval(() => console.log(props.audioCtx), 4000);
+        let i3 = setInterval(() => console.log(audioCtx), 4000);
         handleResize();
         return () => {
             clearInterval(i1);
             clearInterval(i2);
             clearInterval(i3);
         }
-    }, [loopLength, props.audioCtx])
+    }, [loopLength, audioCtx])
 
     useEffect(() => {
         let cleanup = initMesh();
@@ -240,7 +258,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
-                        audioCtx={props.audioCtx}
+                        audioCtx={audioCtx}
                         paused={paused}
                         addToPlaylist={addToPlaylist}
                         sendToPeers={sendToPeers}

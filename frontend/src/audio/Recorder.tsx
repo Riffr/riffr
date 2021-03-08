@@ -191,7 +191,7 @@ const Recorder = (props: RecorderProps) => {
     // TODO Combine both recording status labels into a single recording icon (on the canvas?)
     return (
         <div id="coordination">
-            <div><button className={"squircle-button light-blue "+(muted ? "muted ":" ")+(recording? "recording ":"")} id={"mute"} disabled={!props.permission} title={getMuteTooltip()}
+            <div><button className={"squircle-button light-blue "+(muted ? "muted ":" ")+(recording? "recording ":"")} id={"mute"} title={getMuteTooltip()}
                 onClick={toggleMuted}>{getMuteStatus()}
             </button></div>
             <AudioUploader
@@ -213,7 +213,7 @@ const Recorder = (props: RecorderProps) => {
                 <input id={"tempo-input"} type={"number"} min={0} title={"Set tempo of loop (can be left blank)"} ref={tempo}></input>
             </div>
             <div>
-                <label htmlFor={"duration-input"} title={"Set duration of loop"}>Duration: </label>
+                <label htmlFor={"duration-input"} title={"Duration of loop (in seconds, or bars if tempo value filled in)"}>Duration: </label>
                 <input id={"duration-input"} type={"number"} min={0} title={"Duration of loop (in seconds, or bars if tempo value filled in)"} ref={duration}></input>
             </div>
             <div><button className={"green circle-button"} style={{width: "30px", padding: "0"}}><i className={"fa fa-check block"} title={"Submit changes"} onClick={changeSettings}></i></button></div>

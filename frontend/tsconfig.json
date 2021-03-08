@@ -18,6 +18,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
     "allowJs": true,
+    "sourceMap": true,
     "esModuleInterop": true
   },
   "include": [

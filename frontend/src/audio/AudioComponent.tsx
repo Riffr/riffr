@@ -16,6 +16,7 @@ const AudioComponent = (props: { signal: SignallingChannel }) => {
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
 
     const resetAudioCtx = () => {
+        audioCtx.close();
         setAudioCtx(createAudioCtx());
     }
 

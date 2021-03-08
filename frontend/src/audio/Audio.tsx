@@ -139,7 +139,6 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         setSounds(new Map());
         barCount.current = 1;
 
-        props.audioCtx.close();
         props.resetAudioCtx();
         setPaused(true);
     }

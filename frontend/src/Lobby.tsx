@@ -3,30 +3,38 @@ import {Link, RouteComponentProps} from 'react-router-dom';
 import './css/Lobby.css';
 import './css/General.css'
 
+import { v4 as uuidv4 } from "uuid";
+
 import { Socket } from './connections/Socket';
 
 import { 
     ChatEvent, 
     ChatUser as User,
     UserProps,
-    Message 
+    Message, 
+    chat
 } from '@riffr/backend';
 import { ChatClient } from './connections/ChatClient';
 import { Room } from './connections/Room';
+import { WithChatClientLocationState } from './WithChatClient';
 
 
 interface LobbyProps extends RouteComponentProps {
-    chatClient: ChatClient
+    chatClient: ChatClient;
+    create: boolean;
 };
 
 
 const Lobby = (props: LobbyProps) => {
     
     const { path } = props.match;
+    
 
-    const { chatClient } = props;
+    const { chatClient, create } = props;
     const user = chatClient.user;
     const room = chatClient.room;
+
+    const locationState: WithChatClientLocationState = { roomId: room.id, username: user.username, create };
     
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState<Array<Message>>([]);
@@ -58,6 +66,10 @@ const Lobby = (props: LobbyProps) => {
 
         chatClient.on("message", (_, message: Message) => {
             onMessageReceived(message);
+        });
+
+        chatClient.on("start", () => {
+            props.history.push('/riffr/room', locationState)
         });
 
         return () => { 
@@ -104,12 +116,15 @@ const Lobby = (props: LobbyProps) => {
                     <i className={"fa fa-send"}/>
                 </button>
             </div>
-            <Link to={`${path}/room`}>
+            { create && <Link to={
+                { pathname: `/riffr/room`
+                , state: locationState
+                }} onClick={() => chatClient.broadcastStart()}>
                 <button id={"start-button"} className={"squircle-button green"}>
                     Start
                     <i className={"fa fa-play"} />
                 </button>
-            </Link>
+            </Link>}
         </div>
     );
 }

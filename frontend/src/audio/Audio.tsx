@@ -254,8 +254,8 @@ const Audio = (props: { signal: SignallingChannel}) => {
     }, [])
 
     return (
-        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2" }}>
-            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds} loopLength={loopLength} />
+        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2", display: 'flex', flexDirection: 'column' }}>
+            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds} loopLength={loopLength}/>
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
@@ -266,15 +266,16 @@ const Audio = (props: { signal: SignallingChannel}) => {
                         loopLength={loopLength}
                         changeLoop={changeLoopLength}
                     />
-                    <button className={"squircle-button light-blue"} onClick={togglePaused}>{getPausedStatus()}</button>
-                    <button className={"squircle-button light-blue"} onClick={() => {
-                        mesh?.send("data", "test")
-                    }}>Send Dummy Audio
-                    </button>
+                    <div>
+                        <button className={"squircle-button light-blue"} onClick={togglePaused}>{getPausedStatus()}</button>
+                        <button className={"squircle-button light-blue"} onClick={() => {
+                            mesh?.send("data", "test")
+                        }}>Send Dummy Audio
+                        </button>
+                    </div>
                 </div>
-
             </div>
-        </div >
+        </div>
     );
 }
 

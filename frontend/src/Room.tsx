@@ -16,6 +16,7 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
 
     let [members, setMembers] = useState<Array<User>>([]);
     let [memberListShown, setListShown] = useState("grid");
+    let [settingsShown, setSettingsShown] = useState("grid");
 
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
@@ -83,6 +84,16 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
         }
     }
 
+    const toggleSettings = () => {
+        if (settingsShown == "grid") {
+            setSettingsShown("none");
+        }
+        else {
+            setSettingsShown("grid");
+        }
+        document.getElementById("controls")?.setAttribute("style","display: "+settingsShown);
+    }
+
     const toggleChat = () => {
         if (chatDisplay == "flex") {
             setChatDisplay("none");
@@ -99,15 +110,18 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
                 <Link to={"/"} className={"squircle-button button blue"}>
                     <i className={"fa fa-home block"} />
                 </Link>
-                <button className={"squircle-button purple"} onClick={toggleChat}>
+                <button className={"squircle-button purple"} onClick={toggleChat} style={{marginTop: "50px"}}>
                     <i className={"fa fa-comment block"} />
+                </button>
+                <button className={"squircle-button purple"} onClick={toggleSettings} title={"Toggle loop settings"}>
+                    <i className={"fa fa-cog block"}/>
                 </button>
             </div>
             {audio}
             <div id={"chat"} style={{ display: chatDisplay }}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
-                <div id={"member-list"} style={{ display: memberListShown }}>
-                    <p><b>Members: </b>{members.map(user => user.id).join(", ")}</p>
+                <div id={"member-list"} style={{display: memberListShown}}>
+                    {members.map(user => <p>{user.id}</p>)}
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>

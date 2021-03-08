@@ -13,14 +13,14 @@
 
 #nav-bar {
     display: grid;
-    grid-template-rows: 40px 40px;
+    grid-template-rows: 40px 90px 40px;
     grid-template-columns: 40px;
     grid-gap: 10px;
 }
 
 #canvas {
     width: 100%;
-    height: calc(100% - 110px);
+    flex-grow: 1;
     border: 3px solid #444;
     background: #666;
     border-radius: 15px;
@@ -87,10 +87,12 @@
 }
 
 #controls {
-    display: flex;
+    display: grid;
     align-items: center;
     width: 100%;
-    height: 100px;
+    height: max-content;
+    padding: 10px;
+    grid-gap: 10px;
     background: #fff;
     border-radius: 15px;
     border: 3px solid #444;
@@ -99,10 +101,94 @@
 }
 
 #audio {
-    display: flex;
+    /*display: flex;*/
     width: 100%;
     justify-content: space-around;
     /*align-items: center;*/
+}
+
+.button.disabled {
+    color: rgb(109, 109, 109);
+}
+
+#fake-upload {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 8px;
+    padding-right: 35px;
+    text-overflow: ellipsis;
+    width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    align-self: initial !important;
+}
+
+#mute:not(.recording):not(.muted) {
+    background-color: yellow;
+}
+
+#mute.muted {
+    background-color: pink;
+}
+
+#coordination {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 4px 0;
+    justify-content: space-around;
+    height: 40px;
+}
+
+#coordination div:nth-child(2n), #coordination div:last-child {
+    border-right: none;
+}
+
+@media only screen and (min-width: 1500px) {
+    #coordination {
+        display: flex;
+    }
+
+    #coordination div:nth-child(2n) {
+        border-right: 1px solid #aaa;
+    }
+}
+
+#coordination div {
+    display: flex;
+    gap: 5px;
+    padding: 0px 5px;
+    border-right: 1px solid #aaa;
+    vertical-align: middle;
+    justify-content: center;
+    flex-grow: 1;
+}
+
+#coordination div button {
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+#coordination div label {
+    font-size: 18px;
+    align-self: center;
+}
+
+#coordination div input:not([type='file']) {
+    border-radius: 15px;
+    border-style: solid;
+    padding: 0 5px;
+    text-align: center;
+    font-size: 15px;
+}
+
+#tempo-input, #duration-input {
+    width: 60px;
+}
+
+#signature-input, #signature-input-2 {
+    width: 50px;
 }
 
 @media only screen and (min-width: 600px) {

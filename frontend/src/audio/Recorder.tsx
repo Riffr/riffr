@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, createRef } from 'react';
 import AudioUploader from './AudioUploader';
 import { SignallingChannel } from "../connections/SignallingChannel";
 import { DecodedRecord } from "./Audio";
@@ -35,6 +35,11 @@ const Recorder = (props: RecorderProps) => {
 
     const [muted, setMuted] = useState(true);
     const [recording, setRecording] = useState(false);
+    const sig1 = createRef<HTMLInputElement>();
+    const sig2 = createRef<HTMLInputElement>();
+    const tempo = createRef<HTMLInputElement>();
+    const duration = createRef<HTMLInputElement>();
+
 
     const checkRecord = () => {
         if (!recording && props.loopLength - (props.audioCtx.currentTime) % props.loopLength <= (props.loopLength / 10)) {
@@ -148,15 +153,30 @@ const Recorder = (props: RecorderProps) => {
         return (recorder2 !== null && recorder2.state === "recording") ? "Recording" : "Not recording"
     }
 
+    const getMuteTooltip = () => {
+        if (muted) return "Unmute";
+        else if (recording) return "Mute";
+        else return "Unmuting next cycle";
+    }
+
+    const changeSettings = () => {
+        if (tempo.current === null || duration.current === null || sig1.current === null || sig2.current === null) return;
+        if (tempo.current?.value !== "") {
+            let durationSeconds = duration.current.valueAsNumber * sig1.current.valueAsNumber / tempo.current.valueAsNumber * 60;
+            props.changeLoop(durationSeconds);
+        }
+        else {
+            props.changeLoop(duration.current.valueAsNumber);
+        }
+    }
+
     // TODO stop recording immediately when pressing "Mute"
     // TODO Combine both recording status labels into a single recording icon (on the canvas?)
     return (
-        <div>
-            <label> {getRecordingStatus()}</label>
-            <label> {getRecordingStatus2()}</label>
-            <button className={"squircle-button light-blue"}
+        <div id="coordination">
+            <div><button className={"squircle-button light-blue "+(muted ? "muted ":" ")+(recording? "recording ":"")} id={"mute"} title={getMuteTooltip()}
                 onClick={toggleMuted}>{getMuteStatus()}
-            </button>
+            </button></div>
             <AudioUploader
                 audioCtx={props.audioCtx}
                 paused={props.paused}
@@ -166,6 +186,21 @@ const Recorder = (props: RecorderProps) => {
                 addToPlaylist={props.addToPlaylist}
                 sendToPeers={props.sendToPeers}
             />
+            <div>
+                <label htmlFor={"signature-input"}>Time Sig: </label>
+                <input id={"signature-input"} type={"number"} min={1} ref={sig1}></input>
+                <label htmlFor={"signature-input-2"}> / </label>
+                <input id={"signature-input-2"} type={"number"} min={1} ref={sig2}></input>
+            </div>
+            <div>
+                <label htmlFor={"tempo-input"} title={"Set tempo of loop (can be left blank)"}>Tempo: </label>
+                <input id={"tempo-input"} type={"number"} min={0} title={"Set tempo of loop (can be left blank)"} ref={tempo}></input>
+            </div>
+            <div>
+                <label htmlFor={"duration-input"} title={"Duration of loop (in seconds, or bars if tempo value filled in)"}>Duration: </label>
+                <input id={"duration-input"} type={"number"} min={0} title={"Duration of loop (in seconds, or bars if tempo value filled in)"} ref={duration}></input>
+            </div>
+            <div><button className={"green circle-button"} style={{width: "30px", padding: "0"}}><i className={"fa fa-check block"} title={"Submit changes"} onClick={changeSettings}></i></button></div>
         </div>
     );
 }

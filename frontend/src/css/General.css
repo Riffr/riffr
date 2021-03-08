@@ -12,7 +12,7 @@ body {
     width: 100%;
 }
 
-a.button {
+.button {
     display: inline-block;
     text-decoration: none;
 }
@@ -21,13 +21,13 @@ button i.block, a.button i.block {
     display: block;
 }
 
-button:hover, a.button:hover {
+button:hover, .button:hover {
     cursor: pointer;
     transition: 0.15s;
     filter: brightness(110%);
 }
 
-button:active, a.button:active {
+button:active, .button:active {
     filter: brightness(90%);
     outline: none;
 }

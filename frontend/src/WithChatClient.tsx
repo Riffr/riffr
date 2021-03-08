@@ -34,36 +34,39 @@ interface WithChatClientLocationState {
 //     )
 
 interface WithChatClientProps extends RouteComponentProps<{}, {}, WithChatClientLocationState> {
-    socket: Socket;
 };
-type ChatClientProps<P> = P & { socket: Socket, chatClient: ChatClient };
+type ChatClientProps<P> = P & { chatClient: ChatClient };
 
 
 const withChatClient = <P extends any>(
     Component: React.FC<ChatClientProps<P>>
 ): React.FC<P & WithChatClientProps> =>
     (props) => {
-        const { socket } = props;
         const { roomId, username, create } = props.location.state;
         const userProps : UserProps = { username };
 
-        const chatClientResource = resource(
-            create
-            ? ChatClient.createRoom(socket, roomId, userProps)
-            : ChatClient.joinRoom(socket, roomId, userProps)
-        );
+        console.log('Creating chatClientPromise');
+
+        const chatClientPromise = create
+            ? ChatClient.createRoom(roomId, userProps)
+            : ChatClient.joinRoom(roomId, userProps);
+
+        const chatClientResource = resource(chatClientPromise);
+
+        const Wrapped = withResource<ChatClient, P>(props => {
+            console.log(`Reading chatClientResource...`);
+            const chatClient = props.resource.read();
+            if (!chatClient) throw new Error(`Chat Client is undefined!`);
+
+            useEffect(() => 
+                () => chatClient?.leave(), 
+            [chatClient]);
+
+            return <Component {...props} chatClient={chatClient} />
+        });
 
         return <ErrorBoundary fallback={<p>ChatClientError</p>}>
-            {withResource<ChatClient, P>(props => {
-                const chatClient = props.resource.read();
-                if (!chatClient) throw new Error(`Chat Client is undefined!`);
-
-                useEffect(() => 
-                    () => chatClient?.leave(), 
-                [chatClient]);
-
-                return <Component {...props} socket={socket} chatClient={chatClient} />
-            })}        
+            <Wrapped {...props} fallback={<p>Loading...</p>} resource={chatClientResource} />        
         </ErrorBoundary>
     };
 

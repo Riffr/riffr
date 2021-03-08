@@ -2,7 +2,7 @@ import React, { Suspense } from "react";
 import { Resource } from "./resource";
 
 interface WithResourceProps<T> {
-    fallback: React.FC;
+    fallback: React.ReactChild;
     resource: Resource<T>
 };
 

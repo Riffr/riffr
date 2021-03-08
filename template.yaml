@@ -34,6 +34,31 @@ Parameters:
 
 Resources:
 
+  FrontendCloudfrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig: #required
+        Enabled: True
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: True
+          TargetOriginId: FrontendBucket
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: index.html
+        Origins:
+          - Id: FrontendBucket
+            DomainName: !GetAtt FrontendBucket.DomainName
+            CustomOriginConfig:
+              OriginProtocolPolicy: match-viewer
+
+
+
  ######   #######  
 ##    ## ##     ## 
 ##              ## 

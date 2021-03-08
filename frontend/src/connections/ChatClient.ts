@@ -13,6 +13,7 @@ import StrictEventEmitter from "strict-event-emitter-types"
 
 interface ChatEvents {
     message: (client: ChatClient, message: Message) => void;
+    start: (client: ChatClient) => void;
 }
 type ChatEmitter = {new (): StrictEventEmitter<EventEmitter, ChatEvents>};
 
@@ -23,21 +24,14 @@ class ChatClient extends (EventEmitter as ChatEmitter) {
     public readonly user: User;
     public readonly room: Room<UserProps>;
 
-    static async createRoom(roomId: string, userProps: UserProps) {
-        console.log(`Creating Room... ChatClient`);
-        
-        const signalSocket = new Socket(`${process.env.REACT_APP_BACKEND_IP}:${process.env.REACT_APP_BACKEND_PORT}/chat`);
-
+    static async createRoom(socket: Socket, roomId: string, userProps: UserProps) {
+        const signalSocket = new Socket(`${socket.uri}/chat`);
         const { room, user } = await Room.createRoom<UserProps>(signalSocket, roomId, userProps);
         return new ChatClient(signalSocket, user, room);
     }
 
-    static async joinRoom( roomId: string, userProps: UserProps) {
-        console.log(`Joining Room... JoinRoom`);
-        
-        
-        const signalSocket = new Socket(`${process.env.REACT_APP_BACKEND_IP}:${process.env.REACT_APP_BACKEND_PORT}/chat`);
-
+    static async joinRoom(socket: Socket, roomId: string, userProps: UserProps) {
+        const signalSocket = new Socket(`${socket.uri}/chat`);
         const { room, user } = await Room.joinRoom<UserProps>(signalSocket, roomId, userProps);
         return new ChatClient(signalSocket, user, room);
     }
@@ -51,11 +45,19 @@ class ChatClient extends (EventEmitter as ChatEmitter) {
 
         this.socket.on(ChatEvent.Message, (message: Message) => {
             this.emit("message", this, message);
+        });
+
+        this.socket.on(ChatEvent.Start, () => {
+            this.emit("start", this);
         })
     }
 
     public send(content: string) {
         this.socket.emit(ChatEvent.Message, content);
+    }
+
+    public broadcastStart() {
+        this.socket.emit(ChatEvent.Start);
     }
 
     public leave() {

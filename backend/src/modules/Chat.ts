@@ -27,6 +27,7 @@ interface Message {
 
 enum ChatEvent {
     Message = "chat/message",
+    Start   = "chat/start",
 }
 
 const chat = room<UserProps>("/chat", RoomState<UserProps>());
@@ -45,6 +46,12 @@ chat.on(ChatEvent.Message, (ctx: Context, content: string, callback: any) => {
 
     roomCtx.room?.broadcast(ctx, ChatEvent.Message, { from: roomCtx.user.id, content } as Message);
 });
+chat.on(ChatEvent.Start, (ctx: Context) => {
+    const roomCtx = Store.of<RoomState<UserProps>>(ctx).roomCtx;
+
+    roomCtx?.room?.broadcast(ctx, ChatEvent.Start);    
+})
+
 
 export {
     UserProps, ChatUser,

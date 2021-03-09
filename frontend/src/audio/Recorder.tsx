@@ -139,6 +139,11 @@ const Recorder = (props: RecorderProps) => {
         if (!permission) {
             getPermission();
         }
+        if (!muted) {
+            // Stop recording immediately when pressing 'Mute'
+            stopRecording(recorder1);
+            stopRecording(recorder2);
+        }
         setMuted(!muted)
     }
 
@@ -184,8 +189,6 @@ const Recorder = (props: RecorderProps) => {
         console.log(duration.current.valueAsNumber);
     }
 
-    // TODO stop recording immediately when pressing "Mute"
-    // TODO Combine both recording status labels into a single recording icon (on the canvas?)
     return (
         <div id="coordination">
             <div><button className={"squircle-button light-blue "+(muted ? "muted ":" ")+(getRecordingStatusBoth()? "recording ":"")} id={"mute"} title={getMuteTooltip()}

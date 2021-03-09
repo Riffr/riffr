@@ -15,8 +15,8 @@ export interface DecodedRecord {
     //endOffset: number;
 }
 
-let AudioContext: any = window.AudioContext // Default
-    || (window as any).webkitAudioContext // Safari
+const AudioContext: any = window.AudioContext // Default
+    || (window as any).webkitAudioContext; // Safari
 
 const createAudioCtx = () => {
     const ctx: AudioContext = new AudioContext();
@@ -257,11 +257,11 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     /* Canvas resizing code */
     const handleResize = () => {
-        let w = document.getElementById("canvas")?.clientWidth || 1;
-        let h = document.getElementById("canvas")?.clientHeight || 1;
+        const w = document.getElementById("canvas")?.clientWidth || 1;
+        const h = document.getElementById("canvas")?.clientHeight || 1;
         setCanvasWidth(w);
         setCanvasHeight(h);
-    }
+    };
 
     useEffect(() => {
         let i1: any;

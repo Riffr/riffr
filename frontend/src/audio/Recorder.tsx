@@ -75,13 +75,13 @@ const Recorder = (props: RecorderProps) => {
             setRecording(true);
             setTimeout(() => {
                 console.log("Setting recording to false");
-                setRecording(false)
-            }, props.loopLength * 1000 / 2 + startOffset.current * 1000)
+                setRecording(false);
+            }, props.loopLength * 1000 / 2 + startOffset.current * 1000);
 
             recorder.start();
             startOffset.current = props.loopLength - (props.audioCtx.currentTime) % props.loopLength;
             setTimeout(() => {
-                stopRecording(recorder)
+                stopRecording(recorder);
             }, props.loopLength * 1000 + startOffset.current * 1000);
 
         } else {
@@ -160,7 +160,7 @@ const Recorder = (props: RecorderProps) => {
         }
         props.setIsRecording(muted);
         setMuted(!muted);
-    }
+    };
 
     const getMuteStatus = () => {
         return muted ? "Unmute" : "Mute";

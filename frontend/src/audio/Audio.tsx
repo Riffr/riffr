@@ -87,13 +87,12 @@ const Audio = (props: { signal: SignallingChannel }) => {
                 const decodedRecord: DecodedRecord = await decodeReceivedData(data);
                 addToPlaylist(decodedRecord, peer.userId!);
             } else if (channel.label === "control") {
-                switch (data) {
-                    case "play":
-                        play();
-                        break;
-                    case "pause":
-                        pause();
-                        break;
+                if (data === "play") {play()}
+                else if (data === "pause") {pause()}
+                else if (data.substring(0,17) === "changeLoopLength:") {
+                    let newLoopLength = data.substring(17);
+                    console.log("Changing loop length to", newLoopLength)
+                    changeLoopLength(parseFloat(newLoopLength), false)
                 }
             }
         });
@@ -203,8 +202,11 @@ const Audio = (props: { signal: SignallingChannel }) => {
         return paused ? "Start" : "Stop";
     };
 
-    const changeLoopLength = (length: number) => {
+    const changeLoopLength = (length: number, updateMesh = true) => {
         newLoopLength.current = length;
+        if (updateMesh) {
+            mesh?.send("control", "changeLoopLength:".concat(length.toString()))
+        }
     };
 
     const checkLoopLength = () => {
@@ -304,7 +306,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         addToPlaylist={addToPlaylist}
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
-                        changeLoop={changeLoopLength}
+                        changeLoopLength={changeLoopLength}
 
                         setTimeSignature={setTimeSignature}
                         setDuration={setDuration}

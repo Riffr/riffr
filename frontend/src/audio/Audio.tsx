@@ -1,18 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import Recorder, { RecordType } from './Recorder';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import Recorder, {RecordType} from './Recorder';
 
 // import { SignalPayload } from "@riffr/backend/modules/Mesh";
-import { Mesh, MeshedPeer } from "../connections/Mesh";
-import { SignallingChannel } from "../connections/SignallingChannel";
+import {Mesh, MeshedPeer} from "../connections/Mesh";
+import {SignallingChannel} from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
 
-import { Mesh as M } from '@riffr/backend';
+import {Mesh as M} from '@riffr/backend';
 
 export interface DecodedRecord {
     buffer: AudioBuffer;
     startOffset: number;
     isBackingTrack: boolean;
     //endOffset: number;
+}
+
+enum RecorderState {
+    REC,
+    MUTE,
+    STOP
 }
 
 let AudioContext: any = window.AudioContext // Default
@@ -24,7 +30,7 @@ const createAudioCtx = () => {
     return ctx;
 }
 
-const Audio = (props: { signal: SignallingChannel}) => {
+const Audio = (props: { signal: SignallingChannel }) => {
     const [paused, setPaused] = useState(true);
     const [loopLength, setLoopLength] = useState<number>(8);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
@@ -35,6 +41,8 @@ const Audio = (props: { signal: SignallingChannel}) => {
 
     const [canvasWidth, setCanvasWidth] = useState(1000);
     const [canvasHeight, setCanvasHeight] = useState(600);
+
+    const [recorderState, setRecorderState] = useState(RecorderState.STOP);
 
     let barCount = useRef(1);
     let newLoopLength = useRef(8);
@@ -148,7 +156,10 @@ const Audio = (props: { signal: SignallingChannel}) => {
 
     const play = () => {
         checkLoopLength();
-        setAudioCtx(prev => {prev.resume(); return prev});  // Does the same thing as audioCtx.resume() but always gets called on the actual audioCtx
+        setAudioCtx(prev => {
+            prev.resume();
+            return prev
+        });  // Does the same thing as audioCtx.resume() but always gets called on the actual audioCtx
         setPaused(false);
     }
 
@@ -258,8 +269,16 @@ const Audio = (props: { signal: SignallingChannel}) => {
     }, [])
 
     return (
-        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2", display: 'flex', flexDirection: 'column', maxHeight: 'inherit' }}>
-            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds} loopLength={loopLength}/>
+        <div style={{
+            position: "relative",
+            gridRow: "1 /span 2",
+            gridColumn: "2",
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: 'inherit'
+        }}>
+            <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds}
+                    loopLength={loopLength} recorderState={recorderState}/>
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
@@ -270,12 +289,16 @@ const Audio = (props: { signal: SignallingChannel}) => {
                         loopLength={loopLength}
                         changeLoop={changeLoopLength}
                     />
-                    <div>
-                        <button className={"squircle-button light-blue"} onClick={togglePaused}>{getPausedStatus()}</button>
-                        <button className={"squircle-button light-blue"} onClick={() => {
-                            mesh?.send("data", "test")
-                        }}>Send Dummy Audio
+                    <div style={{paddingTop: "16px"}}>
+                        <button id={"play-button"} className={`squircle-button ${paused ? `green` : `red`}`}
+                                onClick={togglePaused}>
+                            {getPausedStatus()}
+                            <i className={`fa fa-${paused ? `play` : `stop`}`}/>
                         </button>
+                        {/*<button className={"squircle-button light-blue"} onClick={() => {*/}
+                        {/*    mesh?.send("data", "test")*/}
+                        {/*}}>Send Dummy Audio*/}
+                        {/*</button>*/}
                     </div>
                 </div>
             </div>

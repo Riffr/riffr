@@ -106,6 +106,16 @@
     /*align-items: center;*/
 }
 
+#play-button {
+    width: 150px;
+    font-weight: bolder;
+    margin-left: calc(50% - 75px);
+}
+
+#play-button i {
+    padding-left: 12px;
+}
+
 .button.disabled {
     color: rgb(109, 109, 109);
 }
@@ -179,7 +189,7 @@
 #coordination div {
     display: flex;
     gap: 5px;
-    padding: 0px 5px;
+    padding: 0 5px;
     border-right: 1px solid #aaa;
     vertical-align: middle;
     justify-content: center;

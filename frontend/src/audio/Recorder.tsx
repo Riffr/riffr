@@ -199,17 +199,17 @@ const Recorder = (props: RecorderProps) => {
             </button></div>
             <div>
                 <label htmlFor={"signature-input"}>Time Sig: </label>
-                <input id={"signature-input"} type={"number"} min={1} ref={sig1}></input>
+                <input id={"signature-input"} type={"number"} min={1} ref={sig1} defaultValue={4}/>
                 <label htmlFor={"signature-input-2"}> / </label>
-                <input id={"signature-input-2"} type={"number"} min={1}></input>
+                <input id={"signature-input-2"} type={"number"} min={1} defaultValue={4}/>
             </div>
             <div>
                 <label htmlFor={"tempo-input"} title={"Set tempo of loop (can be left blank)"}>Tempo: </label>
-                <input id={"tempo-input"} type={"number"} min={0} title={"Set tempo of loop (can be left blank)"} ref={tempo}></input>
+                <input id={"tempo-input"} type={"number"} min={0} title={"Set tempo of loop (can be left blank)"} ref={tempo} defaultValue={`10`}/>
             </div>
             <div>
                 <label htmlFor={"duration-input"} title={"Duration of loop (in seconds, or bars if tempo value filled in)"}>Duration: </label>
-                <input id={"duration-input"} type={"number"} min={0} step={0.01} title={"Duration of loop (in seconds, or bars if tempo value filled in)"} ref={duration}></input>
+                <input id={"duration-input"} type={"number"} min={0} step={0.01} title={"Duration of loop (in seconds, or bars if tempo value filled in)"} ref={duration}/>
             </div>
             <div>
             <AudioUploader
@@ -222,7 +222,7 @@ const Recorder = (props: RecorderProps) => {
                 sendToPeers={props.sendToPeers}
             />
             </div>
-            <div><button className={"green circle-button"} style={{width: "30px", padding: "0"}}><i className={"fa fa-check block"} title={"Submit changes"} onClick={changeSettings}></i></button></div>
+            <div><button className={"green circle-button"} style={{width: "30px", padding: "0"}}><i className={"fa fa-check block"} title={"Submit changes"} onClick={changeSettings}/></button></div>
         </div>
     );
 }

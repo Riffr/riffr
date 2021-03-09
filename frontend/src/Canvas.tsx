@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { DecodedRecord } from "./audio/Audio";
+import React, {useEffect} from 'react';
+import {DecodedRecord} from "./audio/Audio";
 
 interface CanvasProps {
     id: string;
@@ -8,6 +8,13 @@ interface CanvasProps {
     time: number;
     loopLength: number;
     sounds: Map<string, DecodedRecord[]>;
+    recorderState: RecorderState;
+}
+
+enum RecorderState {
+    REC,
+    MUTE,
+    STOP
 }
 
 abstract class CanvasObject {
@@ -125,12 +132,12 @@ class CanvasText extends CanvasObject {
         this.counter += 1;
         return this.counter > 100;
     }
-
-
 }
 
 const Canvas = (props: CanvasProps) => {
     let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
+    let recording: CanvasText = new CanvasText(props.width - 150, 100, "REC", 60, "#4CAF50");
+    let muted: CanvasText = new CanvasText(props.width - 250, 100, "MUTED", 60, "#e53935");
     let canvasObjects = [grid];
     const canvasRef = React.useRef(null);
 
@@ -170,9 +177,8 @@ const Canvas = (props: CanvasProps) => {
     }, [props.time, props.width, props.height, props.sounds])
 
 
-
     return (
-        <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height} />
+        <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height}/>
     );
 
 }

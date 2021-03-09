@@ -222,7 +222,7 @@
     }
 }
 
-@media only screen and (min-width: 1000px) {
+@media only screen and (min-width: 1200px) {
     #room-wrapper {
         box-shadow: 0 2px 5px 0 #5d5d5d94;
         border: 3px solid #444;

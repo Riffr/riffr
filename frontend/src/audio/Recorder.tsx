@@ -191,15 +191,6 @@ const Recorder = (props: RecorderProps) => {
             <div><button className={"squircle-button light-blue "+(muted ? "muted ":" ")+(getRecordingStatusBoth()? "recording ":"")} id={"mute"} title={getMuteTooltip()}
                 onClick={toggleMuted}>{getMuteStatus()}
             </button></div>
-            <AudioUploader
-                audioCtx={props.audioCtx}
-                paused={props.paused}
-                permission={permission}
-                loopLength={props.loopLength}
-                changeLoop={(duration: number) => {backingTrackUpdated(duration); props.changeLoop(duration);}}
-                addToPlaylist={props.addToPlaylist}
-                sendToPeers={props.sendToPeers}
-            />
             <div>
                 <label htmlFor={"signature-input"}>Time Sig: </label>
                 <input id={"signature-input"} type={"number"} min={1} ref={sig1}></input>
@@ -213,6 +204,17 @@ const Recorder = (props: RecorderProps) => {
             <div>
                 <label htmlFor={"duration-input"} title={"Duration of loop (in seconds, or bars if tempo value filled in)"}>Duration: </label>
                 <input id={"duration-input"} type={"number"} min={0} title={"Duration of loop (in seconds, or bars if tempo value filled in)"} ref={duration}></input>
+            </div>
+            <div>
+            <AudioUploader
+                audioCtx={props.audioCtx}
+                paused={props.paused}
+                permission={permission}
+                loopLength={props.loopLength}
+                changeLoop={(duration: number) => {backingTrackUpdated(duration); props.changeLoop(duration);}}
+                addToPlaylist={props.addToPlaylist}
+                sendToPeers={props.sendToPeers}
+            />
             </div>
             <div><button className={"green circle-button"} style={{width: "30px", padding: "0"}}><i className={"fa fa-check block"} title={"Submit changes"} onClick={changeSettings}></i></button></div>
         </div>

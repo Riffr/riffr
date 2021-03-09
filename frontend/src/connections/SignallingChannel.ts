@@ -1,5 +1,7 @@
 import {
-    User,
+    ChatUser as User,
+    UserProps,
+
     Mesh as M,
     SignalEvent,
 } from '@riffr/backend';
@@ -18,24 +20,26 @@ type SignallingChannelEmitter = {new (): StrictEventEmitter<EventEmitter, Signal
 
 class SignallingChannel extends (EventEmitter as SignallingChannelEmitter) {
 
-    private socket: Socket;
+    private readonly socket: Socket;
 
-    public user: User;
-    public room: Room<User>;
+    public readonly user: User;
+    public readonly room: Room<UserProps>;
 
-    static async createRoom(socket: Socket, roomId: string, user: User) {
+    static async createRoom(socket: Socket, roomId: string, userProps: UserProps) {
         const signalSocket = new Socket(`${socket.uri}/signalling`);
-        const room = await Room.createRoom<User>(signalSocket, roomId, user);
+
+        const { room, user } = await Room.createRoom<UserProps>(signalSocket, roomId, userProps);
         return new SignallingChannel(signalSocket, user, room);
     }
 
-    static async joinRoom(socket: Socket, roomId: string, user: User) {
+    static async joinRoom(socket: Socket, roomId: string, userProps: UserProps) {
         const signalSocket = new Socket(`${socket.uri}/signalling`);
-        const room = await Room.joinRoom<User>(signalSocket, roomId, user);
+
+        const { room, user } = await Room.joinRoom<UserProps>(signalSocket, roomId, userProps);
         return new SignallingChannel(signalSocket, user, room);
     }
 
-    private constructor(socket: Socket, user: User, room: Room<User>) {
+    private constructor(socket: Socket, user: User, room: Room<UserProps>) {
         super();
 
         this.socket = socket;
@@ -51,8 +55,8 @@ class SignallingChannel extends (EventEmitter as SignallingChannelEmitter) {
         this.socket.emit(SignalEvent.Signal, payload);
     }
 
-    public async leave() {
-        await this.room.leave();
+    public leave() {
+        this.room.leave();
     }
 
 }

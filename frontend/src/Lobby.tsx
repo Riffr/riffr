@@ -1,71 +1,85 @@
 import React, {RefObject, useCallback, useEffect, useRef, useState} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, RouteComponentProps} from 'react-router-dom';
 import './css/Lobby.css';
 import './css/General.css'
 
+import { v4 as uuidv4 } from "uuid";
+
 import { Socket } from './connections/Socket';
 
-import { User, Message } from '@riffr/backend';
+import { 
+    ChatEvent, 
+    ChatUser as User,
+    UserProps,
+    Message, 
+    chat
+} from '@riffr/backend';
 import { ChatClient } from './connections/ChatClient';
 import { Room } from './connections/Room';
+import { WithChatClientLocationState } from './WithChatClient';
 
-const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: boolean, chatClient?: ChatClient, setChatClient: (chat?: ChatClient) => void }) => {
+
+interface LobbyProps extends RouteComponentProps {
+    chatClient: ChatClient;
+    create: boolean;
+};
+
+
+const Lobby = (props: LobbyProps) => {
+    
+    const { path } = props.match;
+    
+
+    const { chatClient, create } = props;
+    const user = chatClient.user;
+    const room = chatClient.room;
+
+    const locationState: WithChatClientLocationState = { roomId: room.id, username: user.username, create };
     
     let [message, setMessage] = useState("");
-    let [messages, setMessages] = useState([]);
-    let [members, setMembers] = useState<Array<User>>([]);
-    
-    const user: User = { id: props.name };
+    let [messages, setMessages] = useState<Array<Message>>([]);
+    let [members, setMembers] = useState<Array<UserProps>>([...room.members.values()]);
 
     const onMessageReceived = (message: Message) => {
-        console.log(messages);
-        // I promise I'll be good later...
-        // @ts-ignore
-        setMessages(prev => [...prev, message]);
-    }
+        const { from, content } = message;
+
+        const username = room.members.get(from)?.username;
+        if (!username) return;
+
+        setMessages(prev => [...prev, { from: username, content}]);
+    };
 
     const sendMessage = useCallback(() => {
         let msg = message;
 
-        // Add some UI for pending messages?
-        if (!props.chatClient) return;
         props.chatClient.send(message);
 
-        // @ts-ignore
-        setMessages(prev => [...prev, {from: user, content: msg} as Message]);
+        setMessages(prev => [...prev, {from: user.username, content: msg} as Message]);
         setMessage("");
+    }, [message]);
 
-
-    }, [props.socket, message, props.chatClient]);
 
     useEffect(() => {
-        (async () => {
-            console.log("registering...");
-            const client = await (props.create 
-                ? ChatClient.createRoom(props.socket, props.roomCode, user)
-                : ChatClient.joinRoom(props.socket, props.roomCode, user));
+        chatClient.room.on("membersUpdated", (room: Room<User>) => {
+            setMembers([...room.members.values()]);
+        })
 
- 
-            client.room.on("membersUpdated", (room: Room<User>) => {
-                setMembers(room.members);
-            })
+        chatClient.on("message", (_, message: Message) => {
+            onMessageReceived(message);
+        });
 
-            client.on("message", (_, message: Message) => {
-                onMessageReceived(message);
-            });
-
-            props.setChatClient(client);
-            setMembers(client.room.members || []);
-
-            document.getElementById("chat-input")?.focus();
-
-        }) ();
+        chatClient.on("start", () => {
+            props.history.push('/riffr/room', locationState)
+        });
 
         return () => { 
-            props.chatClient?.removeAllListeners("message"); 
-            props.chatClient?.room.removeAllListeners("membersUpdated"); 
-            props.chatClient?.leave();
+            chatClient.removeAllListeners("message"); 
+            chatClient.room.removeAllListeners("membersUpdated"); 
         };
+    }, [chatClient])
+
+    useEffect(() => {
+        document.getElementById("chat-input")?.focus();
     }, []);
 
     useEffect(() => {
@@ -78,6 +92,7 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
         }
     }
 
+
     return (
         <div id="lobby-wrapper">
             <div>
@@ -85,17 +100,18 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
                     <i className={"fa fa-home block"}/>
                 </Link>
             </div>
-            <h1>Welcome, {props.name}</h1>
+            <h1>Welcome, {user.username}</h1>
             <h3>Invite your friends using the code below</h3>
-            <CopyField id={"copy-field"} value={props.roomCode}/>
+            <CopyField id={"copy-field"} value={room.id}/>
             <div>
                 <div id={"member-list"}>
-                    <p><b>Members: </b>{members.map(user => user.id).join(", ")}</p>
+                    <p><b>Members: </b>{members.map(user => user.username).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
-                    </div>)}
+                            <p className={"chat-message"}><b>{x.from}</b>: {x.content}</p>
+                        </div>
+                    )}
                 </div>
                 <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
                        placeholder={"Type message"}
@@ -104,12 +120,15 @@ const Lobby = (props: { name: string, roomCode: string, socket: Socket, create: 
                     <i className={"fa fa-send"}/>
                 </button>
             </div>
-            <Link to={`/room/${props.roomCode}/${props.name}`}>
+            { create && <Link to={
+                { pathname: `/riffr/room`
+                , state: locationState
+                }} onClick={() => chatClient.broadcastStart()}>
                 <button id={"start-button"} className={"squircle-button green"}>
                     Start
                     <i className={"fa fa-play"} />
                 </button>
-            </Link>
+            </Link>}
         </div>
     );
 }

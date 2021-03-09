@@ -1,5 +1,6 @@
 import { Socket } from "socket.io";
 import { Context, error, Handler, Module, Store, success } from "../Server";
+import { v4 as uuidv4 } from "uuid";
 
 enum RoomEvent {
     Create              = "room/create",
@@ -10,37 +11,90 @@ enum RoomEvent {
     RemoveUser          = "room/remove_user",
 };
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+// ERRORS
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+enum RoomErrorType {
+    RoomExists = "room_exists",
+    RoomNotExists = "room_not_exists",
+    Unknown = "unknown"
+};
+
+interface RoomExistsError {
+    type: RoomErrorType.RoomExists, 
+    roomId: string
+};
+interface RoomNotExistsError {
+    type: RoomErrorType.RoomNotExists,
+    roomId: string
+}
+interface UnknownError {
+    type: RoomErrorType.Unknown
+};
+
+
+type CreateRoomError = RoomExistsError | UnknownError;
+type JoinRoomError = RoomNotExistsError | UnknownError;
+
+class CreateRoomException extends Error {
+    public err: CreateRoomError;
+
+    constructor(err: CreateRoomError) {
+        super(`Create Room Exception. Error: ${ JSON.stringify(err) }`);
+        this.err = err;
+    }
+}
+
+class JoinRoomException extends Error {
+    public err: JoinRoomError;
+
+    constructor(err: JoinRoomError) {
+        super(`Join Room Exception. Error: ${ JSON.stringify(err) }`);
+        this.err = err;
+    }
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+type User<T> = T & { id: string };
+type RoomContext<T> = {
+    room: Room<T>,
+    user: User<T>
+};
 class Room<T> {
 
     public id : string;
-    public members: Map<string, T> = new Map();
+    public members: Map<string, User<T>> = new Map();
 
     constructor(name: string) {
         this.id = name;
     }
 
-    public join(ctx: Context, user: T) {
-        leave(ctx);
+    public join(ctx: Context, userProps: T) {
+
+        // Join the room
         ctx.socket.join(this.id);
     
-        Store.of<RoomState<T>>(ctx).room = this;
+        // Create user from props and set socket / room state
+        const user = { ...userProps, id: uuidv4() };
         this.members.set(ctx.socket.id, user);
 
-
-        console.log("[join] Emitting AddClientToRoom")
-        ctx.socket.to(this.id).broadcast.emit(RoomEvent.AddUser, user);
+        Store.of<RoomState<T>>(ctx).roomCtx = {
+            room: this,
+            user
+        };
         
-
-        console.log(this.members);
+        // Broadcast new user
+        ctx.socket.to(this.id).broadcast.emit(RoomEvent.AddUser, user);
+        return user;
     }
-
-    // public contexts(ctx: Context): Array<Context>  {
-    //     return Array.from(this.members.keys())
-    //         .map(id => {
-    //             const socket = ctx.io.sockets.get(id)!;
-    //             return { io: ctx.io, socket}
-    //         });
-    // } 
 
     public unicast(ctx: Context, socketId: string, event: string, ...args: any[]) {
         if (!this.members.has(socketId)) return;
@@ -61,7 +115,12 @@ class Room<T> {
     public leave(ctx: Context) {
         ctx.socket.leave(this.id);
 
-        ctx.socket.to(this.id).broadcast.emit(RoomEvent.RemoveUser, this.members.get(ctx.socket.id)!);
+        const user = this.members.get(ctx.socket.id);
+        // I don't know how, but???
+        if (!user) return;
+
+        console.log(`[leave] ${ JSON.stringify(user) } is leaving`);
+        ctx.socket.to(this.id).broadcast.emit(RoomEvent.RemoveUser, user);
         this.members.delete(ctx.socket.id);
     }
 
@@ -71,28 +130,44 @@ class Room<T> {
 
 }
 
-const join = <T>(ctx: Context, roomId: string, user: T) => {
+const create = <T>(ctx: Context, roomId: string, userProps: T) => {
+    leave(ctx);
+
+    const rooms = Store.of<RoomState<T>>(ctx).rooms;
+    if (rooms.has(roomId)) throw new CreateRoomException({ type: RoomErrorType.RoomExists, roomId });
+
+    const room = new Room<T>(roomId);
+    rooms.set(roomId, room);
+    
+    const user = room.join(ctx, userProps);
+    return { room, user };
+}
+
+const join = <T>(ctx: Context, roomId: string, userProps: T) => {
     leave(ctx);
 
     const rooms = Store.of<RoomState<T>>(ctx).rooms;
 
-    if (!rooms.has(roomId)) rooms.set(roomId, new Room(roomId));
+    if (!rooms.has(roomId)) throw new JoinRoomException({ type: RoomErrorType.RoomNotExists, roomId }); 
     const room = rooms.get(roomId)!;
 
-    room.join(ctx, user);
-    return room;
+    const user = room.join(ctx, userProps);
+    return { room, user };
 };
 
 const leave = <T>(ctx: Context) => {
-    const room = Store.of<RoomState<T>>(ctx).room;
-    if (room) room.leave(ctx);
+    const room = Store.of<RoomState<T>>(ctx).roomCtx?.room;
+    if (!room) return;
+
+    room.leave(ctx);
+    if (room.members.size == 0) Store.of<RoomState<T>>(ctx).rooms.delete(room.id);
 };
 
 
 // Module State
 interface RoomState<T> {
     rooms: Map<string, Room<T>>;
-    room?: Room<T>;
+    roomCtx?: RoomContext<T>;
 }
 // Some messy typescript hacks :) Sometimes I miss Java :( 
 const RoomState = <T>(): ({ new(): RoomState<T> }) => {
@@ -102,17 +177,17 @@ const RoomState = <T>(): ({ new(): RoomState<T> }) => {
         private static _rooms = new Map<string, Room<T>>();
     
         public rooms = S._rooms;
-        public room?: Room<T>;
+        public roomCtx?: RoomContext<T>;
     }
 
     return S;
 }
 
-const inRoom = <T>(f: (room: Room<T>) => Handler) => {
+const inRoom = <T>(f: (room: Room<T>, user: User<T>) => Handler) => {
     return (ctx: Context, ...args: any[]) => {
-        const room = Store.of<RoomState<T>>(ctx).room;
-        if (!room) return;
-        return f(room)(ctx, ...args);
+        const roomCtx = Store.of<RoomState<T>>(ctx).roomCtx;
+        if (!roomCtx) return;
+        return f(roomCtx.room, roomCtx.user)(ctx, ...args);
     };
 };
 
@@ -121,42 +196,60 @@ const room = <T>(namespace: string, state: { new (): RoomState<T> }) => {
     const mod = new Module(namespace)
     mod.use(Store.middleware(state));
 
-    
-    mod.on(RoomEvent.Create, (ctx: Context, roomId: string, localCtx: T, callback: any) => {
+    const log = (message: string) => console.log(`{namespace:${namespace}}${ message }`);
 
-        console.log(`[${namespace}][onCreateRoom] Client requesting to create room: ${ JSON.stringify(roomId) }`);
-        const room = Store.of<RoomState<T>>(ctx).rooms.get(roomId);
     
-        if (room && room.size() > 0) {
-            callback(error(`Room ${ roomId } taken`));
-        } else {
-            console.log(`[${namespace}][onCreateRoom] Creating and joining the room ${ roomId }`);
-            const joinedRoom = join(ctx, roomId, localCtx);
-            
-            console.log(`[${namespace}][onCreateRoom] room: ${ JSON.stringify(room) }`);
+    mod.on('disconnect', (ctx: Context) => {
+        log(`[onDisconnect] Client ${ ctx.socket.id } has disconnected.`);
+        leave<T>(ctx);
+    });
+
+    mod.on(RoomEvent.Create, (ctx: Context, roomId: string, userProps: T, callback: any) => {
+
+        log(`[onCreateRoom] Client requesting to create room: ${ roomId }.`);
+        
+        try {
+            const { room, user } = create<T>(ctx, roomId, userProps);
+            log(`[onCreateRoom] Room created successfully. ${ JSON.stringify(user) } has joined.`);
     
             callback(success({
-                members: [...joinedRoom.members.values()]
+                user: user,
+                members: [...room.members.values()]
             }));
+        } catch (err) {
+            if (err instanceof CreateRoomException) {
+                callback(error(err.err));
+            } 
+            log(`[onCreateRoom] Unknown error has occurred ${ JSON.stringify(err) }`);
+            callback(error({ type: RoomErrorType.Unknown } as UnknownError));
+        }
+
+    });
+    
+    
+    mod.on(RoomEvent.Join, (ctx: Context, roomId: string, userProps: T, callback: any) => {
+        console.log(`[${namespace}][onJoinRoom] Client requesting to join room: ${ roomId }`);
+        
+        try {
+            const { room, user } = join<T>(ctx, roomId, userProps);
+            log(`[onJoinRoom] ${ JSON.stringify(user) } has joined.`);
+
+            callback(success({
+                user: user,
+                members: [...room.members.values()]
+            }));
+        } catch (err) {
+            if (err instanceof JoinRoomException) {
+                callback(error(err.err));
+            }
+            log(`[onJoinRoom] Unknown error has occurred ${ JSON.stringify(err) }`);
+            callback(error({ type: RoomErrorType.Unknown } as UnknownError));
         }
     });
     
-    
-    mod.on(RoomEvent.Join, (ctx: Context, roomId: string, localCtx: T, callback: any) => {
-        console.log(`[${namespace}][onJoinRoom] Client requesting to join room: ${ roomId }`);
-        const room = join(ctx, roomId, localCtx);
-    
-        console.log(`[${namespace}][onJoinRoom] room: ${ JSON.stringify(room) }`);
-        callback(success({ 
-            members: [...room.members.values()]
-        }));
-    });
-    
-    mod.on(RoomEvent.Leave, (ctx: Context, callback: any) => {
-        console.log(`[${namespace}][onLeaveRoom] Client requesting to leave room`);
-    
-        leave(ctx);
-        callback(success(`Left room ${ Store.of<RoomState<T>>(ctx).room?.id }`));
+    mod.on(RoomEvent.Leave, (ctx: Context) => {
+        log(`[onLeaveRoom] Client requesting to leave room`);
+        leave<T>(ctx);
     });
     
     
@@ -168,7 +261,9 @@ export {
     inRoom, 
     RoomState,
     RoomEvent,
-    Room
+    Room,
+    RoomContext,
+    User, 
 };
 
 

@@ -1,70 +1,74 @@
 import React, { RefObject, useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, RouteComponentProps } from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
 import Audio from "./audio/Audio";
-//import AudioComponent from "./audio/AudioComponent";
-import { Socket } from './connections/Socket';
-import { SignallingChannel } from "./connections/SignallingChannel";
-import { Message, User } from "@riffr/backend";
-import { ChatClient } from './connections/ChatClient';
 
-const Room = (props: { roomCode: string, name: string, socket: Socket, create: boolean, chatClient?: ChatClient }) => {
+import { 
+    Message, 
+    ChatUser as User,
+    UserProps
+} from "@riffr/backend";
+
+import { Room as CRoom } from './connections/Room';
+import { withSignallingChannel } from './WithSignallingChannel';
+
+const Room = withSignallingChannel(props => {
+    
+
+    const { chatClient, signallingChannel } = props;
+    
+    const room = chatClient.room;
+    const user = chatClient.user;
+
+    console.log(`Room ${room.id}`);
+
 
     let [message, setMessage] = useState("");
     let [messages, setMessages] = useState<Array<Message>>([]);
+    let [members, setMembers] = useState<Array<UserProps>>([...room.members.values()]);
 
-    let [members, setMembers] = useState<Array<User>>([]);
+
     let [memberListShown, setListShown] = useState("grid");
     let [settingsShown, setSettingsShown] = useState("grid");
 
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
-    let [audio, setAudio] = useState(<div />);
 
-    const user: User = { id: props.name };
 
     const onMessageReceived = (message: Message) => {
-        // I promise I'll be good later...
-        // @ts-ignore
-        setMessages(prev => [...prev, message]);
-    }
+        const { from, content } = message;
+
+        const username = room.members.get(from)?.username;
+        if (!username) return;
+
+        setMessages(prev => [...prev, { from: username, content}]);
+    };
 
     const sendMessage = useCallback(() => {
         let msg = message;
 
-        // Add some UI for pending messages?
-        if (!props.chatClient) return;
         props.chatClient.send(message);
-        // @ts-ignore
-        setMessages(prev => [...prev, { from: user, content: msg } as Message]);
+
+        setMessages(prev => [...prev, {from: user.username, content: msg} as Message]);
         setMessage("");
+    }, [message]);
 
-
-    }, [props.socket, message, props.chatClient]);
 
     useEffect(() => {
-        (async () => {
-            const channel = await (props.create
-                ? SignallingChannel.createRoom(props.socket, props.roomCode, user)
-                : SignallingChannel.joinRoom(props.socket, props.roomCode, user));
+        chatClient.room.on("membersUpdated", (room: CRoom<User>) => {
+            setMembers([...room.members.values()]);
+        })
 
-            setAudio(<Audio signal={channel} />);
-        })();
-
-        setMembers(props.chatClient?.room.members || []);
-
-        props.chatClient?.on("message", (_, message: Message) => {
+        chatClient.on("message", (_, message: Message) => {
             onMessageReceived(message);
         });
 
-        return () => {
-            props.chatClient?.removeAllListeners("message");
-            props.chatClient?.room.removeAllListeners("membersUpdated");
-            props.chatClient?.leave();
+        return () => { 
+            chatClient.removeAllListeners("message"); 
+            chatClient.room.removeAllListeners("membersUpdated"); 
         };
-
-    }, []);
+    }, [chatClient]);
 
     useEffect(() => {
         document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
@@ -119,16 +123,17 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
                     <i className={"fa fa-cog block"}/>
                 </button>
             </div>
-            {audio}
+            <Audio signal={signallingChannel} />
             <div id={"chat"} style={{ display: chatDisplay }}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
-                <div id={"member-list"} style={{display: memberListShown}}>
-                    {members.map(user => <p>{user.id}</p>)}
+                <div id={"member-list"}>
+                    <p><b>Members: </b>{members.map(user => user.username).join(", ")}</p>
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>
-                        <p className={"chat-message"}><b>{x.from.id}</b>: {x.content}</p>
-                    </div>)}
+                            <p className={"chat-message"}><b>{x.from}</b>: {x.content}</p>
+                        </div>
+                    )}
                 </div>
                 <div>
                     <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
@@ -141,6 +146,7 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
             </div>
         </div>
     )
-}
+});
+
 
 export default Room;

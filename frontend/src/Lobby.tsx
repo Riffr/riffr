@@ -69,7 +69,7 @@ const Lobby = (props: LobbyProps) => {
         });
 
         chatClient.on("start", () => {
-            props.history.push('/riffr/room', locationState)
+            setTimeout(() => { props.history.push('/riffr/room', locationState)}, 1000);
         });
 
         return () => { 

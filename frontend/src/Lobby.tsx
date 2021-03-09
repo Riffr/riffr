@@ -92,11 +92,10 @@ const Lobby = (props: LobbyProps) => {
         }
     }
 
-
     return (
         <div id="lobby-wrapper">
             <div>
-                <Link to={"/"} className={"squircle-button button red"} id={"home-button"}>
+                <Link to={"/"} className={"squircle-button button dark-burgandy"} id={"home-button"}>
                     <i className={"fa fa-home block"}/>
                 </Link>
             </div>

@@ -146,7 +146,7 @@
     grid-template-columns: 1fr 1fr;
     border: 1px solid #ccc;
     border-radius: 5px;
-    padding: 4px 0;
+    padding: 8px 0;
     justify-content: space-around;
 }
 
@@ -157,6 +157,11 @@
 #coordination div:nth-child(5) div {
     max-width: 25vw;
 }
+
+#coordination button {
+    padding: 12px;
+}
+
 
 @media only screen and (min-width: 1300px) {
     #coordination {

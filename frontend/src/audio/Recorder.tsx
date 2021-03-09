@@ -226,8 +226,8 @@ const Recorder = (props: RecorderProps) => {
             </div>
             <div>
                 <label htmlFor={"duration-input"}
-                       title={"Duration of loop (in seconds, or bars if tempo value filled in)"}>Duration: </label>
-                <input id={"duration-input"} type={"number"} min={0} step={0.01}
+                       title={"Duration of loop (in seconds, or bars if tempo value filled in)"}>Bars: </label>
+                <input id={"duration-input"} type={"number"} min={0} step={1} defaultValue={4}
                        title={"Duration of loop (in seconds, or bars if tempo value filled in)"} ref={duration} onChange={(e) => props.setDuration(e.target.valueAsNumber)}/>
             </div>
             <div>

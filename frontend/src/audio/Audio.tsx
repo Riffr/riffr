@@ -37,7 +37,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [canvasHeight, setCanvasHeight] = useState(600);
 
     const [timeSignature, setTimeSignature] = useState(4);
-    const [duration, setDuration] = useState(120);
+    const [duration, setDuration] = useState(4);
     const [isRecording, setIsRecording] = useState(false);
 
     let barCount = useRef(1);
@@ -170,11 +170,10 @@ const Audio = (props: { signal: SignallingChannel }) => {
         console.log("Pausing");
         let backingTrack = previousSounds.get("backingTrack") || (sounds.get("backingTrack"))?.shift();
         console.log("Backing track being kept:", backingTrack)
-        if (backingTrack){
+        if (backingTrack) {
             setPreviousSounds(new Map([["backingTrack", backingTrack]]));
             setSounds(new Map([["backingTrack", []]]));
-        }
-        else {
+        } else {
             setPreviousSounds(new Map());
             setSounds(new Map());
         }
@@ -295,7 +294,8 @@ const Audio = (props: { signal: SignallingChannel }) => {
             maxHeight: 'inherit'
         }}>
             <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds}
-                    loopLength={loopLength} isRecording={isRecording} isPaused={paused}/>
+                    loopLength={loopLength} isRecording={isRecording} isPaused={paused} duration={duration}
+                    timeSignature={timeSignature}/>
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder

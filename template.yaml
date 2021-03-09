@@ -193,6 +193,16 @@ Resources:
         - Key: Name
           Value: !Sub ${AWS::StackName}-alb-sg
 
+  ALBListenerHttp:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions: 
+        - Type: forward
+          TargetGroupArn: !Ref EC2TargetGroup
+
   ALBListenerHttps:
     Condition: CreateHttpsResources
     Type: AWS::ElasticLoadBalancingV2::Listener

@@ -33,17 +33,17 @@ interface Mesh {
     // Connections buffer. This stores connections that will
     // later be dispatched to newly initialized mesh clients. 
     peerBuffer: Array<Peer>;
-};
+}
 
 
 
 enum SignalEvent {
     Signal = "signal/signal",
-};
+}
 
 class SignalState extends RoomState<UserProps>() {
     public mesh?: Mesh;
-};
+}
 
 const hasMesh = (f: (mesh: Mesh) => Handler) => {
     return (ctx: Context, ...args: any[]) => {

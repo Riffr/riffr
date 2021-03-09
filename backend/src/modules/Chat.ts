@@ -7,7 +7,7 @@ import { room, RoomState, User as RoomUser } from './Room';
 
 enum ChatErrorType {
     MessageFailed = "message_failed",
-};
+}
 interface MessageFailedError {
     type: ChatErrorType.MessageFailed
 }
@@ -18,7 +18,7 @@ type ChatError = MessageFailedError;
 ////////////////////////////////////////////////////////////////////////////////////////////////
 interface UserProps {
     username: string,
-};
+}
 type ChatUser = RoomUser<UserProps>;
 interface Message {
     from: string,

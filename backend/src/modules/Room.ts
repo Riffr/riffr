@@ -9,7 +9,7 @@ enum RoomEvent {
 
     AddUser             = "room/add_user",
     RemoveUser          = "room/remove_user",
-};
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // ERRORS
@@ -20,19 +20,19 @@ enum RoomErrorType {
     RoomExists = "room_exists",
     RoomNotExists = "room_not_exists",
     Unknown = "unknown"
-};
+}
 
 interface RoomExistsError {
     type: RoomErrorType.RoomExists, 
     roomId: string
-};
+}
 interface RoomNotExistsError {
     type: RoomErrorType.RoomNotExists,
     roomId: string
 }
 interface UnknownError {
     type: RoomErrorType.Unknown
-};
+}
 
 
 type CreateRoomError = RoomExistsError | UnknownError;

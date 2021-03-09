@@ -113,7 +113,7 @@ const Room = withSignallingChannel(props => {
     return (
         <div id="room-wrapper" style={{ gridTemplateColumns: wrapperGrid }}>
             <div id={"nav-bar"}>
-                <Link to={"/"} className={"squircle-button button blue"}>
+                <Link to={"/"} className={"squircle-button button dark-burgandy"}>
                     <i className={"fa fa-home block"} />
                 </Link>
                 <button className={"squircle-button purple"} onClick={toggleChat} style={{marginTop: "50px"}}>

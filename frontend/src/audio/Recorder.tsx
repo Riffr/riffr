@@ -20,7 +20,7 @@ interface RecorderProps {
     sendToPeers(record: RecordType, isBackingTrack: boolean): void;
 
     loopLength: number;
-    changeLoop(length: number): void;
+    changeLoopLength(length: number): void;
 
     setTimeSignature(val: number): void;
     setDuration(val: number): void;
@@ -187,9 +187,9 @@ const Recorder = (props: RecorderProps) => {
         if (tempo.current === null || duration.current === null || sig1.current === null) return;
         if (tempo.current?.value !== "") {
             const durationSeconds = duration.current.valueAsNumber * sig1.current.valueAsNumber / tempo.current.valueAsNumber * 60;
-            props.changeLoop(durationSeconds);
+            props.changeLoopLength(durationSeconds);
         } else {
-            props.changeLoop(duration.current.valueAsNumber);
+            props.changeLoopLength(duration.current.valueAsNumber);
         }
     };
 
@@ -226,8 +226,8 @@ const Recorder = (props: RecorderProps) => {
             </div>
             <div>
                 <label htmlFor={"duration-input"}
-                       title={"Duration of loop (in seconds, or bars if tempo value filled in)"}>Duration: </label>
-                <input id={"duration-input"} type={"number"} min={0} step={0.01}
+                       title={"Duration of loop (in seconds, or bars if tempo value filled in)"}>Bars: </label>
+                <input id={"duration-input"} type={"number"} min={0} step={1} defaultValue={4}
                        title={"Duration of loop (in seconds, or bars if tempo value filled in)"} ref={duration} onChange={(e) => props.setDuration(e.target.valueAsNumber)}/>
             </div>
             <div>
@@ -236,9 +236,9 @@ const Recorder = (props: RecorderProps) => {
                     paused={props.paused}
                     permission={permission}
                     loopLength={props.loopLength}
-                    changeLoop={(duration: number) => {
+                    changeLoopLength={(duration: number) => {
                         backingTrackUpdated(duration);
-                        props.changeLoop(duration);
+                        props.changeLoopLength(duration);
                     }}
                     addToPlaylist={props.addToPlaylist}
                     sendToPeers={props.sendToPeers}

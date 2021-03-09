@@ -7,7 +7,7 @@ interface AudioUploadProps {
     paused: boolean;
     permission: boolean;
     loopLength: number;
-    changeLoop(length: number): void;
+    changeLoopLength(length: number): void;
     addToPlaylist(record: DecodedRecord, peerID: string): void;
     sendToPeers(record: RecordType, isBackingTrack: boolean): void
 }
@@ -42,7 +42,7 @@ const AudioUploader = (props: AudioUploadProps) => {
             startOffset: 0,
             isBackingTrack: true,
         };
-        props.changeLoop(audioBuffer.duration);
+        props.changeLoopLength(audioBuffer.duration);
         props.addToPlaylist(decodedRecord, "backingTrack");
 
         setIsFilePicked(true);

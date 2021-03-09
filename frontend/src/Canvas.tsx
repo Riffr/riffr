@@ -11,6 +11,8 @@ interface CanvasProps {
 
     isRecording: boolean;
     isPaused: boolean;
+    timeSignature: number;
+    duration: number;
 }
 
 abstract class CanvasObject {
@@ -132,25 +134,49 @@ class CanvasText extends CanvasObject {
 }
 
 const Canvas = (props: CanvasProps) => {
-    let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
+    let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 8, "#222", 4);
+    let outerGrid = new CanvasGrid(0, 0, 8, props.duration, "#222", 4);
+    let innerGrid = new CanvasGrid(0, 0, 8, props.timeSignature * props.duration, "#444", 2);
     let recording: CanvasText = new CanvasText(props.width - 170, 100, "REC ●", 40, "#4CAF50");
     let muted: CanvasText = new CanvasText(props.width - 220, 100, "MUTED ■", 40, "#e53935");
     let canvasObjects = [grid];
+    let canvasGrids = useRef([outerGrid, innerGrid]);
     let recordingStatus = useRef([muted]);
     const canvasRef = React.useRef(null);
-
 
     //Initial draw
     useEffect(() => {
         // @ts-ignore
         let ctx = canvasRef.current.getContext("2d");
+        console.log(`duration: ${props.duration}`);
+        console.log(`time sig: ${props.timeSignature}`);
         recordingStatus.current = [];
         ctx.clearRect(0, 0, props.width, props.height);
         for (let obj of canvasObjects) {
             obj.draw(ctx, props.width, props.height);
         }
 
-    }, [])
+    }, []);
+
+    // Handle mute/unmute updates
+    useEffect(() => {
+        if (!props.isPaused) {
+            if (props.isRecording) {
+                recordingStatus.current = [recording];
+            } else {
+                recordingStatus.current = [muted];
+            }
+        } else {
+            recordingStatus.current = [];
+        }
+    }, [props.isPaused, props.isRecording]);
+
+    // Handle time signature/bar updates
+    useEffect(() => {
+        let outer = new CanvasGrid(0, 0, 8, props.duration, "#222", 4);
+        let inner = new CanvasGrid(0, 0, 8, props.timeSignature * props.duration, "#444", 2);
+        canvasGrids.current = [inner, outer];
+    }, [props.timeSignature, props.duration]);
 
     //Redraw with scanline
     useEffect(() => {
@@ -164,27 +190,14 @@ const Canvas = (props: CanvasProps) => {
         let texts: CanvasText[] = []
         for (const [key, value] of props.sounds.entries()) {
             texts = [...texts, new CanvasText(10, 50 + i * size * 1.5, key, size, value.length > 0 ? "#11ff11" : "#333333")];
-            i = i + 1;
+            i++;
         }
 
-        for (let obj of [...canvasObjects, line, ...texts, ...recordingStatus.current]) {
+        for (let obj of [...canvasGrids.current, line, ...texts, ...recordingStatus.current]) {
             obj.draw(ctx, props.width, props.height);
         }
 
-    }, [props.time, props.width, props.height, props.sounds])
-
-    useEffect(() => {
-        if (!props.isPaused) {
-            if (props.isRecording) {
-                recordingStatus.current = [recording];
-            } else {
-                recordingStatus.current = [muted];
-            }
-        } else {
-            recordingStatus.current = [];
-        }
-    }, [props.isPaused, props.isRecording]);
-
+    }, [props.time, props.width, props.height, props.sounds, props.duration, props.timeSignature]);
 
     return (
         <canvas ref={canvasRef} id={props.id} width={props.width} height={props.height}/>

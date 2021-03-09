@@ -4,8 +4,8 @@ import './css/Room.css';
 import './css/General.css';
 import Audio from "./audio/Audio";
 
-import { 
-    Message, 
+import {
+    Message,
     ChatUser as User,
     UserProps
 } from "@riffr/backend";
@@ -14,10 +14,10 @@ import { Room as CRoom } from './connections/Room';
 import { withSignallingChannel } from './WithSignallingChannel';
 
 const Room = withSignallingChannel(props => {
-    
+
 
     const { chatClient, signallingChannel } = props;
-    
+
     const room = chatClient.room;
     const user = chatClient.user;
 
@@ -64,9 +64,9 @@ const Room = withSignallingChannel(props => {
             onMessageReceived(message);
         });
 
-        return () => { 
-            chatClient.removeAllListeners("message"); 
-            chatClient.room.removeAllListeners("membersUpdated"); 
+        return () => {
+            chatClient.removeAllListeners("message");
+            chatClient.room.removeAllListeners("membersUpdated");
         };
     }, [chatClient]);
 

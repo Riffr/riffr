@@ -203,7 +203,7 @@ const Recorder = (props: RecorderProps) => {
             </div>
             <div>
                 <label htmlFor={"duration-input"} title={"Duration of loop (in seconds, or bars if tempo value filled in)"}>Duration: </label>
-                <input id={"duration-input"} type={"number"} min={0} title={"Duration of loop (in seconds, or bars if tempo value filled in)"} ref={duration}></input>
+                <input id={"duration-input"} type={"number"} min={0} step={0.01} title={"Duration of loop (in seconds, or bars if tempo value filled in)"} ref={duration}></input>
             </div>
             <div>
             <AudioUploader

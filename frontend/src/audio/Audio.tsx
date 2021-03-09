@@ -82,7 +82,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
         m.on("channelData", async (peer, channel, data) => {
             console.log(`[AUDIO] Received ${data} from channel ${channel.label}`);
             if (channel.label === "audio") {
-                data = await data.arrayBuffer();  // Firefox seems to read data as a blob
+                // data = await data.arrayBuffer();  // Firefox seems to read data as a blob
                 console.log(data);
                 const decodedRecord: DecodedRecord = await decodeReceivedData(data);
                 addToPlaylist(decodedRecord, peer.userId!);

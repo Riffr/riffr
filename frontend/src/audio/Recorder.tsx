@@ -41,7 +41,7 @@ const Recorder = (props: RecorderProps) => {
 
 
     const checkRecord = () => {
-        if (!recording && props.loopLength - (props.audioCtx.currentTime) % props.loopLength <= (props.loopLength / 10)) {
+        if (props.audioCtx.state === "running" && !recording && props.loopLength - (props.audioCtx.currentTime) % props.loopLength <= (props.loopLength / 10)) {
             console.log("Checking muted")
             if (!muted) {
                 console.log("We should!")
@@ -54,8 +54,11 @@ const Recorder = (props: RecorderProps) => {
 
     const startRecording = () => {
         if (props.audioCtx.state === 'suspended') {
-            console.log("Audio context permission required");
-        }
+            console.log("Audio context suspended");
+         }
+         if (!permission) {
+             console.log("Trying to record without permission");
+         }
         let recorder: any;
         if (recorder1 !== null && recorder1.state !== 'recording') {
             recorder = recorder1;
@@ -123,7 +126,7 @@ const Recorder = (props: RecorderProps) => {
         return () => {
             clearInterval(i1);
         }
-    }, [props.loopLength, recorder1, recorder2, permission, muted])
+    }, [props.loopLength, props.audioCtx, recorder1, recorder2, permission, muted])
 
     const getPermission = async () => {
         let mediaStream: MediaStream = await navigator.mediaDevices.getUserMedia({
@@ -138,6 +141,11 @@ const Recorder = (props: RecorderProps) => {
     const toggleMuted = () => {
         if (!permission) {
             getPermission();
+        }
+        if (!muted) {
+            // Stop recording immediately when pressing 'Mute'
+            stopRecording(recorder1);
+            stopRecording(recorder2);
         }
         setMuted(!muted)
     }
@@ -184,8 +192,6 @@ const Recorder = (props: RecorderProps) => {
         console.log(duration.current.valueAsNumber);
     }
 
-    // TODO stop recording immediately when pressing "Mute"
-    // TODO Combine both recording status labels into a single recording icon (on the canvas?)
     return (
         <div id="coordination">
             <div><button className={"squircle-button light-blue "+(muted ? "muted ":" ")+(getRecordingStatusBoth()? "recording ":"")} id={"mute"} title={getMuteTooltip()}

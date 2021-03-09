@@ -2,14 +2,14 @@ import { useState } from 'react';
 import Audio from './Audio';
 import { SignallingChannel } from "../connections/SignallingChannel";
 
-let AudioContext: any = window.AudioContext // Default
-    || (window as any).webkitAudioContext // Safari
 
+/*
 const AudioComponent = (props: { signal: SignallingChannel }) => {
-    const [audioCtx, setAudioCtx] = useState<AudioContext>(new AudioContext());
+    const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
 
     const resetAudioCtx = () => {
-        setAudioCtx(new AudioContext());
+        audioCtx.close();
+        setAudioCtx(createAudioCtx());
     }
 
     return (
@@ -19,3 +19,4 @@ const AudioComponent = (props: { signal: SignallingChannel }) => {
 
 
 export default AudioComponent;
+*/

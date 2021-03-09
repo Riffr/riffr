@@ -1,5 +1,5 @@
 import EventEmitter from "events";
-import StrictEventEmitter from "strict-event-emitter-types"
+import StrictEventEmitter from "strict-event-emitter-types";
 import { v4 as uuidv4 } from "uuid";
 
 import {
@@ -26,7 +26,7 @@ interface PeerEvents {
     channelClose: (peer: Peer, channel: RTCDataChannel) => void;
 
     error: (peer: Peer, error: Error) => void;
-};
+}
 type PeerEmitter = {new (): StrictEventEmitter<EventEmitter, PeerEvents>};
 
 // Peer
@@ -54,7 +54,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
     private connection: RTCPeerConnection;
 
     // This is a hack to deal with asynchronous negotiations
-    private negotiationCount : number = 0;
+    private negotiationCount  = 0;
 
     constructor(config: Config = {}) {
         super();
@@ -72,10 +72,11 @@ class Peer extends (EventEmitter as PeerEmitter) {
         this.connection = new RTCPeerConnection({
             ...Peer.CONFIG,
             ...rtcConfig,
-        })
+        });
         this.initConnection();
         this.addDataChannel("data");
         this.addDataChannel("audio");
+        this.addDataChannel("control");
     }
 
 
@@ -115,7 +116,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
         const offer = await this.connection.createOffer();
         if (neg !== this.negotiationCount) return;
 
-        console.log("[onNegotiationNeeded] creating offer...")
+        console.log("[onNegotiationNeeded] creating offer...");
 
         await this.connection.setLocalDescription(offer).catch(e => this.emit("error", this, e));
 
@@ -162,7 +163,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
         // this.pendingIceCandidates.forEach(this.addCandidate);
         // this.pendingIceCandidates = [];
 
-        console.log("[handleAnswer] handling pending candidates")
+        console.log("[handleAnswer] handling pending candidates");
 
         console.log("[handleAnswer] Handling answer...");
         
@@ -199,7 +200,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
 
         channel.onclose = () => {
             this.emit("channelClose", this, channel);
-        }
+        };
     };
 
 
@@ -214,14 +215,14 @@ class Peer extends (EventEmitter as PeerEmitter) {
 
         this.channels.forEach((channel: RTCDataChannel) => {
             channel.onmessage = null;
-        })
+        });
         this.channels = new Map();
 
         this.connection.close();
     }
 
     public send(label: string, data: any) {
-        console.log("Sending to channels: ", this.channels);
+        console.log("Sending", data, "to channel,", label, "(channels =", this.channels, ")");
         this.channels.get(label)?.send(data);
     }
 

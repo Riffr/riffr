@@ -27,6 +27,7 @@
     image-rendering: -moz-crisp-edges;
     image-rendering: -webkit-crisp-edges;
     image-rendering: pixelated;
+    font-family: Roboto, sans-serif;
 }
 
 #chat {
@@ -90,7 +91,6 @@
     display: grid;
     align-items: center;
     width: 100%;
-    height: max-content;
     padding: 10px;
     grid-gap: 10px;
     background: #fff;
@@ -105,6 +105,16 @@
     width: 100%;
     justify-content: space-around;
     /*align-items: center;*/
+}
+
+#play-button {
+    width: 150px;
+    font-weight: bolder;
+    margin-left: calc(50% - 75px);
+}
+
+#play-button i {
+    padding-left: 12px;
 }
 
 .button.disabled {
@@ -133,32 +143,59 @@
 
 #coordination {
     display: grid;
-    grid-template-columns: max-content max-content;
+    grid-template-columns: 1fr 1fr;
     border: 1px solid #ccc;
     border-radius: 5px;
-    padding: 4px 0;
+    padding: 8px 0;
     justify-content: space-around;
-    height: 40px;
 }
 
 #coordination div:nth-child(2n), #coordination div:last-child {
     border-right: none;
 }
 
-@media only screen and (min-width: 1500px) {
+#coordination div:nth-child(5) div {
+    max-width: 25vw;
+}
+
+#coordination button {
+    padding: 12px;
+}
+
+
+@media only screen and (min-width: 1300px) {
     #coordination {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
     }
 
     #coordination div:nth-child(2n) {
         border-right: 1px solid #aaa;
+    }
+
+    #coordination div:nth-child(3n), #coordination div:last-child {
+        border-right: none;
+    }
+}
+
+@media only screen and (min-width: 1900px) {
+    #coordination {
+        display: flex;
+    }
+
+    #coordination div:nth-child(3n) {
+        border-right: 1px solid #aaa;
+    }
+
+    #coordination div:nth-child(5) div {
+        max-width: 15vw;
     }
 }
 
 #coordination div {
     display: flex;
     gap: 5px;
-    padding: 0px 5px;
+    padding: 0 5px;
     border-right: 1px solid #aaa;
     vertical-align: middle;
     justify-content: center;
@@ -201,7 +238,7 @@
     }
 }
 
-@media only screen and (min-width: 1000px) {
+@media only screen and (min-width: 1200px) {
     #room-wrapper {
         box-shadow: 0 2px 5px 0 #5d5d5d94;
         border: 3px solid #444;
@@ -214,5 +251,23 @@
         height: 90vh;
         width: min-content;
         margin: 0;
+    }
+}
+
+@media only screen and (min-width: 1800px) {
+    #canvas {
+        max-height: 900px;
+    }
+}
+
+@media only screen and (min-width: 2400px) {
+    #canvas {
+        max-height: 1000px;
+    }
+}
+
+@media only screen and (min-width: 2700px) {
+    #canvas {
+        max-height: 1100px;
     }
 }

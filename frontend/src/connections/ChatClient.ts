@@ -1,36 +1,42 @@
 import { Room, RoomEmitter } from "./Room";
 import { Socket } from "./Socket";
 
-import { Message, User, ChatEvent, chat } from '@riffr/backend';
+import { 
+    ChatUser as User,
+    UserProps,
+
+    Message, ChatEvent 
+} from '@riffr/backend';
 
 import EventEmitter from "events";
-import StrictEventEmitter from "strict-event-emitter-types"
+import StrictEventEmitter from "strict-event-emitter-types";
 
 interface ChatEvents {
     message: (client: ChatClient, message: Message) => void;
+    start: (client: ChatClient) => void;
 }
 type ChatEmitter = {new (): StrictEventEmitter<EventEmitter, ChatEvents>};
 
 class ChatClient extends (EventEmitter as ChatEmitter) {
 
-    private socket: Socket;
+    private readonly socket: Socket;
 
-    public user: User;
-    public room: Room<User>;
+    public readonly user: User;
+    public readonly room: Room<UserProps>;
 
-    static async createRoom(socket: Socket, roomId: string, user: User) {
-        const chatSocket = new Socket(`${socket.uri}/chat`);
-        const room = await Room.createRoom<User>(chatSocket, roomId, user);
-        return new ChatClient(chatSocket, user, room);
+    static async createRoom(socket: Socket, roomId: string, userProps: UserProps) {
+        const signalSocket = new Socket(`${socket.uri}/chat`);
+        const { room, user } = await Room.createRoom<UserProps>(signalSocket, roomId, userProps);
+        return new ChatClient(signalSocket, user, room);
     }
 
-    static async joinRoom(socket: Socket, roomId: string, user: User) {
-        const chatSocket = new Socket(`${socket.uri}/chat`);
-        const room = await Room.joinRoom<User>(chatSocket, roomId, user);
-        return new ChatClient(chatSocket, user, room);
+    static async joinRoom(socket: Socket, roomId: string, userProps: UserProps) {
+        const signalSocket = new Socket(`${socket.uri}/chat`);
+        const { room, user } = await Room.joinRoom<UserProps>(signalSocket, roomId, userProps);
+        return new ChatClient(signalSocket, user, room);
     }
 
-    private constructor(socket: Socket, user: User, room: Room<User>) {
+    private constructor(socket: Socket, user: User, room: Room<UserProps>) {
         super();
 
         this.socket = socket;
@@ -38,28 +44,32 @@ class ChatClient extends (EventEmitter as ChatEmitter) {
         this.room = room;
 
         this.socket.on(ChatEvent.Message, (message: Message) => {
-            console.log("ChatEvent Message");
             this.emit("message", this, message);
-        })
+        });
+
+        this.socket.on(ChatEvent.Start, () => {
+            this.emit("start", this);
+        });
     }
 
-    public send(message: string) {
-        console.log("ChatClient send")
-        console.log(this.socket);
-        // this.socket.emit("chat/message", "test");
-        this.socket.emit(ChatEvent.Message, { from: this.user, content: message } as Message);
+    public send(content: string) {
+        this.socket.emit(ChatEvent.Message, content);
     }
 
-    public async leave() {
-        await this.room.leave();
+    public broadcastStart() {
+        this.socket.emit(ChatEvent.Start);
+    }
+
+    public leave() {
+        this.room.leave();
     }
 
 }
 
 export {
     ChatClient,
-}
+};
 export type {
     ChatEmitter,
     ChatEvents,
-}
+};

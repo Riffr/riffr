@@ -230,8 +230,9 @@ const Audio = (props: { signal: SignallingChannel}) => {
     const handleResize = () => {
         let w = document.getElementById("canvas")?.offsetWidth || 1;
         let h = document.getElementById("canvas")?.offsetHeight || 1;
+        let maxH = document.getElementById("room-wrapper")?.clientHeight || 1;
         // console.log(`Width: ${w}, height: ${h}`);
-        setCanvasHeight(canvasWidth * h / w);
+        setCanvasHeight(maxH - 156);
     }
 
     window.addEventListener("resize", handleResize);

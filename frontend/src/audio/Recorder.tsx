@@ -36,7 +36,6 @@ const Recorder = (props: RecorderProps) => {
     const [muted, setMuted] = useState(true);
     const [recording, setRecording] = useState(false);
     const sig1 = createRef<HTMLInputElement>();
-    const sig2 = createRef<HTMLInputElement>();
     const tempo = createRef<HTMLInputElement>();
     const duration = createRef<HTMLInputElement>();
 
@@ -153,6 +152,11 @@ const Recorder = (props: RecorderProps) => {
         return (recorder2 !== null && recorder2.state === "recording") ? "Recording" : "Not recording"
     }
 
+    const getRecordingStatusBoth = () => {
+        if (recorder1 === null || recorder2 === null) return false;
+        else return recorder1.state === "recording" || recorder2.state === "recording";
+    }
+
     const getMuteTooltip = () => {
         if (muted) return "Unmute";
         else if (recording) return "Mute";
@@ -160,7 +164,7 @@ const Recorder = (props: RecorderProps) => {
     }
 
     const changeSettings = () => {
-        if (tempo.current === null || duration.current === null || sig1.current === null || sig2.current === null) return;
+        if (tempo.current === null || duration.current === null || sig1.current === null) return;
         if (tempo.current?.value !== "") {
             let durationSeconds = duration.current.valueAsNumber * sig1.current.valueAsNumber / tempo.current.valueAsNumber * 60;
             props.changeLoop(durationSeconds);
@@ -170,11 +174,21 @@ const Recorder = (props: RecorderProps) => {
         }
     }
 
+    const backingTrackUpdated = (newDuration: number) => {
+        if (tempo.current === null || duration.current === null || sig1.current === null) return;
+        if (tempo.current?.value !== "") {
+            newDuration = newDuration / 60 * tempo.current.valueAsNumber / sig1.current.valueAsNumber;
+        }
+        newDuration = Math.round(newDuration*100)/100;
+        duration.current.valueAsNumber = newDuration;
+        console.log(duration.current.valueAsNumber);
+    }
+
     // TODO stop recording immediately when pressing "Mute"
     // TODO Combine both recording status labels into a single recording icon (on the canvas?)
     return (
         <div id="coordination">
-            <div><button className={"squircle-button light-blue "+(muted ? "muted ":" ")+(recording? "recording ":"")} id={"mute"} title={getMuteTooltip()}
+            <div><button className={"squircle-button light-blue "+(muted ? "muted ":" ")+(getRecordingStatusBoth()? "recording ":"")} id={"mute"} title={getMuteTooltip()}
                 onClick={toggleMuted}>{getMuteStatus()}
             </button></div>
             <AudioUploader
@@ -182,7 +196,7 @@ const Recorder = (props: RecorderProps) => {
                 paused={props.paused}
                 permission={permission}
                 loopLength={props.loopLength}
-                changeLoop={props.changeLoop}
+                changeLoop={(duration: number) => {backingTrackUpdated(duration); props.changeLoop(duration);}}
                 addToPlaylist={props.addToPlaylist}
                 sendToPeers={props.sendToPeers}
             />
@@ -190,7 +204,7 @@ const Recorder = (props: RecorderProps) => {
                 <label htmlFor={"signature-input"}>Time Sig: </label>
                 <input id={"signature-input"} type={"number"} min={1} ref={sig1}></input>
                 <label htmlFor={"signature-input-2"}> / </label>
-                <input id={"signature-input-2"} type={"number"} min={1} ref={sig2}></input>
+                <input id={"signature-input-2"} type={"number"} min={1}></input>
             </div>
             <div>
                 <label htmlFor={"tempo-input"} title={"Set tempo of loop (can be left blank)"}>Tempo: </label>

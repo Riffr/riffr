@@ -90,7 +90,7 @@
     display: grid;
     align-items: center;
     width: 100%;
-    height: max-content;
+    height: 120px;
     padding: 10px;
     grid-gap: 10px;
     background: #fff;

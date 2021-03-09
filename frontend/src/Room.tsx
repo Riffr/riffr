@@ -85,13 +85,15 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
     }
 
     const toggleSettings = () => {
+        console.log(settingsShown == "grid");
         if (settingsShown == "grid") {
+            document.getElementById("controls")?.setAttribute("style","display: none");
             setSettingsShown("none");
         }
         else {
+            document.getElementById("controls")?.setAttribute("style","display: grid");
             setSettingsShown("grid");
         }
-        document.getElementById("controls")?.setAttribute("style","display: "+settingsShown);
     }
 
     const toggleChat = () => {

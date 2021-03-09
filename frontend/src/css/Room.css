@@ -237,3 +237,21 @@
         margin: 0;
     }
 }
+
+@media only screen and (min-width: 1800px) {
+    #canvas {
+        max-height: 900px;
+    }
+}
+
+@media only screen and (min-width: 2400px) {
+    #canvas {
+        max-height: 1000px;
+    }
+}
+
+@media only screen and (min-width: 2700px) {
+    #canvas {
+        max-height: 1100px;
+    }
+}

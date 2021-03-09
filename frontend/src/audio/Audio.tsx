@@ -255,7 +255,7 @@ const Audio = (props: { signal: SignallingChannel}) => {
     }, [])
 
     return (
-        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2", display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: "relative", gridRow: "1 /span 2", gridColumn: "2", display: 'flex', flexDirection: 'column', maxHeight: 'inherit' }}>
             <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds} loopLength={loopLength}/>
             <div id={"controls"}>
                 <div id={"audio"}>

@@ -15,21 +15,36 @@ export interface DecodedRecord {
     //endOffset: number;
 }
 
-const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, resetAudioCtx: () => void }) => {
-    const [loopLength, setLoopLength] = useState<number>(8);
+let AudioContext: any = window.AudioContext // Default
+    || (window as any).webkitAudioContext // Safari
 
+const createAudioCtx = () => {
+    let ctx: AudioContext = new AudioContext();
+    ctx.suspend();
+    return ctx;
+}
+
+const Audio = (props: { signal: SignallingChannel}) => {
+    const [paused, setPaused] = useState(true);
+    const [loopLength, setLoopLength] = useState<number>(8);
     const [sounds, setSounds] = useState<Map<string, DecodedRecord[]>>(new Map());
     const [previousSounds, setPreviousSounds] = useState<Map<string, DecodedRecord>>(new Map());
+
     const [time, setTime] = useState(0);
     const [mesh, setMesh] = useState<Mesh | undefined>(undefined);
+
     const [canvasWidth, setCanvasWidth] = useState(1000);
     const [canvasHeight, setCanvasHeight] = useState(600);
 
     let barCount = useRef(1);
-    let sessionOffset = useRef(0);
+    let newLoopLength = useRef(8);
 
-    const init = () => {
+    const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
 
+    const resetAudioCtx = () => {
+        //audioCtx.close();  // We probably should be closing these, but it crashes :(
+        console.log("Resetting AudioContext");
+        setAudioCtx(createAudioCtx());
     }
 
     const initMesh = useCallback(() => {
@@ -65,6 +80,15 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
                 console.log(data);
                 let decodedRecord: DecodedRecord = await decodeReceivedData(data);
                 addToPlaylist(decodedRecord, peer.meshId!);
+            } else if (channel.label == "control") {
+                switch (data) {
+                    case "play":
+                        play();
+                        break;
+                    case "pause":
+                        pause();
+                        break;
+                }
             }
         });
 
@@ -100,7 +124,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         let startOffset: number = dataView.getFloat64(0, true);
         let isBackingTrack: boolean = !!dataView.getInt8(8);
         let audioArrayBuffer = data.slice(9);  // startOffset (float64) takes up first 8 bytes, isBackingTrack (int8/bool) is 1 byte
-        let buffer: AudioBuffer = await props.audioCtx.decodeAudioData(audioArrayBuffer);
+        let buffer: AudioBuffer = await audioCtx.decodeAudioData(audioArrayBuffer);
         let decodedRecord: DecodedRecord = {
             buffer: buffer,
             startOffset: startOffset,
@@ -122,36 +146,56 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
         sounds.get(peerID)!.push(decodedRecord)
     }
 
-    const clearAudio = () => {
-        console.log("Audio Cleared!");
-        setPreviousSounds(new Map());
-        setSounds(new Map());
+    const play = () => {
+        checkLoopLength();
+        setAudioCtx(prev => {prev.resume(); return prev});  // Does the same thing as audioCtx.resume() but always gets called on the actual audioCtx
+        setPaused(false);
     }
 
-    const leave = () => {
-        clearAudio();
-        props.audioCtx.close();
-        props.resetAudioCtx();
+    const pause = () => {
+        console.log("Pausing");
+        setPreviousSounds(new Map());
+        setSounds(new Map());
+        barCount.current = 1;
+
+        resetAudioCtx();
+        setPaused(true);
+    }
+
+    const togglePaused = () => {
+        if (paused) {
+            play();
+            mesh?.send("control", "play");
+        } else {
+            pause();
+            mesh?.send("control", "pause");
+        }
+    }
+
+    const getPausedStatus = () => {
+        return paused ? "Start" : "Stop";
     }
 
     const changeLoopLength = (length: number) => {
-        if (length !== loopLength) {
-            clearAudio();
-            setLoopLength(length);
-            sessionOffset.current = props.audioCtx.currentTime;
-            setTime(0);
-            barCount.current = 1;
+        newLoopLength.current = length;
+    }
+
+    const checkLoopLength = () => {
+        if (newLoopLength.current !== loopLength) {
+            console.log("Detect loop length change");
+            setLoopLength(newLoopLength.current);
         }
     }
 
     const playSound = (record: DecodedRecord, volume: number = 1) => {
-        let sourceNode = props.audioCtx.createBufferSource();
-        let gainNode = props.audioCtx.createGain();
+        let sourceNode = audioCtx.createBufferSource();
+        let gainNode = audioCtx.createGain();
         sourceNode.buffer = record.buffer;
         sourceNode.connect(gainNode);
-        gainNode.connect(props.audioCtx.destination);
+        gainNode.connect(audioCtx.destination);
         gainNode.gain.value = volume;
-        sourceNode.start(sessionOffset.current + loopLength * barCount.current, record.startOffset, loopLength);
+        console.log("Scheduled to play: ", loopLength * barCount.current);
+        sourceNode.start(loopLength * barCount.current, record.startOffset, loopLength);
     }
 
     const onSectionStart = () => {
@@ -179,7 +223,7 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     }
 
     const update = () => {
-        setTime(props.audioCtx.currentTime - sessionOffset.current);
+        setTime(audioCtx.currentTime);
     }
 
     /* Canvas resizing code */
@@ -195,14 +239,14 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
     useEffect(() => {
         let i1 = setInterval(onSectionStart, loopLength * 1000);
         let i2 = setInterval(update, 100);
-        // let i3 = setInterval(() => console.log(props.audioCtx), 1000);
+        let i3 = setInterval(() => console.log(audioCtx), 4000);
         handleResize();
         return () => {
             clearInterval(i1);
             clearInterval(i2);
-            // clearInterval(i3);
+            clearInterval(i3);
         }
-    }, [loopLength])
+    }, [loopLength, audioCtx])
 
     useEffect(() => {
         let cleanup = initMesh();
@@ -215,16 +259,15 @@ const Audio = (props: { signal: SignallingChannel, audioCtx: AudioContext, reset
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
-                        audioCtx={props.audioCtx}
+                        audioCtx={audioCtx}
+                        paused={paused}
                         addToPlaylist={addToPlaylist}
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
-                        sessionOffset={sessionOffset.current}
                         changeLoop={changeLoopLength}
                     />
                     <div>
-                        <button className={"squircle-button light-blue"} disabled={false} onClick={init}>Start</button>
-                        <button className={"squircle-button light-blue"} onClick={leave}>Leave</button>
+                        <button className={"squircle-button light-blue"} onClick={togglePaused}>{getPausedStatus()}</button>
                         <button className={"squircle-button light-blue"} onClick={() => {
                             mesh?.send("data", "test")
                         }}>Send Dummy Audio

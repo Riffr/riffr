@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
 import Audio from "./audio/Audio";
-import AudioComponent from "./audio/AudioComponent";
+//import AudioComponent from "./audio/AudioComponent";
 import { Socket } from './connections/Socket';
 import { SignallingChannel } from "./connections/SignallingChannel";
 import { Message, User } from "@riffr/backend";
@@ -49,7 +49,7 @@ const Room = (props: { roomCode: string, name: string, socket: Socket, create: b
                 ? SignallingChannel.createRoom(props.socket, props.roomCode, user)
                 : SignallingChannel.joinRoom(props.socket, props.roomCode, user));
 
-            setAudio(<AudioComponent signal={channel} />);
+            setAudio(<Audio signal={channel} />);
         })();
 
         setMembers(props.chatClient?.room.members || []);

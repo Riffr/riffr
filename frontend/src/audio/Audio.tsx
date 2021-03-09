@@ -238,7 +238,10 @@ const Audio = (props: { signal: SignallingChannel}) => {
     window.addEventListener("resize", handleResize);
 
     useEffect(() => {
-        let i1 = setInterval(onSectionStart, loopLength * 1000);
+        let i1: any;
+        if (audioCtx.state == "running") {
+            i1 = setInterval(onSectionStart, loopLength * 1000);
+        }
         let i2 = setInterval(update, 100);
         let i3 = setInterval(() => console.log(audioCtx), 4000);
         handleResize();
@@ -247,7 +250,7 @@ const Audio = (props: { signal: SignallingChannel}) => {
             clearInterval(i2);
             clearInterval(i3);
         }
-    }, [loopLength, audioCtx])
+    }, [loopLength, audioCtx.state])
 
     useEffect(() => {
         let cleanup = initMesh();

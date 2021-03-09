@@ -44,9 +44,11 @@ const Audio = (props: { signal: SignallingChannel }) => {
     let newLoopLength = useRef(8);
 
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
+    const [audioSources, setAudioSources] = useState<AudioBufferSourceNode[]>([]);
 
     const resetAudioCtx = () => {
         //audioCtx.close();  // We probably should be closing these, but it crashes :(
+        audioCtx.suspend();
         console.log("Resetting AudioContext");
         setAudioCtx(createAudioCtx());
     }
@@ -81,10 +83,11 @@ const Audio = (props: { signal: SignallingChannel }) => {
         m.on("channelData", async (peer, channel, data) => {
             console.log(`[AUDIO] Received ${data} from channel ${channel.label}`);
             if (channel.label === "audio") {
+                data = await data.arrayBuffer();  // Firefox seems to read data as a blob
                 console.log(data);
                 let decodedRecord: DecodedRecord = await decodeReceivedData(data);
                 addToPlaylist(decodedRecord, peer.meshId!);
-            } else if (channel.label == "control") {
+            } else if (channel.label === "control") {
                 switch (data) {
                     case "play":
                         play();
@@ -154,16 +157,32 @@ const Audio = (props: { signal: SignallingChannel }) => {
         checkLoopLength();
         setAudioCtx(prev => {
             prev.resume();
+            onSectionStart();  // Still doesn't work?
             return prev
         });  // Does the same thing as audioCtx.resume() but always gets called on the actual audioCtx
         setPaused(false);
+        //onSectionStart();
     }
 
     const pause = () => {
         console.log("Pausing");
-        setPreviousSounds(new Map());
-        setSounds(new Map());
+        let backingTrack = previousSounds.get("backingTrack") || (sounds.get("backingTrack"))?.shift();
+        console.log("Backing track being kept:", backingTrack)
+        if (backingTrack){
+            setPreviousSounds(new Map([["backingTrack", backingTrack]]));
+            setSounds(new Map([["backingTrack", []]]));
+        }
+        else {
+            setPreviousSounds(new Map());
+            setSounds(new Map());
+        }
         barCount.current = 1;
+
+        // Stop currently playing audio
+        console.log(audioSources);
+        for (let i = 0; i < audioSources.length; i++) {
+            audioSources[i].stop();
+        }
 
         resetAudioCtx();
         setPaused(true);
@@ -203,13 +222,14 @@ const Audio = (props: { signal: SignallingChannel }) => {
         gainNode.gain.value = volume;
         console.log("Scheduled to play: ", loopLength * barCount.current);
         sourceNode.start(loopLength * barCount.current, record.startOffset, loopLength);
+        audioSources.push(sourceNode);
     }
 
     const onSectionStart = () => {
         // Bit ugly but lets us read state easily
 
         // Find and play the correct tracks from other peers
-        console.log("Playing sounds")
+        console.log("Playing sounds:", sounds)
         sounds.forEach((soundList, peerID) => {
             if (soundList !== undefined) {
                 let sound;
@@ -254,7 +274,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             clearInterval(i2);
             clearInterval(i3);
         }
-    }, [loopLength, audioCtx.state])
+    }, [loopLength, audioCtx, audioCtx.state])
 
     useEffect(() => {
         handleResize();

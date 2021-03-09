@@ -1,6 +1,7 @@
-import {useEffect, useRef, useState, createRef} from 'react';
+import { useEffect, useRef, useState, createRef } from 'react';
 import AudioUploader from './AudioUploader';
-import {DecodedRecord} from "./Audio";
+import { SignallingChannel } from "../connections/SignallingChannel";
+import { DecodedRecord } from "./Audio";
 
 declare var MediaRecorder: any;
 type BlobEvent = { data: Blob; }
@@ -16,17 +17,13 @@ interface RecorderProps {
     paused: boolean;
 
     addToPlaylist(record: DecodedRecord, peerID: string): void;
-
     sendToPeers(record: RecordType, isBackingTrack: boolean): void;
 
     loopLength: number;
-
     changeLoop(length: number): void;
 
     setTimeSignature(val: number): void;
-
     setDuration(val: number): void;
-
     setIsRecording(state: boolean): void;
 }
 
@@ -103,15 +100,17 @@ const Recorder = (props: RecorderProps) => {
     }
 
     const saveRecording = async () => {
-        let blob = new Blob(chunks, {'type': 'audio/ogg; codecs=opus'});
-        let audioBuffer = await blob.arrayBuffer();
-        const clip: RecordType = {
-            buffer: audioBuffer,
-            startOffset: startOffset.current
+        if (props.audioCtx.state === "running") {
+            let blob = new Blob(chunks, {'type': 'audio/ogg; codecs=opus'});
+            let audioBuffer = await blob.arrayBuffer();
+            const clip: RecordType = {
+                buffer: audioBuffer,
+                startOffset: startOffset.current
+            }
+            console.log(clip)
+            props.sendToPeers(clip, false);
+            chunks = [];
         }
-        console.log(clip)
-        props.sendToPeers(clip, false);
-        chunks = [];
     }
 
 

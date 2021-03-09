@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {DecodedRecord} from "./audio/Audio";
 
 interface CanvasProps {
@@ -8,13 +8,9 @@ interface CanvasProps {
     time: number;
     loopLength: number;
     sounds: Map<string, DecodedRecord[]>;
-    recorderState: RecorderState;
-}
 
-enum RecorderState {
-    REC,
-    MUTE,
-    STOP
+    isRecording: boolean;
+    isPaused: boolean;
 }
 
 abstract class CanvasObject {
@@ -117,13 +113,14 @@ class CanvasText extends CanvasObject {
     constructor(x: number, y: number, text: string, fontSize: number, color: string) {
         super(x, y);
         this.text = text;
-        this.font = `${fontSize}px Arial`;
+        this.font = `${fontSize}px Ubuntu`;
         this.color = color;
         this.counter = 0;
     }
 
     draw(ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number): void {
         ctx.font = this.font;
+        // console.log(this.font);
         ctx.fillStyle = this.color;
         ctx.fillText(this.text, this.x, this.y)
     }
@@ -136,9 +133,10 @@ class CanvasText extends CanvasObject {
 
 const Canvas = (props: CanvasProps) => {
     let grid: CanvasGrid = new CanvasGrid(0, 0, 8, 10, "#222", 4);
-    let recording: CanvasText = new CanvasText(props.width - 150, 100, "REC", 60, "#4CAF50");
-    let muted: CanvasText = new CanvasText(props.width - 250, 100, "MUTED", 60, "#e53935");
+    let recording: CanvasText = new CanvasText(props.width - 170, 100, "REC ●", 40, "#4CAF50");
+    let muted: CanvasText = new CanvasText(props.width - 220, 100, "MUTED ■", 40, "#e53935");
     let canvasObjects = [grid];
+    let recordingStatus = useRef([muted]);
     const canvasRef = React.useRef(null);
 
 
@@ -146,7 +144,7 @@ const Canvas = (props: CanvasProps) => {
     useEffect(() => {
         // @ts-ignore
         let ctx = canvasRef.current.getContext("2d");
-
+        recordingStatus.current = [];
         ctx.clearRect(0, 0, props.width, props.height);
         for (let obj of canvasObjects) {
             obj.draw(ctx, props.width, props.height);
@@ -164,17 +162,28 @@ const Canvas = (props: CanvasProps) => {
         let i = 0;
         let size = 24;
         let texts: CanvasText[] = []
-        // console.log(props.sounds)
         for (const [key, value] of props.sounds.entries()) {
             texts = [...texts, new CanvasText(10, 50 + i * size * 1.5, key, size, value.length > 0 ? "#11ff11" : "#333333")];
             i = i + 1;
         }
 
-        for (let obj of [...canvasObjects, line, ...texts]) {
+        for (let obj of [...canvasObjects, line, ...texts, ...recordingStatus.current]) {
             obj.draw(ctx, props.width, props.height);
         }
-        // console.log(props.time);
+
     }, [props.time, props.width, props.height, props.sounds])
+
+    useEffect(() => {
+        if (!props.isPaused) {
+            if (props.isRecording) {
+                recordingStatus.current = [recording];
+            } else {
+                recordingStatus.current = [muted];
+            }
+        } else {
+            recordingStatus.current = [];
+        }
+    }, [props.isPaused, props.isRecording]);
 
 
     return (

@@ -1,9 +1,8 @@
-import React, { RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
 import Audio from "./audio/Audio";
-//import AudioComponent from "./audio/AudioComponent";
 import { Socket } from './connections/Socket';
 import { SignallingChannel } from "./connections/SignallingChannel";
 import { Message, User } from "@riffr/backend";

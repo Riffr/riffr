@@ -15,12 +15,6 @@ export interface DecodedRecord {
     //endOffset: number;
 }
 
-enum RecorderState {
-    REC,
-    MUTE,
-    STOP
-}
-
 let AudioContext: any = window.AudioContext // Default
     || (window as any).webkitAudioContext // Safari
 
@@ -42,7 +36,9 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [canvasWidth, setCanvasWidth] = useState(1000);
     const [canvasHeight, setCanvasHeight] = useState(600);
 
-    const [recorderState, setRecorderState] = useState(RecorderState.STOP);
+    const [timeSignature, setTimeSignature] = useState(4);
+    const [duration, setDuration] = useState(120);
+    const [isRecording, setIsRecording] = useState(false);
 
     let barCount = useRef(1);
     let newLoopLength = useRef(8);
@@ -239,14 +235,11 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     /* Canvas resizing code */
     const handleResize = () => {
-        let w = document.getElementById("canvas")?.offsetWidth || 1;
-        let h = document.getElementById("canvas")?.offsetHeight || 1;
-        let maxH = document.getElementById("room-wrapper")?.clientHeight || 1;
-        // console.log(`Width: ${w}, height: ${h}`);
-        setCanvasHeight(maxH - 156);
+        let w = document.getElementById("canvas")?.clientWidth || 1;
+        let h = document.getElementById("canvas")?.clientHeight || 1;
+        setCanvasWidth(w);
+        setCanvasHeight(h);
     }
-
-    window.addEventListener("resize", handleResize);
 
     useEffect(() => {
         let i1: any;
@@ -264,6 +257,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     }, [loopLength, audioCtx.state])
 
     useEffect(() => {
+        handleResize();
         let cleanup = initMesh();
         //TODO: Should we clear up the mesh once we leave the room?
     }, [])
@@ -278,7 +272,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             maxHeight: 'inherit'
         }}>
             <Canvas id={"canvas"} width={canvasWidth} height={canvasHeight} time={time} sounds={sounds}
-                    loopLength={loopLength} recorderState={recorderState}/>
+                    loopLength={loopLength} isRecording={isRecording} isPaused={paused}/>
             <div id={"controls"}>
                 <div id={"audio"}>
                     <Recorder
@@ -288,6 +282,10 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
                         changeLoop={changeLoopLength}
+
+                        setTimeSignature={setTimeSignature}
+                        setDuration={setDuration}
+                        setIsRecording={setIsRecording}
                     />
                     <div style={{paddingTop: "16px"}}>
                         <button id={"play-button"} className={`squircle-button ${paused ? `green` : `red`}`}

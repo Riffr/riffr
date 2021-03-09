@@ -3,7 +3,6 @@ import { Link, RouteComponentProps } from 'react-router-dom';
 import './css/Room.css';
 import './css/General.css';
 import Audio from "./audio/Audio";
-import AudioComponent from "./audio/AudioComponent";
 
 import { 
     Message, 
@@ -31,6 +30,7 @@ const Room = withSignallingChannel(props => {
 
 
     let [memberListShown, setListShown] = useState("grid");
+    let [settingsShown, setSettingsShown] = useState("grid");
 
     let [chatDisplay, setChatDisplay] = useState("flex");
     let [wrapperGrid, setWrapperGrid] = useState("min-content 3fr 1fr");
@@ -88,6 +88,18 @@ const Room = withSignallingChannel(props => {
         }
     }
 
+    const toggleSettings = () => {
+        console.log(settingsShown == "grid");
+        if (settingsShown == "grid") {
+            document.getElementById("controls")?.setAttribute("style","display: none");
+            setSettingsShown("none");
+        }
+        else {
+            document.getElementById("controls")?.setAttribute("style","display: grid");
+            setSettingsShown("grid");
+        }
+    }
+
     const toggleChat = () => {
         if (chatDisplay == "flex") {
             setChatDisplay("none");
@@ -104,11 +116,14 @@ const Room = withSignallingChannel(props => {
                 <Link to={"/"} className={"squircle-button button blue"}>
                     <i className={"fa fa-home block"} />
                 </Link>
-                <button className={"squircle-button purple"} onClick={toggleChat}>
+                <button className={"squircle-button purple"} onClick={toggleChat} style={{marginTop: "50px"}}>
                     <i className={"fa fa-comment block"} />
                 </button>
+                <button className={"squircle-button purple"} onClick={toggleSettings} title={"Toggle loop settings"}>
+                    <i className={"fa fa-cog block"}/>
+                </button>
             </div>
-            <AudioComponent signal={signallingChannel} />
+            <Audio signal={signallingChannel} />
             <div id={"chat"} style={{ display: chatDisplay }}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"}>

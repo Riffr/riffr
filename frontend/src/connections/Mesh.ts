@@ -122,6 +122,11 @@ class Mesh extends (EventEmitter as MeshEmitter) {
         this.peers.forEach(peer => peer.send(label, data));
     }
 
+    public close() {
+        this.peers.forEach(peer => peer.close());
+        this.peers = new Map();
+    }
+
     public async dispatch(payload: M.MeshPayload) {
         switch (payload.type) {
             case P.SignalPayloadType.Offer:

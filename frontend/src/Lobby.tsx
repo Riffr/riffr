@@ -79,8 +79,12 @@ const Lobby = (props: LobbyProps) => {
     }, [chatClient])
 
     useEffect(() => {
-        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
+        document.getElementById("chat-input")?.focus();
     }, []);
+
+    useEffect(() => {
+        document.querySelector("#message-field")?.lastElementChild?.scrollIntoView();
+    }, [messages]);
 
     const chatKeypress = (e: any) => {
         if (e.code == "Enter") {

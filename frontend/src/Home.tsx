@@ -1,4 +1,4 @@
-import React, {ReactComponentElement, useCallback, useState} from 'react';
+import React, {ReactComponentElement, useCallback, useEffect, useState} from 'react';
 import {Link, RouteComponentProps} from "react-router-dom";
 import './css/Home.css'
 import './css/General.css'
@@ -15,6 +15,33 @@ const Home = (props: RouteComponentProps<{}>) => {
     const [roomId, setRoomId] = useState("");
 
     let randomRoomName = generateRandomRoomName();
+
+    useEffect(() => {
+        document.getElementById("name-input")?.focus();
+        document.getElementById("name-input")?.addEventListener("keydown", (e) => {
+            if (e.code === "Enter") {
+                document.getElementById("lobby-input")?.focus();
+            }
+        });
+    }, []);
+
+    const joinRoom = useCallback(() => {
+        if (roomId == "") {
+            alert("Please enter lobby name");
+        } else if (username === "") {
+            alert("Please enter username");
+        } else {
+            props.history.push(`/riffr/lobby`, { roomId, username, create: false });
+        }
+    }, [props.history, username, roomId]);
+
+    useEffect(() => {
+        document.getElementById("lobby-input")
+            ?.addEventListener("keydown", (e) => {
+                if (e.code === "Enter") joinRoom();
+            });
+    }, [joinRoom]);
+
 
     return (
         <div id={"home-wrapper"}>
@@ -53,11 +80,13 @@ const generateRandomRoomName = () => {
         words.splice(Math.floor(Math.random() * words.length), 1)[0];
 }
 
+
 const TextInput = (props: { id: string, placeholder: string, autoComplete?: string, parentCallback: (arg0: string) => void }) => {
     let autoComplete = "off";
     if (props.autoComplete != undefined) {
         autoComplete = props.autoComplete;
     }
+
     return (
         <input type={"textField"} id={props.id} className={"text-input"} placeholder={props.placeholder}
                autoComplete={autoComplete} onChange={(e) => {

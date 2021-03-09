@@ -48,7 +48,7 @@ class SignallingChannel extends (EventEmitter as SignallingChannelEmitter) {
 
         this.socket.on(SignalEvent.Signal, (payload: M.MeshPayload) => {
             this.emit("signal", this, payload);
-        })
+        });
     }
 
     public signal(payload: M.SignalPayload) {
@@ -63,4 +63,4 @@ class SignallingChannel extends (EventEmitter as SignallingChannelEmitter) {
 
 export {
     SignallingChannel,
-}
+};

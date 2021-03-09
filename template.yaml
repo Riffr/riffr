@@ -1,0 +1,266 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  This is the AWS CFN template for the IB Group Project,
+  "Riffr" by Team Papa
+
+########     ###    ########     ###    ##     ##
+##     ##   ## ##   ##     ##   ## ##   ###   ###
+##     ##  ##   ##  ##     ##  ##   ##  #### ####
+########  ##     ## ########  ##     ## ## ### ##
+##        ######### ##   ##   ######### ##     ##
+##        ##     ## ##    ##  ##     ## ##     ##
+##        ##     ## ##     ## ##     ## ##     ##
+
+Parameters:
+  
+  DomainName:
+    Type: String
+    Default: riffr.net
+
+  Stage:
+    Description: Development stage
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+
+  Port:
+    Description: Port for the Backend Server
+    Type: Number
+    Default: 10000
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair for SSH access to the Backend Server Instance
+
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Description:  VPC Id
+    Default: vpc-cefb23b7
+
+  SubnetPublic1Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public Subnet 1 in default VPC
+    Default: subnet-c245a089
+
+  SubnetPublic2Id:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public Subnet 2 in default VPC
+    Default: subnet-80bdb7e6
+
+  CreateHttpsResources:
+    Type: String
+    Default: false
+    AllowedValues:
+      - false
+      - true
+
+
+Conditions:
+  CreateHttpsResources: !Equals [!Ref CreateHttpsResources, true]
+
+Resources:
+
+ ######  ##        #######  ##     ## ########  ######## ########   #######  ##    ## ######## 
+##    ## ##       ##     ## ##     ## ##     ## ##       ##     ## ##     ## ###   ##    ##    
+##       ##       ##     ## ##     ## ##     ## ##       ##     ## ##     ## ####  ##    ##    
+##       ##       ##     ## ##     ## ##     ## ######   ########  ##     ## ## ## ##    ##    
+##       ##       ##     ## ##     ## ##     ## ##       ##   ##   ##     ## ##  ####    ##    
+##    ## ##       ##     ## ##     ## ##     ## ##       ##    ##  ##     ## ##   ###    ##    
+ ######  ########  #######   #######  ########  ##       ##     ##  #######  ##    ##    ##    
+
+  CloudfrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig: 
+        Enabled: True
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: True
+          TargetOriginId: WebsiteBucket
+          ViewerProtocolPolicy: redirect-to-https
+        DefaultRootObject: index.html
+        Origins:
+          - Id: WebsiteBucket
+            DomainName: !GetAtt WebsiteBucket.DomainName
+            CustomOriginConfig:
+              OriginProtocolPolicy: match-viewer
+
+ ######   #######  
+##    ## ##     ## 
+##              ## 
+ ######   #######  
+      ##        ## 
+##    ## ##     ## 
+ ######   #######  
+
+  WebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: PublicRead
+      BucketName: !Sub ${AWS::AccountId}-${AWS::StackName}-${Stage}-website-bucket
+      WebsiteConfiguration: 
+        IndexDocument: "index.html"
+        ErrorDocument: "index.html"
+  
+  WebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteBucket
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement: 
+          - Sid: AllowPublicReadAccess
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource:
+              - !Sub ${WebsiteBucket.Arn}/*
+
+########   #######  ##     ## ######## ######## ########  #######  
+##     ## ##     ## ##     ##    ##    ##       ##       ##     ## 
+##     ## ##     ## ##     ##    ##    ##       ##              ## 
+########  ##     ## ##     ##    ##    ######   #######   #######  
+##   ##   ##     ## ##     ##    ##    ##             ##        ## 
+##    ##  ##     ## ##     ##    ##    ##       ##    ## ##     ## 
+##     ##  #######   #######     ##    ########  ######   #######  
+
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Properties:
+      Name: !Sub ${Stage}.${DomainName}
+
+  ALBAliasRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZone
+      Name: !Sub alb.${Stage}.${DomainName}
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ALB.DNSName
+        HostedZoneId: !GetAtt ALB.CanonicalHostedZoneID
+
+  ALBHttpsCertificate:
+    Condition: CreateHttpsResources
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Sub alb.${Stage}.${DomainName}
+      DomainValidationOptions:
+        - DomainName: !Sub alb.${Stage}.${DomainName}
+          HostedZoneId: !Ref HostedZone
+      ValidationMethod: DNS
+
+   ###    ##       ########  
+  ## ##   ##       ##     ## 
+ ##   ##  ##       ##     ## 
+##     ## ##       ########  
+######### ##       ##     ## 
+##     ## ##       ##     ## 
+##     ## ######## ########  
+
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets: 
+        - !Ref SubnetPublic1Id
+        - !Ref SubnetPublic2Id
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Type: application
+      Scheme: internet-facing
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPCId
+      GroupDescription: Access to the ALB that sits in front of EC2
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-alb-sg
+
+  ALBListenerHttps:
+    Condition: CreateHttpsResources
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref ALBHttpsCertificate
+      DefaultActions: 
+        - Type: forward
+          TargetGroupArn: !Ref EC2TargetGroup
+
+  EC2TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${AWS::StackName}-alb-ec2-tg
+      VpcId: !Ref VPCId
+      Port: !Ref Port
+      Protocol: HTTP
+      Targets:
+        - Id: !Ref EC2Instance
+          Port: !Ref Port
+      HealthCheckIntervalSeconds: 60
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /socket.io/?EIO=4&transport=polling
+      Matcher:
+        HttpCode: "200"
+      
+########  ######   #######  
+##       ##    ## ##     ## 
+##       ##              ## 
+######   ##        #######  
+##       ##       ##        
+##       ##    ## ##        
+########  ######  ######### 
+
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref KeyName
+      ImageId: !Ref AmiId
+      InstanceType: t2.micro
+      NetworkInterfaces:
+        - DeviceIndex: '0'
+          AssociatePublicIpAddress: True
+          GroupSet:
+            - !Ref EC2SecurityGroup
+          SubnetId:
+            !Ref SubnetPublic1Id
+
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPCId
+      GroupDescription: Accesss to the EC2 instances 
+      SecurityGroupIngress:
+        - IpProtocol: "-1"
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+
+  WebsiteUrl:
+    Value: !GetAtt WebsiteBucket.WebsiteURL
+    Description: URL for the frontend website on S3

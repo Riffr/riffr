@@ -1,6 +1,6 @@
 import {Socket} from './Socket';
 
-import {RoomEvent} from '@riffr/backend';
+import {RoomEvent, User} from '@riffr/backend';
 
 import EventEmitter from "events";
 import StrictEventEmitter from "strict-event-emitter-types"
@@ -15,59 +15,50 @@ type RoomEmitter<T> = { new(): StrictEventEmitter<EventEmitter, RoomEvents<T>> }
 class Room<T> extends EventEmitter {
 
     // Factory methods
-    static async createRoom<T>(socket: Socket, id: string, user: T) {
+    static async createRoom<T>(socket: Socket, id: string, userProps: T) {
+        console.log(`Creating Room... Room`);
+        const { user, members } = await socket.request(RoomEvent.Create, id, userProps);
+        const room = new Room<T>(socket, id, members);
 
-        const room = new Room<T>(socket, id);
-        await room.create(user);
-
-        return room;
+        return { room, user };
     }
 
-    static async joinRoom<T>(socket: Socket, id: string, user: T) {
+    static async joinRoom<T>(socket: Socket, id: string, userProps: T) {
+        const { user, members } = await socket.request(RoomEvent.Join, id, userProps);
+        const room = new Room<T>(socket, id, members);
 
-        const room = new Room<T>(socket, id);
-        await room.join(user);
-
-        return room;
+        return { room, user };
     }
 
-    private async create(user: T) {
-        const {members} = await this.socket.request(RoomEvent.Create, this.id, user);
-        this.members = members;
-    }
-
-    private async join(user: T) {
-        const {members} = await this.socket.request(RoomEvent.Join, this.id, user);
-        this.members = members;
-    }
 
     private socket: Socket;
 
     public id: string;
-    public members: Array<T> = [];
+    public readonly members: Map<string, T> = new Map();
     // Room class allows handling of room metadata
     // e.g. Room members, etc
 
-    private constructor(socket: Socket, id: string) {
+    private constructor(socket: Socket, id: string, members: Array<User<T>>) {
         super();
 
         this.socket = socket;
         this.id = id;
 
-        this.socket.on(RoomEvent.AddUser, (user: T) => {
-            this.members.push(user);
+        members.forEach(user => this.members.set(user.id, user));
+
+        this.socket.on(RoomEvent.AddUser, (user: User<T>) => {
+            this.members.set(user.id, user);
             this.emit("membersUpdated", this);
         });
 
-        this.socket.on(RoomEvent.RemoveUser, (user: T) => {
-            // Locking? This will lead to a race condition...
-            this.members = this.members.filter(x => x !== user);
+        this.socket.on(RoomEvent.RemoveUser, (user: User<T>) => {
+            this.members.delete(user.id);
             this.emit("membersUpdated", this);
         });
     }
 
     public async leave() {
-        await this.socket.request(RoomEvent.Leave);
+        this.socket.emit(RoomEvent.Leave);
     }
 }
 

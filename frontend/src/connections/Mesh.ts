@@ -26,7 +26,7 @@ type MeshEmitter = {new (): StrictEventEmitter<EventEmitter, MeshEvents>};
 
 class MeshedPeer extends Peer {
 
-    public meshId?: string;
+    public userId?: string;
 
     constructor(config: PeerConfig) {
         super(config);
@@ -42,7 +42,7 @@ interface Config extends PeerConfig {
 class Mesh extends (EventEmitter as MeshEmitter) {
 
     // 1-to-many relationship with peerIds
-    public id: string;
+    // public id: string;
     private peers : Map<string, MeshedPeer> = new Map();
 
     private maxPeers : number;
@@ -54,20 +54,20 @@ class Mesh extends (EventEmitter as MeshEmitter) {
         super();
         
         const { 
-            id = uuidv4(),
+            // id = uuidv4(),
             maxPeers = 128,
             peerBufferSize = 1, 
             ...peerConfig
         } = config;
 
-        this.id = id;
+        // this.id = id;
         this.maxPeers = maxPeers;
         this.peerBufferSize = peerBufferSize; 
         this.peerConfig = peerConfig;
 
 
         setTimeout(() => {
-            this.emit("signal", { type: M.SignalPayloadType.Init, meshId: this.id} as M.SignalPayload);
+            this.emit("signal", { type: M.SignalPayloadType.Init } as M.SignalPayload);
             for (let i = 0; i < this.peerBufferSize; i++) {
                 this.createInitiator();
             }
@@ -76,13 +76,11 @@ class Mesh extends (EventEmitter as MeshEmitter) {
     }
 
     private createInitiator() {
-        const id = uuidv4();
         const peer = this.createPeer({
-            id,
             initiator: true,
             ...this.peerConfig
         });
-        this.peers.set(id, peer);
+        this.peers.set(peer.id, peer);
     }
 
     private createPeer(config: PeerConfig) {
@@ -124,6 +122,11 @@ class Mesh extends (EventEmitter as MeshEmitter) {
         this.peers.forEach(peer => peer.send(label, data));
     }
 
+    public close() {
+        this.peers.forEach(peer => peer.close());
+        this.peers = new Map();
+    }
+
     public async dispatch(payload: M.MeshPayload) {
         switch (payload.type) {
             case P.SignalPayloadType.Offer:
@@ -135,24 +138,24 @@ class Mesh extends (EventEmitter as MeshEmitter) {
                 break;
             }
             case M.MeshMessageType.PeerAccepted: {
-                const { meshId, peerId } = payload;
+                const { userId, peerId } = payload;
                 const peer = this.peers.get(peerId);
-                if (peer) peer.meshId = meshId;
+                if (peer) peer.userId = userId;
                 break;
             }
             case M.MeshMessageType.RequestPeer:
                 this.createInitiator();
                 break;
             case M.MeshMessageType.AcceptPeer: {
-                const { peer: {meshId, peerId, signals} } = payload;
+                const { peer: { userId, peerId, signals } } = payload;
                 
                 const peer = this.createPeer({
                     id: peerId,
                     ...this.peerConfig
                 });
-                peer.meshId = meshId;
-
+                peer.userId = userId;
                 this.peers.set(peerId, peer);
+
                 signals.forEach((signal: M.PeerSignalPayload) => {
                     this.dispatch(signal);
                 });

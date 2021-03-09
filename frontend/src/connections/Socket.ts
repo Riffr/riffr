@@ -1,4 +1,6 @@
+import { debug } from 'console';
 import io from 'socket.io-client';
+import { v4 as uuidv4 } from 'uuid';
 
 interface Result {
     status: ResultStatus,
@@ -14,10 +16,13 @@ type Function = (...args: any[]) => void;
 
 class Socket {
 
+    public readonly id = uuidv4();
+
     public uri: string;
     private socket: SocketIOClient.Socket;
 
     constructor(uri: string, opts?: SocketIOClient.ConnectOpts) {
+        console.log(`Creating Socket w/ uri ${uri} ${this.id}...`);
         this.uri = uri;
         this.socket = io(uri, opts);
     }
@@ -53,9 +58,15 @@ class Socket {
      */
 
     request(event: string, ...args: any[]): Promise<any> {
+        console.log(`Creating Room... Socket Request ${ this.id }`);
+        
         const promise = new Promise((resolve, reject) => {
             // Emit and wait
+
+            console.log('Requesting....');
             this.socket.emit(event, ...args, (res: Result) => {
+                console.log(`Result from socket ${ this.id } ${this.uri}`);
+
                 // TODO: Would be nice to add some runtime typechecking
                 // for result, perhaps using https://github.com/gristlabs/ts-interface-checker
                 if (res.status === ResultStatus.Success) {

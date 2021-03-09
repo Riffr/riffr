@@ -55,7 +55,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     const initMesh = useCallback(() => {
         let m = new Mesh();
-        console.log(`Initializing mesh with id: ${m.id}`);
 
         m.on("error", (_, e: Error) => {
             console.log(`Error: ${JSON.stringify(e)}`);
@@ -71,13 +70,13 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
         m.on("connection", (peer: MeshedPeer, state: RTCIceConnectionState) => {
             if (state === "connected") {
-                console.log(`Mesh: ${peer.meshId} connected via WebRTC :)`);
+                console.log(`Mesh: ${peer.userId} connected via WebRTC :)`);
             }
         });
 
         m.on("channelOpen", (_, channel: RTCDataChannel) => {
             console.log(`connected with ${channel.label} and ready to send data!`);
-            m.send("data", `Hello World from ${m.id}`);
+            m.send("data", `Hello World`);
         });
 
         m.on("channelData", async (peer, channel, data) => {
@@ -86,7 +85,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
                 data = await data.arrayBuffer();  // Firefox seems to read data as a blob
                 console.log(data);
                 let decodedRecord: DecodedRecord = await decodeReceivedData(data);
-                addToPlaylist(decodedRecord, peer.meshId!);
+                addToPlaylist(decodedRecord, peer.userId!);
             } else if (channel.label === "control") {
                 switch (data) {
                     case "play":
@@ -100,7 +99,10 @@ const Audio = (props: { signal: SignallingChannel }) => {
         });
 
         setMesh(m);
-        return () => props.signal.removeAllListeners("signal");
+        return () => {
+            props.signal.removeAllListeners("signal");
+            m.close();
+        };
     }, [props.signal]);
 
     const sendToPeers = useCallback((record: RecordType, isBackingTrack: boolean = false) => {
@@ -278,6 +280,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     useEffect(() => {
         handleResize();
+        console.log('Creating mesh');
         let cleanup = initMesh();
         //TODO: Should we clear up the mesh once we leave the room?
     }, [])

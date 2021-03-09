@@ -13,7 +13,6 @@ enum SignalPayloadType {
 
 interface InitPayload {
     readonly type: SignalPayloadType.Init
-    readonly meshId: string
 };
 
 interface ClosePayload {
@@ -40,7 +39,7 @@ enum MeshMessageType {
 
 interface PeerAcceptedPayload {
     readonly type: MeshMessageType.PeerAccepted,
-    readonly meshId: string,
+    readonly userId: string,
     readonly peerId: string
 };
 
@@ -49,7 +48,7 @@ interface RequestPeerPayload {
 };
 
 interface Peer {
-    meshId: string;
+    userId: string;
     peerId: string; 
     signals: Array<OfferPayload | CandidatePayload>;
 };

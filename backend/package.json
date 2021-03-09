@@ -11,6 +11,7 @@
   "author": "Alistair O'Brien",
   "license": "ISC",
   "dependencies": {
+    "express": "^4.17.1",
     "socket.io": "^3.1.0",
     "strict-event-emitter-types": "^2.0.0",
     "uuid": "^8.3.2"

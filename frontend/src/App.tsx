@@ -9,7 +9,7 @@ import {User} from "@riffr/backend";
 import { ChatClient } from './connections/ChatClient';
 
 const App = () => {
-    const socket = new Socket("127.0.0.1:10000");
+    const socket = new Socket("https://ec2-52-17-80-252.eu-west-1.compute.amazonaws.com:443", {secure: true});
     const [create, setCreate] = useState(false);
     const [chatClient, setChatClient] = useState<ChatClient|undefined>(undefined);
 

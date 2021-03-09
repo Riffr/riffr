@@ -222,7 +222,7 @@ class Peer extends (EventEmitter as PeerEmitter) {
     }
 
     public send(label: string, data: any) {
-        console.log("Sending to channels: ", this.channels);
+        console.log("Sending", data, "to channel,", label, "(channels =", this.channels, ")");
         this.channels.get(label)?.send(data);
     }
 

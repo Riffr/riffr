@@ -9,7 +9,7 @@ import {
 } from '@riffr/backend';
 
 import EventEmitter from "events";
-import StrictEventEmitter from "strict-event-emitter-types"
+import StrictEventEmitter from "strict-event-emitter-types";
 
 interface ChatEvents {
     message: (client: ChatClient, message: Message) => void;
@@ -49,7 +49,7 @@ class ChatClient extends (EventEmitter as ChatEmitter) {
 
         this.socket.on(ChatEvent.Start, () => {
             this.emit("start", this);
-        })
+        });
     }
 
     public send(content: string) {
@@ -68,8 +68,8 @@ class ChatClient extends (EventEmitter as ChatEmitter) {
 
 export {
     ChatClient,
-}
+};
 export type {
     ChatEmitter,
     ChatEvents,
-}
+};

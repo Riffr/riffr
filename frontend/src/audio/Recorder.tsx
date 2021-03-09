@@ -3,7 +3,7 @@ import AudioUploader from './AudioUploader';
 import { SignallingChannel } from "../connections/SignallingChannel";
 import { DecodedRecord } from "./Audio";
 
-declare var MediaRecorder: any;
+declare let MediaRecorder: any;
 type BlobEvent = { data: Blob; }
 
 export interface RecordType {
@@ -46,15 +46,15 @@ const Recorder = (props: RecorderProps) => {
 
     const checkRecord = () => {
         if (props.audioCtx.state === "running" && !recording && props.loopLength - (props.audioCtx.currentTime) % props.loopLength <= (props.loopLength / 10)) {
-            console.log("Checking muted")
+            console.log("Checking muted");
             if (!muted) {
-                console.log("We should!")
+                console.log("We should!");
                 startRecording();
-                console.log("We're recording! ")
+                console.log("We're recording! ");
                 return false;
             }
         }
-    }
+    };
 
     const startRecording = () => {
         if (props.audioCtx.state === 'suspended') {
@@ -75,13 +75,13 @@ const Recorder = (props: RecorderProps) => {
             setRecording(true);
             setTimeout(() => {
                 console.log("Setting recording to false");
-                setRecording(false)
-            }, props.loopLength * 1000 / 2 + startOffset.current * 1000)
+                setRecording(false);
+            }, props.loopLength * 1000 / 2 + startOffset.current * 1000);
 
             recorder.start();
             startOffset.current = props.loopLength - (props.audioCtx.currentTime) % props.loopLength;
             setTimeout(() => {
-                stopRecording(recorder)
+                stopRecording(recorder);
             }, props.loopLength * 1000 + startOffset.current * 1000);
 
         } else {
@@ -89,7 +89,7 @@ const Recorder = (props: RecorderProps) => {
             console.log(recorder1);
             console.log(recorder2);
         }
-    }
+    };
 
     const stopRecording = (recorder: any) => {
         if (recorder !== null && recorder.state !== 'inactive') {
@@ -97,57 +97,57 @@ const Recorder = (props: RecorderProps) => {
             recorder.stop();
             stopOffset.current = (props.audioCtx.currentTime) % props.loopLength;
         }
-    }
+    };
 
     const saveRecording = async () => {
         if (props.audioCtx.state === "running") {
-            let blob = new Blob(chunks, {'type': 'audio/ogg; codecs=opus'});
-            let audioBuffer = await blob.arrayBuffer();
+            const blob = new Blob(chunks, {'type': 'audio/ogg; codecs=opus'});
+            const audioBuffer = await blob.arrayBuffer();
             const clip: RecordType = {
                 buffer: audioBuffer,
                 startOffset: startOffset.current
-            }
-            console.log(clip)
+            };
+            console.log(clip);
             props.sendToPeers(clip, false);
             chunks = [];
         }
-    }
+    };
 
 
     if (recorder1 !== null) {
         recorder1.onstop = saveRecording;
 
         recorder1.ondataavailable = (evt: BlobEvent) => {
-            console.log("Saving recorder1")
+            console.log("Saving recorder1");
             chunks.push(evt.data);
-        }
+        };
     }
 
     if (recorder2 !== null) {
         recorder2.onstop = saveRecording;
 
         recorder2.ondataavailable = (evt: BlobEvent) => {
-            console.log("Saving recorder2")
+            console.log("Saving recorder2");
             chunks.push(evt.data);
-        }
+        };
     }
 
     useEffect(() => {
-        let i1 = setInterval(() => checkRecord(), props.loopLength * 100);
+        const i1 = setInterval(() => checkRecord(), props.loopLength * 100);
         return () => {
             clearInterval(i1);
-        }
-    }, [props.loopLength, props.audioCtx, recorder1, recorder2, permission, muted])
+        };
+    }, [props.loopLength, props.audioCtx, recorder1, recorder2, permission, muted]);
 
     const getPermission = async () => {
-        let mediaStream: MediaStream = await navigator.mediaDevices.getUserMedia({
+        const mediaStream: MediaStream = await navigator.mediaDevices.getUserMedia({
             audio: true,
             video: false
         });
         setMediaRecorder1(new MediaRecorder(mediaStream));
         setMediaRecorder2(new MediaRecorder(mediaStream));
         setPermission(true);
-    }
+    };
 
     const toggleMuted = () => {
         if (!permission) {
@@ -160,38 +160,38 @@ const Recorder = (props: RecorderProps) => {
         }
         props.setIsRecording(muted);
         setMuted(!muted);
-    }
+    };
 
     const getMuteStatus = () => {
-        return muted ? "Unmute" : "Mute"
-    }
+        return muted ? "Unmute" : "Mute";
+    };
     const getRecordingStatus = () => {
-        return (recorder1 !== null && recorder1.state === "recording") ? "Recording" : "Not recording"
-    }
+        return (recorder1 !== null && recorder1.state === "recording") ? "Recording" : "Not recording";
+    };
     const getRecordingStatus2 = () => {
-        return (recorder2 !== null && recorder2.state === "recording") ? "Recording" : "Not recording"
-    }
+        return (recorder2 !== null && recorder2.state === "recording") ? "Recording" : "Not recording";
+    };
 
     const getRecordingStatusBoth = () => {
         if (recorder1 === null || recorder2 === null) return false;
         else return recorder1.state === "recording" || recorder2.state === "recording";
-    }
+    };
 
     const getMuteTooltip = () => {
         if (muted) return "Unmute";
         else if (recording) return "Mute";
         else return "Unmuting next cycle";
-    }
+    };
 
     const changeSettings = () => {
         if (tempo.current === null || duration.current === null || sig1.current === null) return;
         if (tempo.current?.value !== "") {
-            let durationSeconds = duration.current.valueAsNumber * sig1.current.valueAsNumber / tempo.current.valueAsNumber * 60;
+            const durationSeconds = duration.current.valueAsNumber * sig1.current.valueAsNumber / tempo.current.valueAsNumber * 60;
             props.changeLoop(durationSeconds);
         } else {
             props.changeLoop(duration.current.valueAsNumber);
         }
-    }
+    };
 
     const backingTrackUpdated = (newDuration: number) => {
         if (tempo.current === null || duration.current === null || sig1.current === null) return;
@@ -201,7 +201,7 @@ const Recorder = (props: RecorderProps) => {
         newDuration = Math.round(newDuration * 100) / 100;
         duration.current.valueAsNumber = newDuration;
         console.log(duration.current.valueAsNumber);
-    }
+    };
 
     return (
         <div id="coordination">
@@ -250,6 +250,6 @@ const Recorder = (props: RecorderProps) => {
             </div>
         </div>
     );
-}
+};
 
 export default Recorder;

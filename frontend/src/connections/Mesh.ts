@@ -1,5 +1,5 @@
 import EventEmitter from 'events';
-import StrictEventEmitter from "strict-event-emitter-types"
+import StrictEventEmitter from "strict-event-emitter-types";
 import { v4 as uuidv4 } from "uuid";
 
 import { 
@@ -20,7 +20,7 @@ interface MeshEvents {
     channelClose: (peer: MeshedPeer, channel: RTCDataChannel) => void;
 
     error: (peer: MeshedPeer, error: Error) => void;
-};
+}
 type MeshEmitter = {new (): StrictEventEmitter<EventEmitter, MeshEvents>};
 
 
@@ -37,7 +37,7 @@ class MeshedPeer extends Peer {
 interface Config extends PeerConfig {
     maxPeers?: number;
     peerBufferSize?: number;
-};
+}
 
 class Mesh extends (EventEmitter as MeshEmitter) {
 
@@ -107,7 +107,7 @@ class Mesh extends (EventEmitter as MeshEmitter) {
 
         peer.on("error", (peer : Peer, error: Error) => {
             this.emit("error", peer, error);
-        })
+        });
 
 
 
@@ -115,7 +115,7 @@ class Mesh extends (EventEmitter as MeshEmitter) {
     }
 
     public addDataChannel(label: string, channelInit?: RTCDataChannelInit) {
-        this.peers.forEach(peer => peer.addDataChannel(label, channelInit))
+        this.peers.forEach(peer => peer.addDataChannel(label, channelInit));
     }
 
     public send(label: string, data: any) {

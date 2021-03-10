@@ -38,7 +38,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [duration, setDuration] = useState(4);
     const [isRecording, setIsRecording] = useState(false);
 
-    const barCount = useRef(0);
+    const barCount = useRef(1);
     const newLoopLength = useRef(8);
 
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());

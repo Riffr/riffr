@@ -10,6 +10,9 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { resource, Resource } from "./resource";
 import { withResource } from "./WithResource";
 
+import Loading from "./Loading";
+import ErrorMessage from "./ErrorMessage";
+
 interface WithSignallingChannelProps {
     socket: Socket;
     chatClient: ChatClient;
@@ -52,8 +55,8 @@ const withSignallingChannel = <P extends any>(
 
         if (signallingChannelResource == undefined) return <p>Loading resource...</p>;
 
-        return <ErrorBoundary fallback={<p>SignallingChannelError</p>}>
-            <Wrapped {...props} fallback={<p>Loading...</p>} resource={signallingChannelResource} />        
+        return <ErrorBoundary fallback={<ErrorMessage />}>
+            <Wrapped {...props} fallback={<Loading />} resource={signallingChannelResource} />        
         </ErrorBoundary>
     };
 

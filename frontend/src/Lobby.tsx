@@ -26,9 +26,6 @@ interface LobbyProps extends RouteComponentProps {
 
 
 const Lobby = (props: LobbyProps) => {
-    
-    const { path } = props.match;
-    
 
     const { chatClient, create } = props;
     const user = chatClient.user;
@@ -99,35 +96,37 @@ const Lobby = (props: LobbyProps) => {
                     <i className={"fa fa-home block"}/>
                 </Link>
             </div>
-            <h1>Welcome, {user.username}</h1>
-            <h3>Invite your friends using the code below</h3>
-            <CopyField id={"copy-field"} value={room.id}/>
-            <div style={{maxWidth: "350px"}}>
-                <div id={"member-list"}>
-                    <p><b>Members: </b>{members.map(user => user.username).join(", ")}</p>
+            <div id={"inner-lobby-wrapper"}>
+                <h1>Welcome, {user.username}</h1>
+                <h3 style={{marginBottom: "20px"}}>Invite your friends using the code below</h3>
+                <CopyField id={"copy-field"} value={room.id}/>
+                <div style={{width: "350px"}}>
+                    <div id={"member-list"}>
+                        <p><b>Members: </b>{members.map(user => user.username).join(", ")}</p>
+                    </div>
+                    <div id={"message-field"}>
+                        {messages.map((x: Message) => <div className={"messageWrapper"}>
+                                <p className={"chat-message"}><b>{x.from}</b>: {x.content}</p>
+                            </div>
+                        )}
+                    </div>
+                    <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
+                           placeholder={"Type message"}
+                           onChange={(e) => setMessage(e.target.value)} autoComplete={"off"} />
+                    <button id={"send-message-button"} className={"blue"} onClick={sendMessage}>
+                        <i className={"fa fa-send"}/>
+                    </button>
                 </div>
-                <div id={"message-field"}>
-                    {messages.map((x: Message) => <div className={"messageWrapper"}>
-                            <p className={"chat-message"}><b>{x.from}</b>: {x.content}</p>
-                        </div>
-                    )}
-                </div>
-                <input id={"chat-input"} onKeyDown={chatKeypress} type={"textField"} value={message}
-                       placeholder={"Type message"}
-                       onChange={(e) => setMessage(e.target.value)} autoComplete={"off"} />
-                <button id={"send-message-button"} className={"blue"} onClick={sendMessage}>
-                    <i className={"fa fa-send"}/>
-                </button>
+                { create && <Link to={
+                    { pathname: `/riffr/room`
+                    , state: locationState
+                    }} onClick={() => chatClient.broadcastStart()}>
+                    <button id={"start-button"} className={"squircle-button green"}>
+                        Start
+                        <i className={"fa fa-play"} />
+                    </button>
+                </Link>}
             </div>
-            { create && <Link to={
-                { pathname: `/riffr/room`
-                , state: locationState
-                }} onClick={() => chatClient.broadcastStart()}>
-                <button id={"start-button"} className={"squircle-button green"}>
-                    Start
-                    <i className={"fa fa-play"} />
-                </button>
-            </Link>}
         </div>
     );
 }

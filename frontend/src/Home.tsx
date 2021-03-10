@@ -1,10 +1,7 @@
 import React, {ReactComponentElement, useCallback, useEffect, useState} from 'react';
 import {Link, RouteComponentProps} from "react-router-dom";
-import './css/Home.css'
-import './css/General.css'
-
-
-import {Socket} from "./connections/Socket";
+import './css/Home.css';
+import './css/General.css';
 import { WithChatClientLocationState } from './WithChatClient';
 
 

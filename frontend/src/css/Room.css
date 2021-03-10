@@ -38,6 +38,7 @@
 }
 
 #chat #member-list {
+    display: grid;
     grid-template-columns: auto;
     grid-gap: 5px;
     text-align: center;

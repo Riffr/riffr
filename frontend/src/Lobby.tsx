@@ -102,7 +102,7 @@ const Lobby = (props: LobbyProps) => {
             <h1>Welcome, {user.username}</h1>
             <h3>Invite your friends using the code below</h3>
             <CopyField id={"copy-field"} value={room.id}/>
-            <div>
+            <div style={{maxWidth: "350px"}}>
                 <div id={"member-list"}>
                     <p><b>Members: </b>{members.map(user => user.username).join(", ")}</p>
                 </div>

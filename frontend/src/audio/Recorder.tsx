@@ -138,7 +138,7 @@ const Recorder = (props: RecorderProps) => {
     }
 
     useEffect(() => {
-        const i1 = setInterval(() => checkRecord(), 700);
+        const i1 = setInterval(() => checkRecord(), 70);
         return () => {
             clearInterval(i1);
         };

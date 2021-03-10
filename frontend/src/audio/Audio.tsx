@@ -22,6 +22,8 @@ const createAudioCtx = () => {
     return ctx;
 };
 
+const INITIAL_BAR_COUNT = 0;
+
 const Audio = (props: { signal: SignallingChannel }) => {
     const [paused, setPaused] = useState(true);
     const [loopLength, setLoopLength] = useState<number>(8);
@@ -38,13 +40,13 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [duration, setDuration] = useState(4);
     const [isRecording, setIsRecording] = useState(false);
 
-    const barCount = useRef(1);
+    const barCount = useRef(INITIAL_BAR_COUNT);
     const newLoopLength = useRef(8);
 
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
     const [audioSources, setAudioSources] = useState<AudioBufferSourceNode[]>([]);
 
-    const audioOffset = 0;
+    const audioOffset = 0.5;
 
     const resetAudioCtx = () => {
         //audioCtx.close();  // We probably should be closing these, but it crashes :(
@@ -193,7 +195,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             console.log("Removed sounds in", prev);
             return prev
         })
-        barCount.current = 1;
+        barCount.current = INITIAL_BAR_COUNT;
 
         // Stop all currently playing audio
         // Hack because acting directly on audioSources doesn't work when called from inside initMesh
@@ -255,7 +257,9 @@ const Audio = (props: { signal: SignallingChannel }) => {
             if (soundList !== undefined) {
                 let sound;
                 if (soundList.length) {
+                    //console.log("Retrieving sound from soundlist", soundList)
                     sound = soundList.shift();  // Returns and removes the first item in the list
+                    //console.log("Retrieved sound from soundlist", soundList)
                 }/* else {
                     sound = previousSounds.get(peerID);
                 }*/

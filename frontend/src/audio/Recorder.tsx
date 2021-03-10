@@ -32,7 +32,6 @@ const positiveMod = (n: number, m: number) => {
   return ((n % m) + m) % m;
 }
 
-//Todo: Not really synced with the audio player, might have to move logic here into audio as well
 const Recorder = (props: RecorderProps) => {
     let chunks: BlobPart[] = [];
     const [recorder1, setMediaRecorder1] = useState<any>(null);
@@ -51,7 +50,7 @@ const Recorder = (props: RecorderProps) => {
     const checkRecord = () => {
         //console.log(props.audioCtx.state, !recording, props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength))
         if (props.audioCtx.state === "running" && !recording.current &&
-            props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength) <= (1.5)) {
+            props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength) <= (0.15)) {
             console.log("Checking muted");
             if (!muted) {
                 console.log("We should!");
@@ -78,6 +77,7 @@ const Recorder = (props: RecorderProps) => {
             console.log("Start recording...");
             // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
             recording.current = true;
+            console.log("Set recording to true")
             setTimeout(() => {
                 console.log("Setting recording to false");
                 recording.current = false;
@@ -138,7 +138,7 @@ const Recorder = (props: RecorderProps) => {
     }
 
     useEffect(() => {
-        const i1 = setInterval(() => checkRecord(), 70);
+        const i1 = setInterval(() => checkRecord(), 50);
         return () => {
             clearInterval(i1);
         };

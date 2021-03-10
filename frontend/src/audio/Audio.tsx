@@ -23,7 +23,7 @@ const createAudioCtx = () => {
     return ctx;
 };
 
-const INITIAL_BAR_COUNT = 1;
+const INITIAL_BAR_COUNT = 0;
 
 const Audio = (props: { signal: SignallingChannel }) => {
     const [paused, setPaused] = useState(true);
@@ -47,7 +47,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
     const [audioSources, setAudioSources] = useState<AudioBufferSourceNode[]>([]);
 
-    const audioOffset = 0;
+    const audioOffset = 1;
 
     const resetAudioCtx = () => {
         //audioCtx.close();  // We probably should be closing these, but it crashes :(
@@ -125,6 +125,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
             mesh.send("audio", combinedArray.buffer);
 
+            /*
             // Temp
             audioCtx.decodeAudioData(record.buffer).then((buffer) => {
                 const decodedRecord: DecodedRecord = {
@@ -135,6 +136,8 @@ const Audio = (props: { signal: SignallingChannel }) => {
                 addToPlaylist(decodedRecord, "self");
             })
             // End temp
+            */
+
         } else {
             console.log("Error: Mesh uninitialised");
         }

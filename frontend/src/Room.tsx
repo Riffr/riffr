@@ -127,7 +127,7 @@ const Room = withSignallingChannel(props => {
             <div id={"chat"} style={{ display: chatDisplay }}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
                 <div id={"member-list"}>
-                    {members.map(user => <p>user.username</p>)}
+                    {members.map(user => <p>{user.username}</p>)}
                 </div>
                 <div id={"message-field"}>
                     {messages.map((x: Message) => <div className={"messageWrapper"}>

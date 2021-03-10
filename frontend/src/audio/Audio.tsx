@@ -313,7 +313,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         setDuration={setDuration}
                         setIsRecording={setIsRecording}
                     />
-                    <div style={{paddingTop: "16px"}}>
+                    <div style={{paddingTop: "8px"}}>
                         <button id={"play-button"} className={`squircle-button ${paused ? `green` : `red`}`}
                                 onClick={togglePaused}>
                             {getPausedStatus()}

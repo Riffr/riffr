@@ -148,6 +148,7 @@
     border-radius: 5px;
     padding: 8px 0;
     justify-content: space-around;
+    grid-gap: 5px;
 }
 
 #coordination div:nth-child(2n), #coordination div:last-child {

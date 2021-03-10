@@ -39,7 +39,6 @@ const Recorder = (props: RecorderProps) => {
     const [recorder2, setMediaRecorder2] = useState<any>(null);
 
     const startOffset = useRef(0);
-    const stopOffset = useRef(0);
     const [permission, setPermission] = useState(false);
 
     const [muted, setMuted] = useState(true);
@@ -85,7 +84,8 @@ const Recorder = (props: RecorderProps) => {
             }, props.loopLength * 1000 / 2 + startOffset.current * 1000);
 
             recorder.start();
-            startOffset.current = props.loopLength - (props.audioCtx.currentTime - props.audioOffset) % props.loopLength;
+            startOffset.current = props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength);
+            console.log("Start offset", startOffset.current)
             setTimeout(() => {
                 stopRecording(recorder);
             }, props.loopLength * 1000 + startOffset.current * 1000);
@@ -101,7 +101,6 @@ const Recorder = (props: RecorderProps) => {
         if (recorder !== null && recorder.state !== 'inactive') {
             console.log("Stop recording");
             recorder.stop();
-            stopOffset.current = (props.audioCtx.currentTime - props.audioOffset) % props.loopLength;
         }
     };
 

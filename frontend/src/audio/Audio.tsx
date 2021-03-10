@@ -38,11 +38,13 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [duration, setDuration] = useState(4);
     const [isRecording, setIsRecording] = useState(false);
 
-    const barCount = useRef(1);
+    const barCount = useRef(0);
     const newLoopLength = useRef(8);
 
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
     const [audioSources, setAudioSources] = useState<AudioBufferSourceNode[]>([]);
+
+    const audioOffset = 0.5;
 
     const resetAudioCtx = () => {
         //audioCtx.close();  // We probably should be closing these, but it crashes :(
@@ -145,7 +147,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
         console.log("Deleting backing track");
 
         // Hacks because previousSounds.delete("backingTrack") doesn't work when called from inside initMesh
-        setPreviousSounds(prev => {prev.delete("backingTrack"); return prev});
+        //setPreviousSounds(prev => {prev.delete("backingTrack"); return prev});
         setSounds(prev => {prev.delete("backingTrack"); return prev});
         if (updateMesh) {
             mesh?.send("control", "deleteBackingTrack");
@@ -154,20 +156,25 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     const addToPlaylist = (decodedRecord: DecodedRecord, peerID: string) => {
         console.log("Adding sound from peer ", peerID, " to playlist (isBackingTrack = ", decodedRecord.isBackingTrack, ")");
-        if (decodedRecord.isBackingTrack) {
-            peerID = "backingTrack";
-        }
-        if (!(peerID in sounds)) {
-            sounds.set(peerID, []);
-        }
-        sounds.get(peerID)!.push(decodedRecord);
+        // Another initMesh hack
+        setSounds(prev => {
+            if (decodedRecord.isBackingTrack) {
+                prev.set("backingTrack", [decodedRecord]);
+            } else {
+                if (!(peerID in prev)) {
+                    prev.set(peerID, []);
+                }
+                prev.get(peerID)!.push(decodedRecord);
+            }
+            return prev
+        });
     };
 
     const play = () => {
         checkLoopLength();
         setAudioCtx(prev => {
             prev.resume();
-            onSectionStart();  // Still doesn't work?
+            //onSectionStart();  // Still doesn't work?
             return prev;
         });  // Does the same thing as audioCtx.resume() but always gets called on the actual audioCtx
         setPaused(false);
@@ -176,16 +183,16 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     const pause = () => {
         console.log("Pausing");
-        const backingTrack = previousSounds.get("backingTrack") || (sounds.get("backingTrack"))?.shift();
+        const backingTrack = (sounds.get("backingTrack"))?.shift();
         console.log("Backing track being kept:", backingTrack);
         if (backingTrack){
-            setPreviousSounds(new Map([["backingTrack", backingTrack]]));
-            setSounds(new Map([["backingTrack", []]]));
+            //setPreviousSounds(new Map([["backingTrack", backingTrack]]));
+            setSounds(new Map([["backingTrack", [backingTrack]]]));
         } else {
             setPreviousSounds(new Map());
             setSounds(new Map());
         }
-        barCount.current = 1;
+        barCount.current = 0;
 
         // Stop all currently playing audio
         // Hack because acting directly on audioSources doesn't work when called from inside initMesh
@@ -236,26 +243,30 @@ const Audio = (props: { signal: SignallingChannel }) => {
         gainNode.connect(audioCtx.destination);
         gainNode.gain.value = volume;
         console.log("Scheduled to play: ", loopLength * barCount.current);
-        sourceNode.start(loopLength * barCount.current, record.startOffset, loopLength);
+        sourceNode.start(loopLength * barCount.current + audioOffset, record.startOffset, loopLength);
         audioSources.push(sourceNode);
     };
 
     const onSectionStart = () => {
         // Find and play the correct tracks from other peers
-        console.log("Playing sounds:", sounds);
+        console.log("Playing sounds:", sounds, previousSounds);
         sounds.forEach((soundList, peerID) => {
             if (soundList !== undefined) {
                 let sound;
                 if (soundList.length) {
                     sound = soundList.shift();  // Returns and removes the first item in the list
-                } else {
+                }/* else {
                     sound = previousSounds.get(peerID);
-                }
+                }*/
                 if (sound !== undefined) {
                     // Keep the previous sound around so that we can still play it next iteration if needed
-                    previousSounds.set(peerID, sound);
+                    //previousSounds.set(peerID, sound);
 
                     playSound(sound);
+                    if (peerID == "backingTrack") {
+                        // Keep the backing track so it repeats
+                        soundList.push(sound)
+                    }
                 }
             }
         });
@@ -263,7 +274,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     };
 
     const update = () => {
-        setTime(audioCtx.currentTime);
+        setTime(Math.max(audioCtx.currentTime - audioOffset, 0));
     };
 
     /* Canvas resizing code */
@@ -276,7 +287,9 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     useEffect(() => {
         let i1: any;
-        if (audioCtx.state == "running") {
+        console.log("Setting update intervals: audioCtx.state ==", audioCtx.state)
+        if (!paused) {
+            onSectionStart();
             i1 = setInterval(onSectionStart, loopLength * 1000);
         }
         const i2 = setInterval(update, 30);
@@ -285,7 +298,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             clearInterval(i1);
             clearInterval(i2);
         };
-    }, [loopLength, audioCtx, audioCtx.state]);
+    }, [paused]);
 
     useEffect(() => {
         handleResize();
@@ -310,6 +323,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
                 <div id={"audio"}>
                     <Recorder
                         audioCtx={audioCtx}
+                        audioOffset={audioOffset}
                         paused={paused}
                         addToPlaylist={addToPlaylist}
                         sendToPeers={sendToPeers}

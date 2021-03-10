@@ -185,13 +185,16 @@ const Canvas = (props: CanvasProps) => {
         ctx.clearRect(0, 0, props.width, props.height);
         let line: ScanLine = new ScanLine((props.time * props.width / props.loopLength) % props.width, 0, 0, props.width, "#00ff00", 4);
 
+
         let i = 0;
         let size = 24;
+
         let texts: CanvasText[] = []
+        /*
         for (const [key, value] of props.sounds.entries()) {
             texts = [...texts, new CanvasText(10, 50 + i * size * 1.5, key, size, value.length > 0 ? "#11ff11" : "#333333")];
             i++;
-        }
+        }*/
 
         for (let obj of [...canvasGrids.current, line, ...texts, ...recordingStatus.current]) {
             obj.draw(ctx, props.width, props.height);

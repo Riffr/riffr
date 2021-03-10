@@ -90,6 +90,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             } else if (channel.label === "control") {
                 if (data === "play") {play()}
                 else if (data === "pause") {pause()}
+                else if (data === "deleteBackingTrack") {deleteBackingTrack(false)}
                 else if (data.substring(0,17) === "changeLoopLength:") {
                     let newLoopLength = data.substring(17);
                     console.log("Changing loop length to", newLoopLength)
@@ -144,6 +145,16 @@ const Audio = (props: { signal: SignallingChannel }) => {
         return decodedRecord;
     };
 
+    const deleteBackingTrack = (updateMesh = true) => {
+        console.log("Deleting backing track");
+        // Hacks because previousSounds.delete("backingTrack") doesn't work when called from inside initMesh
+        setPreviousSounds(prev => {prev.delete("backingTrack"); return prev});
+        setSounds(prev => {prev.delete("backingTrack"); return prev});
+        if (updateMesh) {
+            mesh?.send("control", "deleteBackingTrack");
+        }
+    }
+
     const addToPlaylist = (decodedRecord: DecodedRecord, peerID: string) => {
         console.log("Adding sound from peer ", peerID, " to playlist (isBackingTrack = ", decodedRecord.isBackingTrack, ")");
         if (decodedRecord.isBackingTrack) {
@@ -179,11 +190,15 @@ const Audio = (props: { signal: SignallingChannel }) => {
         }
         barCount.current = 1;
 
-        // Stop currently playing audio
-        console.log(audioSources);
-        for (let i = 0; i < audioSources.length; i++) {
-            audioSources[i].stop();
-        }
+        // Stop all currently playing audio
+        // Hack because acting directly on audioSources doesn't work when called from inside initMesh
+        setAudioSources(prev => {
+            for (let i = 0; i < prev.length; i++) {
+                prev[i].stop();
+            }
+            return []
+        });
+        //setAudioSources([]);
 
         resetAudioCtx();
         setPaused(true);
@@ -308,6 +323,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
                         changeLoopLength={changeLoopLength}
+                        deleteBackingTrack={deleteBackingTrack}
 
                         setTimeSignature={setTimeSignature}
                         setDuration={setDuration}

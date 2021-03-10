@@ -21,6 +21,7 @@ interface RecorderProps {
 
     loopLength: number;
     changeLoopLength(length: number): void;
+    deleteBackingTrack(): void;
 
     setTimeSignature(val: number): void;
     setDuration(val: number): void;
@@ -240,6 +241,7 @@ const Recorder = (props: RecorderProps) => {
                         backingTrackUpdated(duration);
                         props.changeLoopLength(duration);
                     }}
+                    deleteBackingTrack={props.deleteBackingTrack}
                     addToPlaylist={props.addToPlaylist}
                     sendToPeers={props.sendToPeers}
                 />

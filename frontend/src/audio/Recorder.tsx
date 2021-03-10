@@ -9,11 +9,11 @@ type BlobEvent = { data: Blob; }
 export interface RecordType {
     buffer: ArrayBuffer;
     startOffset: number;
-    //endOffset: number;
 }
 
 interface RecorderProps {
     audioCtx: AudioContext;
+    audioOffset: number;
     paused: boolean;
 
     addToPlaylist(record: DecodedRecord, peerID: string): void;
@@ -21,10 +21,15 @@ interface RecorderProps {
 
     loopLength: number;
     changeLoopLength(length: number): void;
+    deleteBackingTrack(): void;
 
     setTimeSignature(val: number): void;
     setDuration(val: number): void;
     setIsRecording(state: boolean): void;
+}
+
+const positiveMod = (n: number, m: number) => {
+  return ((n % m) + m) % m;
 }
 
 //Todo: Not really synced with the audio player, might have to move logic here into audio as well
@@ -38,19 +43,20 @@ const Recorder = (props: RecorderProps) => {
     const [permission, setPermission] = useState(false);
 
     const [muted, setMuted] = useState(true);
-    const [recording, setRecording] = useState(false);
+    const recording = useRef(false);
     const sig1 = createRef<HTMLInputElement>();
     const tempo = createRef<HTMLInputElement>();
     const duration = createRef<HTMLInputElement>();
 
 
     const checkRecord = () => {
-        if (props.audioCtx.state === "running" && !recording && props.loopLength - (props.audioCtx.currentTime) % props.loopLength <= (props.loopLength / 10)) {
+        //console.log(props.audioCtx.state, !recording, props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength))
+        if (props.audioCtx.state === "running" && !recording.current &&
+            props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength) <= (1.5)) {
             console.log("Checking muted");
             if (!muted) {
                 console.log("We should!");
                 startRecording();
-                console.log("We're recording! ");
                 return false;
             }
         }
@@ -72,14 +78,14 @@ const Recorder = (props: RecorderProps) => {
         if (recorder) {
             console.log("Start recording...");
             // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
-            setRecording(true);
+            recording.current = true;
             setTimeout(() => {
                 console.log("Setting recording to false");
-                setRecording(false);
+                recording.current = false;
             }, props.loopLength * 1000 / 2 + startOffset.current * 1000);
 
             recorder.start();
-            startOffset.current = props.loopLength - (props.audioCtx.currentTime) % props.loopLength;
+            startOffset.current = props.loopLength - (props.audioCtx.currentTime - props.audioOffset) % props.loopLength;
             setTimeout(() => {
                 stopRecording(recorder);
             }, props.loopLength * 1000 + startOffset.current * 1000);
@@ -95,7 +101,7 @@ const Recorder = (props: RecorderProps) => {
         if (recorder !== null && recorder.state !== 'inactive') {
             console.log("Stop recording");
             recorder.stop();
-            stopOffset.current = (props.audioCtx.currentTime) % props.loopLength;
+            stopOffset.current = (props.audioCtx.currentTime - props.audioOffset) % props.loopLength;
         }
     };
 
@@ -133,7 +139,7 @@ const Recorder = (props: RecorderProps) => {
     }
 
     useEffect(() => {
-        const i1 = setInterval(() => checkRecord(), props.loopLength * 100);
+        const i1 = setInterval(() => checkRecord(), 700);
         return () => {
             clearInterval(i1);
         };
@@ -165,12 +171,6 @@ const Recorder = (props: RecorderProps) => {
     const getMuteStatus = () => {
         return muted ? "Unmute" : "Mute";
     };
-    const getRecordingStatus = () => {
-        return (recorder1 !== null && recorder1.state === "recording") ? "Recording" : "Not recording";
-    };
-    const getRecordingStatus2 = () => {
-        return (recorder2 !== null && recorder2.state === "recording") ? "Recording" : "Not recording";
-    };
 
     const getRecordingStatusBoth = () => {
         if (recorder1 === null || recorder2 === null) return false;
@@ -179,7 +179,7 @@ const Recorder = (props: RecorderProps) => {
 
     const getMuteTooltip = () => {
         if (muted) return "Unmute";
-        else if (recording) return "Mute";
+        else if (getRecordingStatusBoth()) return "Mute";
         else return "Unmuting next cycle";
     };
 
@@ -240,6 +240,7 @@ const Recorder = (props: RecorderProps) => {
                         backingTrackUpdated(duration);
                         props.changeLoopLength(duration);
                     }}
+                    deleteBackingTrack={props.deleteBackingTrack}
                     addToPlaylist={props.addToPlaylist}
                     sendToPeers={props.sendToPeers}
                 />

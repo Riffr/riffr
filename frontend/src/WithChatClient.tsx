@@ -7,6 +7,8 @@ import { Socket } from "./connections/Socket";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { IsPendingError, Resource, resource } from "./resource";
 import { withResource } from "./WithResource";
+import Loading from "./Loading";
+import ErrorMessage from "./ErrorMessage";
 
 
 interface WithChatClientLocationState {
@@ -76,8 +78,8 @@ const withChatClient = <P extends any>(
 
         if (chatClientResource == undefined) return <p>Loading resource...</p>;
 
-        return <ErrorBoundary fallback={<p>ChatClientError</p>}>
-            <Wrapped {...props} fallback={<p>Loading...</p>} resource={chatClientResource} />        
+        return <ErrorBoundary fallback={<ErrorMessage />}>
+            <Wrapped {...props} fallback={<Loading />} resource={chatClientResource} />
         </ErrorBoundary>
     };
 

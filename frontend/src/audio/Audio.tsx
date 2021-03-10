@@ -124,6 +124,17 @@ const Audio = (props: { signal: SignallingChannel }) => {
             console.log("Sending audio");
 
             mesh.send("audio", combinedArray.buffer);
+
+            // Temp
+            audioCtx.decodeAudioData(record.buffer).then((buffer) => {
+                const decodedRecord: DecodedRecord = {
+                    buffer: buffer,
+                    startOffset: record.startOffset,
+                    isBackingTrack: false
+                }
+                addToPlaylist(decodedRecord, "self");
+            })
+            // End temp
         } else {
             console.log("Error: Mesh uninitialised");
         }

@@ -1,7 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import Recorder, {RecordType} from './Recorder';
 
-// import { SignalPayload } from "@riffr/backend/modules/Mesh";
 import {Mesh, MeshedPeer} from "../connections/Mesh";
 import {SignallingChannel} from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
@@ -12,7 +11,6 @@ export interface DecodedRecord {
     buffer: AudioBuffer;
     startOffset: number;
     isBackingTrack: boolean;
-    //endOffset: number;
 }
 
 const AudioContext: any = window.AudioContext // Default
@@ -114,7 +112,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
             const audioArray: ArrayBuffer = record.buffer;
 
             // Use uint8 because audio data comes in whole bytes
-
             const combinedArray = new Uint8Array(floatArray.byteLength + audioArray.byteLength + 1);
             combinedArray.set(new Uint8Array(floatArray.buffer));
             combinedArray.set([isBackingTrack ? 1 : 0], floatArray.byteLength);
@@ -139,7 +136,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
             buffer: buffer,
             startOffset: startOffset,
             isBackingTrack: isBackingTrack,
-            //endOffset: 0 //Not currently using this
         };
         console.log("Received sound with start offset ", startOffset);
         return decodedRecord;
@@ -147,6 +143,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     const deleteBackingTrack = (updateMesh = true) => {
         console.log("Deleting backing track");
+
         // Hacks because previousSounds.delete("backingTrack") doesn't work when called from inside initMesh
         setPreviousSounds(prev => {prev.delete("backingTrack"); return prev});
         setSounds(prev => {prev.delete("backingTrack"); return prev});
@@ -198,7 +195,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
             }
             return []
         });
-        //setAudioSources([]);
 
         resetAudioCtx();
         setPaused(true);
@@ -245,8 +241,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
     };
 
     const onSectionStart = () => {
-        // Bit ugly but lets us read state easily
-
         // Find and play the correct tracks from other peers
         console.log("Playing sounds:", sounds);
         sounds.forEach((soundList, peerID) => {
@@ -285,13 +279,11 @@ const Audio = (props: { signal: SignallingChannel }) => {
         if (audioCtx.state == "running") {
             i1 = setInterval(onSectionStart, loopLength * 1000);
         }
-        const i2 = setInterval(update, 100);
-        const i3 = setInterval(() => console.log(audioCtx), 4000);
+        const i2 = setInterval(update, 30);
         handleResize();
         return () => {
             clearInterval(i1);
             clearInterval(i2);
-            clearInterval(i3);
         };
     }, [loopLength, audioCtx, audioCtx.state]);
 

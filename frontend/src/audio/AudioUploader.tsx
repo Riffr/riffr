@@ -1,4 +1,4 @@
-import { BaseSyntheticEvent, useState, useRef } from 'react';
+import { BaseSyntheticEvent, useState } from 'react';
 import { DecodedRecord } from './Audio';
 import { RecordType } from "./Recorder";
 
@@ -14,11 +14,8 @@ interface AudioUploadProps {
 }
 
 const AudioUploader = (props: AudioUploadProps) => {
-    const [trackBuffer, setTrackBuffer] = useState<DecodedRecord>();
     const [isFilePicked, setIsFilePicked] = useState(false);
     const [fileName, setFileName] = useState("");
-    const sourceNode = useRef<AudioBufferSourceNode>(props.audioCtx.createBufferSource());
-    const gainNode = useRef<GainNode>(props.audioCtx.createGain());
 
     const onLoadFileSuccess = async (arrayBuffer: ArrayBuffer, fileName: string) => {
         // Convert AudioBuffer into ArrayBuffer that can be sent to other peers
@@ -43,7 +40,6 @@ const AudioUploader = (props: AudioUploadProps) => {
 
         setFileName(fileName);
         setIsFilePicked(true);
-        setTrackBuffer(decodedRecord);
     };
 
     const removeFile = async () => {

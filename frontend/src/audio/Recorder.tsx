@@ -9,7 +9,6 @@ type BlobEvent = { data: Blob; }
 export interface RecordType {
     buffer: ArrayBuffer;
     startOffset: number;
-    //endOffset: number;
 }
 
 interface RecorderProps {
@@ -165,12 +164,6 @@ const Recorder = (props: RecorderProps) => {
 
     const getMuteStatus = () => {
         return muted ? "Unmute" : "Mute";
-    };
-    const getRecordingStatus = () => {
-        return (recorder1 !== null && recorder1.state === "recording") ? "Recording" : "Not recording";
-    };
-    const getRecordingStatus2 = () => {
-        return (recorder2 !== null && recorder2.state === "recording") ? "Recording" : "Not recording";
     };
 
     const getRecordingStatusBoth = () => {

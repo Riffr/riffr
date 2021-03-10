@@ -6,6 +6,7 @@ import {SignallingChannel} from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
 
 import {Mesh as M} from '@riffr/backend';
+import assert from "assert";
 
 export interface DecodedRecord {
     buffer: AudioBuffer;
@@ -21,6 +22,8 @@ const createAudioCtx = () => {
     ctx.suspend();
     return ctx;
 };
+
+const INITIAL_BAR_COUNT = 1;
 
 const Audio = (props: { signal: SignallingChannel }) => {
     const [paused, setPaused] = useState(true);
@@ -38,13 +41,13 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [duration, setDuration] = useState(4);
     const [isRecording, setIsRecording] = useState(false);
 
-    const barCount = useRef(0);
+    const barCount = useRef(INITIAL_BAR_COUNT);
     const newLoopLength = useRef(8);
 
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
     const [audioSources, setAudioSources] = useState<AudioBufferSourceNode[]>([]);
 
-    const audioOffset = 0.5;
+    const audioOffset = 0;
 
     const resetAudioCtx = () => {
         //audioCtx.close();  // We probably should be closing these, but it crashes :(
@@ -121,6 +124,17 @@ const Audio = (props: { signal: SignallingChannel }) => {
             console.log("Sending audio");
 
             mesh.send("audio", combinedArray.buffer);
+
+            // Temp
+            audioCtx.decodeAudioData(record.buffer).then((buffer) => {
+                const decodedRecord: DecodedRecord = {
+                    buffer: buffer,
+                    startOffset: record.startOffset,
+                    isBackingTrack: false
+                }
+                addToPlaylist(decodedRecord, "self");
+            })
+            // End temp
         } else {
             console.log("Error: Mesh uninitialised");
         }
@@ -183,16 +197,17 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     const pause = () => {
         console.log("Pausing");
-        const backingTrack = (sounds.get("backingTrack"))?.shift();
-        console.log("Backing track being kept:", backingTrack);
-        if (backingTrack){
-            //setPreviousSounds(new Map([["backingTrack", backingTrack]]));
-            setSounds(new Map([["backingTrack", [backingTrack]]]));
-        } else {
-            setPreviousSounds(new Map());
-            setSounds(new Map());
-        }
-        barCount.current = 0;
+        console.log("Clearing all except backing track in", sounds)
+        setSounds(prev => {prev.forEach(
+            (soundList, peerID) => {
+                if (peerID !== "backingTrack") {
+                    prev.delete(peerID)
+                }
+            });
+            console.log("Removed sounds in", prev);
+            return prev
+        })
+        barCount.current = INITIAL_BAR_COUNT;
 
         // Stop all currently playing audio
         // Hack because acting directly on audioSources doesn't work when called from inside initMesh
@@ -242,7 +257,8 @@ const Audio = (props: { signal: SignallingChannel }) => {
         sourceNode.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         gainNode.gain.value = volume;
-        console.log("Scheduled to play: ", loopLength * barCount.current);
+        console.log("Scheduled to play: ", loopLength * barCount.current + audioOffset, " current time = ", audioCtx.currentTime);
+        assert(loopLength * barCount.current + audioOffset >= audioCtx.currentTime, "Audio start time must be in the future");
         sourceNode.start(loopLength * barCount.current + audioOffset, record.startOffset, loopLength);
         audioSources.push(sourceNode);
     };
@@ -254,7 +270,9 @@ const Audio = (props: { signal: SignallingChannel }) => {
             if (soundList !== undefined) {
                 let sound;
                 if (soundList.length) {
+                    //console.log("Retrieving sound from soundlist", soundList)
                     sound = soundList.shift();  // Returns and removes the first item in the list
+                    //console.log("Retrieved sound from soundlist", soundList)
                 }/* else {
                     sound = previousSounds.get(peerID);
                 }*/

@@ -126,7 +126,7 @@ const Room = withSignallingChannel(props => {
             <Audio signal={signallingChannel} />
             <div id={"chat"} style={{ display: chatDisplay }}>
                 <button onClick={toggleMembers} className={"blue"} id={"chat-member-header"}><b>Members</b></button>
-                <div id={"member-list"}>
+                <div id={"member-list"} style={{display: memberListShown}}>
                     {members.map(user => <p>{user.username}</p>)}
                 </div>
                 <div id={"message-field"}>

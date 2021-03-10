@@ -32,14 +32,12 @@ const positiveMod = (n: number, m: number) => {
   return ((n % m) + m) % m;
 }
 
-//Todo: Not really synced with the audio player, might have to move logic here into audio as well
 const Recorder = (props: RecorderProps) => {
     let chunks: BlobPart[] = [];
     const [recorder1, setMediaRecorder1] = useState<any>(null);
     const [recorder2, setMediaRecorder2] = useState<any>(null);
 
     const startOffset = useRef(0);
-    const stopOffset = useRef(0);
     const [permission, setPermission] = useState(false);
 
     const [muted, setMuted] = useState(true);
@@ -51,11 +49,19 @@ const Recorder = (props: RecorderProps) => {
 
     const checkRecord = () => {
         //console.log(props.audioCtx.state, !recording, props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength))
-        if (props.audioCtx.state === "running" && !recording.current &&
-            props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength) <= (1.5)) {
+        const timeUntilSectionEnd = props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength);
+        if (props.audioCtx.state === "running" && !recording.current && 0.05 < timeUntilSectionEnd && timeUntilSectionEnd <= 0.15) {
             console.log("Checking muted");
             if (!muted) {
                 console.log("We should!");
+                // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
+                recording.current = true;
+                console.log("Set recording to true")
+                setTimeout(() => {
+                    console.log("Setting recording to false");
+                    recording.current = false;
+                }, props.loopLength * 1000 / 2);
+
                 startRecording();
                 return false;
             }
@@ -77,15 +83,10 @@ const Recorder = (props: RecorderProps) => {
         }
         if (recorder) {
             console.log("Start recording...");
-            // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
-            recording.current = true;
-            setTimeout(() => {
-                console.log("Setting recording to false");
-                recording.current = false;
-            }, props.loopLength * 1000 / 2 + startOffset.current * 1000);
 
             recorder.start();
-            startOffset.current = props.loopLength - (props.audioCtx.currentTime - props.audioOffset) % props.loopLength;
+            startOffset.current = props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength);
+            console.log("Start offset", startOffset.current)
             setTimeout(() => {
                 stopRecording(recorder);
             }, props.loopLength * 1000 + startOffset.current * 1000);
@@ -101,7 +102,6 @@ const Recorder = (props: RecorderProps) => {
         if (recorder !== null && recorder.state !== 'inactive') {
             console.log("Stop recording");
             recorder.stop();
-            stopOffset.current = (props.audioCtx.currentTime - props.audioOffset) % props.loopLength;
         }
     };
 
@@ -139,7 +139,7 @@ const Recorder = (props: RecorderProps) => {
     }
 
     useEffect(() => {
-        const i1 = setInterval(() => checkRecord(), 700);
+        const i1 = setInterval(() => checkRecord(), 50);
         return () => {
             clearInterval(i1);
         };

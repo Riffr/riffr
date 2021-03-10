@@ -193,7 +193,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             console.log("Removed sounds in", prev);
             return prev
         })
-        barCount.current = 0;
+        barCount.current = 1;
 
         // Stop all currently playing audio
         // Hack because acting directly on audioSources doesn't work when called from inside initMesh

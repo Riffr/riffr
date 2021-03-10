@@ -6,6 +6,7 @@ import {SignallingChannel} from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
 
 import {Mesh as M} from '@riffr/backend';
+import assert from "assert";
 
 export interface DecodedRecord {
     buffer: AudioBuffer;
@@ -22,7 +23,7 @@ const createAudioCtx = () => {
     return ctx;
 };
 
-const INITIAL_BAR_COUNT = 0;
+const INITIAL_BAR_COUNT = 1;
 
 const Audio = (props: { signal: SignallingChannel }) => {
     const [paused, setPaused] = useState(true);
@@ -46,7 +47,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
     const [audioSources, setAudioSources] = useState<AudioBufferSourceNode[]>([]);
 
-    const audioOffset = 0.5;
+    const audioOffset = 0;
 
     const resetAudioCtx = () => {
         //audioCtx.close();  // We probably should be closing these, but it crashes :(
@@ -245,7 +246,8 @@ const Audio = (props: { signal: SignallingChannel }) => {
         sourceNode.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         gainNode.gain.value = volume;
-        console.log("Scheduled to play: ", loopLength * barCount.current);
+        console.log("Scheduled to play: ", loopLength * barCount.current + audioOffset, " current time = ", audioCtx.currentTime);
+        assert(loopLength * barCount.current + audioOffset >= audioCtx.currentTime, "Audio start time must be in the future");
         sourceNode.start(loopLength * barCount.current + audioOffset, record.startOffset, loopLength);
         audioSources.push(sourceNode);
     };

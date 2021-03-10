@@ -183,15 +183,16 @@ const Audio = (props: { signal: SignallingChannel }) => {
 
     const pause = () => {
         console.log("Pausing");
-        const backingTrack = (sounds.get("backingTrack"))?.shift();
-        console.log("Backing track being kept:", backingTrack);
-        if (backingTrack){
-            //setPreviousSounds(new Map([["backingTrack", backingTrack]]));
-            setSounds(new Map([["backingTrack", [backingTrack]]]));
-        } else {
-            setPreviousSounds(new Map());
-            setSounds(new Map());
-        }
+        console.log("Clearing all except backing track in", sounds)
+        setSounds(prev => {prev.forEach(
+            (soundList, peerID) => {
+                if (peerID !== "backingTrack") {
+                    prev.delete(peerID)
+                }
+            });
+            console.log("Removed sounds in", prev);
+            return prev
+        })
         barCount.current = 0;
 
         // Stop all currently playing audio

@@ -11,7 +11,7 @@ import { WithChatClientLocationState } from './WithChatClient';
 const Home = (props: RouteComponentProps<{}>) => {
 
 
-    const [username, setUsername] = useState("User");
+    const [username, setUsername] = useState(generateRandomUserName());
     const [roomId, setRoomId] = useState("");
 
     let randomRoomName = generateRandomRoomName();
@@ -70,6 +70,12 @@ const Home = (props: RouteComponentProps<{}>) => {
             </div>
         </div>
     );
+}
+
+const generateRandomUserName = () => {
+    let words = ["Superman","Batman","Spiderman","Ironman","Superwoman","Antman", "Manman", "Womanman", "Userman","User"];
+    // Gets a random word and removes it from the list to avoid duplicates
+    return words.splice(Math.floor(Math.random() * words.length), 1)[0];
 }
 
 const generateRandomRoomName = () => {

@@ -49,11 +49,19 @@ const Recorder = (props: RecorderProps) => {
 
     const checkRecord = () => {
         //console.log(props.audioCtx.state, !recording, props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength))
-        if (props.audioCtx.state === "running" && !recording.current &&
-            props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength) <= (0.15)) {
+        const timeUntilSectionEnd = props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength);
+        if (props.audioCtx.state === "running" && !recording.current && 0.05 < timeUntilSectionEnd && timeUntilSectionEnd <= 0.15) {
             console.log("Checking muted");
             if (!muted) {
                 console.log("We should!");
+                // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
+                recording.current = true;
+                console.log("Set recording to true")
+                setTimeout(() => {
+                    console.log("Setting recording to false");
+                    recording.current = false;
+                }, props.loopLength * 1000 / 2);
+
                 startRecording();
                 return false;
             }
@@ -75,13 +83,6 @@ const Recorder = (props: RecorderProps) => {
         }
         if (recorder) {
             console.log("Start recording...");
-            // Set recording to true and then back to false midway through the iteration so that checkRecord isn't triggered again
-            recording.current = true;
-            console.log("Set recording to true")
-            setTimeout(() => {
-                console.log("Setting recording to false");
-                recording.current = false;
-            }, props.loopLength * 1000 / 2 + startOffset.current * 1000);
 
             recorder.start();
             startOffset.current = props.loopLength - positiveMod(props.audioCtx.currentTime - props.audioOffset, props.loopLength);

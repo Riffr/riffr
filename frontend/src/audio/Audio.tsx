@@ -44,7 +44,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
     const [audioCtx, setAudioCtx] = useState<AudioContext>(createAudioCtx());
     const [audioSources, setAudioSources] = useState<AudioBufferSourceNode[]>([]);
 
-    const audioOffset = 0.5;
+    const audioOffset = 0;
 
     const resetAudioCtx = () => {
         //audioCtx.close();  // We probably should be closing these, but it crashes :(

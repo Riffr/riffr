@@ -19,12 +19,7 @@ const AudioUploader = (props: AudioUploadProps) => {
     const sourceNode = useRef<AudioBufferSourceNode>(props.audioCtx.createBufferSource());
     const gainNode = useRef<GainNode>(props.audioCtx.createGain());
 
-    const fileCheck = (filename: string) => {
-        const extension = filename.substring(filename.lastIndexOf('.'), filename.length) || filename;
-        return extension === ".mp3" || extension === ".wav";
-    };
-
-    const onLoadFileSuccess = async (arrayBuffer: ArrayBuffer) => {
+    const onLoadFileSuccess = async (arrayBuffer: ArrayBuffer, fileName: string) => {
         // Convert AudioBuffer into ArrayBuffer that can be sent to other peers
         console.log("Loaded audio file of size ", arrayBuffer.byteLength);
 
@@ -45,6 +40,7 @@ const AudioUploader = (props: AudioUploadProps) => {
         props.changeLoopLength(audioBuffer.duration);
         props.addToPlaylist(decodedRecord, "backingTrack");
 
+        setFileName(fileName);
         setIsFilePicked(true);
         setTrackBuffer(decodedRecord);
     };
@@ -60,20 +56,11 @@ const AudioUploader = (props: AudioUploadProps) => {
         if (event.target.files) {
             const file: File = event.target.files[0];
             if (file !== undefined) {
-                setFileName(file.name);
                 const reader = new FileReader();
                 reader.onload = (event: any) => {
-                    if (fileCheck(fileName)) {
-                        onLoadFileSuccess(event.target.result);
-                    } else {
-                        removeFile();
-                    }
+                    onLoadFileSuccess(event.target.result, file.name);
                 };
                 reader.readAsArrayBuffer(file);
-            }
-            else
-            {
-                setFileName("");
             }
         }
     };

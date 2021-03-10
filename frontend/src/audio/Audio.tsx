@@ -292,7 +292,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             onSectionStart();
             i1 = setInterval(onSectionStart, loopLength * 1000);
         }
-        const i2 = setInterval(update, 30);
+        const i2 = setInterval(update, 50);
         handleResize();
         return () => {
             clearInterval(i1);

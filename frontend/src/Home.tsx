@@ -7,9 +7,9 @@ import { WithChatClientLocationState } from './WithChatClient';
 
 const Home = (props: RouteComponentProps<{}>) => {
 
-
     const [username, setUsername] = useState("User");
     const [roomId, setRoomId] = useState("");
+    const [submit, setSubmit] = useState(false);
 
     let randomRoomName = generateRandomRoomName();
 
@@ -23,22 +23,34 @@ const Home = (props: RouteComponentProps<{}>) => {
     }, []);
 
     const joinRoom = useCallback(() => {
-        if (roomId == "") {
+        if (roomId === "") {
             alert("Please enter lobby name");
+            setSubmit(false);
         } else if (username === "") {
             alert("Please enter username");
+            setSubmit(false);
         } else {
             props.history.push(`/riffr/lobby`, { roomId, username, create: false });
         }
     }, [props.history, username, roomId]);
 
+
     useEffect(() => {
+        console.log("updated");
         document.getElementById("lobby-input")
             ?.addEventListener("keydown", (e) => {
-                if (e.code === "Enter") joinRoom();
+                if (e.code === "Enter") {
+                    setSubmit(true);
+                }
             });
-    }, [joinRoom]);
+    }, []);
 
+    // Evil hack to get submit-on-enter to work.
+    useEffect(() => {
+        if (submit) {
+            joinRoom();
+        }
+    }, [submit]);
 
     return (
         <div id={"home-wrapper"}>

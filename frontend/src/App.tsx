@@ -15,6 +15,7 @@ const Loading = () => (
 
 const App = () => {
     const socket = new Socket(`${process.env.REACT_APP_BACKEND_IP}:${process.env.REACT_APP_BACKEND_PORT}`);
+
     return (
         <Router>
             <div className="App">

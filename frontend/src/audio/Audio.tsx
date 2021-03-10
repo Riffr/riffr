@@ -1,7 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import Recorder, {RecordType} from './Recorder';
 
-// import { SignalPayload } from "@riffr/backend/modules/Mesh";
 import {Mesh, MeshedPeer} from "../connections/Mesh";
 import {SignallingChannel} from "../connections/SignallingChannel";
 import Canvas from "../Canvas";
@@ -12,7 +11,6 @@ export interface DecodedRecord {
     buffer: AudioBuffer;
     startOffset: number;
     isBackingTrack: boolean;
-    //endOffset: number;
 }
 
 const AudioContext: any = window.AudioContext // Default
@@ -90,6 +88,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
             } else if (channel.label === "control") {
                 if (data === "play") {play()}
                 else if (data === "pause") {pause()}
+                else if (data === "deleteBackingTrack") {deleteBackingTrack(false)}
                 else if (data.substring(0,17) === "changeLoopLength:") {
                     let newLoopLength = data.substring(17);
                     console.log("Changing loop length to", newLoopLength)
@@ -113,7 +112,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
             const audioArray: ArrayBuffer = record.buffer;
 
             // Use uint8 because audio data comes in whole bytes
-
             const combinedArray = new Uint8Array(floatArray.byteLength + audioArray.byteLength + 1);
             combinedArray.set(new Uint8Array(floatArray.buffer));
             combinedArray.set([isBackingTrack ? 1 : 0], floatArray.byteLength);
@@ -138,11 +136,21 @@ const Audio = (props: { signal: SignallingChannel }) => {
             buffer: buffer,
             startOffset: startOffset,
             isBackingTrack: isBackingTrack,
-            //endOffset: 0 //Not currently using this
         };
         console.log("Received sound with start offset ", startOffset);
         return decodedRecord;
     };
+
+    const deleteBackingTrack = (updateMesh = true) => {
+        console.log("Deleting backing track");
+
+        // Hacks because previousSounds.delete("backingTrack") doesn't work when called from inside initMesh
+        setPreviousSounds(prev => {prev.delete("backingTrack"); return prev});
+        setSounds(prev => {prev.delete("backingTrack"); return prev});
+        if (updateMesh) {
+            mesh?.send("control", "deleteBackingTrack");
+        }
+    }
 
     const addToPlaylist = (decodedRecord: DecodedRecord, peerID: string) => {
         console.log("Adding sound from peer ", peerID, " to playlist (isBackingTrack = ", decodedRecord.isBackingTrack, ")");
@@ -179,11 +187,14 @@ const Audio = (props: { signal: SignallingChannel }) => {
         }
         barCount.current = 1;
 
-        // Stop currently playing audio
-        console.log(audioSources);
-        for (let i = 0; i < audioSources.length; i++) {
-            audioSources[i].stop();
-        }
+        // Stop all currently playing audio
+        // Hack because acting directly on audioSources doesn't work when called from inside initMesh
+        setAudioSources(prev => {
+            for (let i = 0; i < prev.length; i++) {
+                prev[i].stop();
+            }
+            return []
+        });
 
         resetAudioCtx();
         setPaused(true);
@@ -230,8 +241,6 @@ const Audio = (props: { signal: SignallingChannel }) => {
     };
 
     const onSectionStart = () => {
-        // Bit ugly but lets us read state easily
-
         // Find and play the correct tracks from other peers
         console.log("Playing sounds:", sounds);
         sounds.forEach((soundList, peerID) => {
@@ -270,13 +279,11 @@ const Audio = (props: { signal: SignallingChannel }) => {
         if (audioCtx.state == "running") {
             i1 = setInterval(onSectionStart, loopLength * 1000);
         }
-        const i2 = setInterval(update, 100);
-        const i3 = setInterval(() => console.log(audioCtx), 4000);
+        const i2 = setInterval(update, 30);
         handleResize();
         return () => {
             clearInterval(i1);
             clearInterval(i2);
-            clearInterval(i3);
         };
     }, [loopLength, audioCtx, audioCtx.state]);
 
@@ -308,6 +315,7 @@ const Audio = (props: { signal: SignallingChannel }) => {
                         sendToPeers={sendToPeers}
                         loopLength={loopLength}
                         changeLoopLength={changeLoopLength}
+                        deleteBackingTrack={deleteBackingTrack}
 
                         setTimeSignature={setTimeSignature}
                         setDuration={setDuration}

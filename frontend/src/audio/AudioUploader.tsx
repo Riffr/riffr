@@ -1,4 +1,4 @@
-import { BaseSyntheticEvent, useState, useRef } from 'react';
+import { BaseSyntheticEvent, useState } from 'react';
 import { DecodedRecord } from './Audio';
 import { RecordType } from "./Recorder";
 
@@ -8,16 +8,14 @@ interface AudioUploadProps {
     permission: boolean;
     loopLength: number;
     changeLoopLength(length: number): void;
+    deleteBackingTrack(): void;
     addToPlaylist(record: DecodedRecord, peerID: string): void;
     sendToPeers(record: RecordType, isBackingTrack: boolean): void
 }
 
 const AudioUploader = (props: AudioUploadProps) => {
-    const [trackBuffer, setTrackBuffer] = useState<DecodedRecord>();
     const [isFilePicked, setIsFilePicked] = useState(false);
     const [fileName, setFileName] = useState("");
-    const sourceNode = useRef<AudioBufferSourceNode>(props.audioCtx.createBufferSource());
-    const gainNode = useRef<GainNode>(props.audioCtx.createGain());
 
     const onLoadFileSuccess = async (arrayBuffer: ArrayBuffer, fileName: string) => {
         // Convert AudioBuffer into ArrayBuffer that can be sent to other peers
@@ -42,12 +40,12 @@ const AudioUploader = (props: AudioUploadProps) => {
 
         setFileName(fileName);
         setIsFilePicked(true);
-        setTrackBuffer(decodedRecord);
     };
 
-    const removeFile = () => {
+    const removeFile = async () => {
         if (isFilePicked) {
-            // TODO Send blank file
+            props.deleteBackingTrack();
+            setFileName("");
             setIsFilePicked(false);
         }
     };
@@ -69,7 +67,7 @@ const AudioUploader = (props: AudioUploadProps) => {
         <div style={{display: "flex"}}>
             <label htmlFor={"audio-file"} id={"fake-upload"} className={"squircle-button light-blue button"+(props.paused ? "" : " disabled")} title={"Upload backing track"}>Upload: {fileName}</label>
             <input id="audio-file" type="file" style={{display:"none"}} accept=".mp3,.wav,.m4a" disabled={!props.paused} onChange={changeHandler}></input>
-            <button disabled={!props.paused} onClick={removeFile} className={"squircle-button"} style={{padding: 0, width: "27px", marginLeft:"-27px", zIndex: 1, backgroundColor: "white"}}><i className={"fa fa-times block"} /></button>
+            <button disabled={!props.paused || !isFilePicked} onClick={removeFile} className={"squircle-button"} style={{padding: 0, width: "27px", marginLeft:"-27px", zIndex: 1, backgroundColor: "white"}}><i className={"fa fa-times block"} /></button>
         </div>
     );
 };

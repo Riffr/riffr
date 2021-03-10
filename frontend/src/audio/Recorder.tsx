@@ -9,7 +9,6 @@ type BlobEvent = { data: Blob; }
 export interface RecordType {
     buffer: ArrayBuffer;
     startOffset: number;
-    //endOffset: number;
 }
 
 interface RecorderProps {
@@ -21,6 +20,7 @@ interface RecorderProps {
 
     loopLength: number;
     changeLoopLength(length: number): void;
+    deleteBackingTrack(): void;
 
     setTimeSignature(val: number): void;
     setDuration(val: number): void;
@@ -165,12 +165,6 @@ const Recorder = (props: RecorderProps) => {
     const getMuteStatus = () => {
         return muted ? "Unmute" : "Mute";
     };
-    const getRecordingStatus = () => {
-        return (recorder1 !== null && recorder1.state === "recording") ? "Recording" : "Not recording";
-    };
-    const getRecordingStatus2 = () => {
-        return (recorder2 !== null && recorder2.state === "recording") ? "Recording" : "Not recording";
-    };
 
     const getRecordingStatusBoth = () => {
         if (recorder1 === null || recorder2 === null) return false;
@@ -240,6 +234,7 @@ const Recorder = (props: RecorderProps) => {
                         backingTrackUpdated(duration);
                         props.changeLoopLength(duration);
                     }}
+                    deleteBackingTrack={props.deleteBackingTrack}
                     addToPlaylist={props.addToPlaylist}
                     sendToPeers={props.sendToPeers}
                 />
